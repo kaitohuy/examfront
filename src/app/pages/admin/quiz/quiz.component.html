@@ -1,0 +1,79 @@
+<div class="card shadow-sm mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-end mb-3">
+      <div class="input-group me-3" style="max-width: 400px;">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          class="form-control border-start-0" 
+          placeholder="Tìm kiếm quiz..." 
+          [(ngModel)]="searchText"
+        >
+      </div>
+      <button class="btn btn-primary" (click)="openCreateQuizDialog()">
+        <i class="bi bi-plus-circle me-1"></i> Thêm Quiz
+      </button>
+    </div>
+    <div *ngIf="isLoadingQuizzes" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Đang tải dữ liệu...</p>
+    </div>
+    <div *ngIf="!isLoadingQuizzes && filteredQuizzes.length === 0" class="text-center py-5">
+      <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+      <h4 class="mt-3">Chưa có quiz nào</h4>
+      <p class="text-muted">Hãy thêm quiz mới cho môn học này</p>
+    </div>
+    <div *ngIf="!isLoadingQuizzes && filteredQuizzes.length > 0" class="table-responsive">
+      <table class="table table-hover">
+        <thead class="table-light">
+          <tr>
+            <th (click)="sortQuizzes('id')" style="cursor: pointer;">
+              ID
+              <i class="{{ sortIcons['id'] }} ms-1"></i>
+            </th>
+            <th (click)="sortQuizzes('title')" style="cursor: pointer;">
+              Tên Quiz
+              <i class="{{ sortIcons['title'] }} ms-1"></i>
+            </th>
+            <th (click)="sortQuizzes('description')" style="cursor: pointer;">
+              Mô tả
+              <i class="{{ sortIcons['description'] }} ms-1"></i>
+            </th>
+            <th (click)="sortQuizzes('createdBy')" style="cursor: pointer;">
+              Người tạo
+              <i class="{{ sortIcons['createdBy'] }} ms-1"></i>
+            </th>
+            <th (click)="sortQuizzes('createdAt')" style="cursor: pointer;">
+              Ngày tạo
+              <i class="{{ sortIcons['createdAt'] }} ms-1"></i>
+            </th>
+            <th class="text-end">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let quiz of filteredQuizzes">
+            <td>{{ quiz.id }}</td>
+            <td>{{ quiz.title }}</td>
+            <td>{{ quiz.description || '--' }}</td>
+            <td>{{ quiz.createdBy.username || '--' }}</td>
+            <td>{{ quiz.createdAt | date:'short' }}</td>
+            <td class="text-end">
+              <div class="btn-group">
+                <button class="btn btn-sm btn-outline-primary me-2" (click)="openEditQuizDialog(quiz); $event.stopPropagation()">
+                  <i class="bi bi-pencil"></i> Sửa
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="deleteQuiz(quiz.id); $event.stopPropagation()">
+                  <i class="bi bi-trash"></i> Xóa
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

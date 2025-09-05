@@ -1,0 +1,77 @@
+/* panel filter */
+.filter-sheet { border-radius: 0.75rem; }
+
+/* giữ form cột ổn định kể cả khi rỗng/đang loading */
+.mat-mdc-table { table-layout: fixed; }
+.mat-mdc-header-cell, .mat-mdc-cell { vertical-align: middle; }
+
+/* chiều rộng ổn định cho các cột chính */
+.col-actions { width: 280px; white-space: nowrap; }
+.col-filename { width: 32%; }
+.col-subject  { width: 22%; }
+.col-uploader { width: 16%; }
+
+.actions-wrap { display: inline-flex; gap: .25rem; flex-wrap: nowrap; }
+.file-icon { line-height: 1; }
+.badge.text-bg-warning,
+.badge.text-bg-success,
+.badge.text-bg-secondary { font-weight: 600; letter-spacing: .2px; }
+
+.loading-overlay {
+  position: absolute; inset: 0; background: rgba(255,255,255,.5);
+  display: grid; place-items: center; z-index: 5;
+}
+
+/* Chip badge – rõ ràng hơn */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .85rem;
+  letter-spacing: .2px;
+  border: 1px solid transparent;
+  line-height: 1.1;
+}
+
+/* Variant */
+.chip-exam {
+  background: #eaf2ff;
+  color: #0b57d0;
+  border-color: #cfe1ff;
+}
+.chip-practice {
+  background: #e8f5e9;
+  color: #1e7e34;
+  border-color: #cfe9d0;
+}
+
+/* Status */
+.chip-approved {
+  background: #e6f4ea;
+  color: #188038;
+  border-color: #cfe9d0;
+}
+.chip-pending {
+  background: #f1f3f4;
+  color: #434a54;
+  border-style: dashed;
+  border-color: #d0d7de;
+}
+.chip-rejected {
+  background: #fdecea;
+  color: #b00020;
+  border-color: #f5c2c7;
+}
+
+/* ép nhỏ Material form-field ~36px cho “tiệp” với .form-control-sm */
+:host ::ng-deep .compact-mat .mat-mdc-text-field-wrapper { height: 32px; padding: 0; }
+:host ::ng-deep .compact-mat .mat-mdc-form-field-flex { align-items: center; }
+:host ::ng-deep .compact-mat .mat-mdc-form-field-infix { padding: 0 10px; min-height: 0; }
+:host ::ng-deep .compact-mat .mat-mdc-input-element { padding: 0; font-size: .875rem; line-height: 32px; }
+:host ::ng-deep .compact-mat .mat-mdc-form-field-subscript-wrapper { height: 0; }
+
+/* thu nhỏ icon nút lịch */
+:host ::ng-deep .compact-mat .mat-mdc-icon-button.mat-mdc-button-base { width: 28px; height: 28px; padding: 0; }

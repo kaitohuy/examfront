@@ -1,0 +1,105 @@
+<div class="sidebar-container" [class.collapsed]="isCollapsed">
+  <!-- Toggle Button -->
+  <button mat-icon-button 
+          class="toggle-btn" 
+          (click)="onToggleSidebar()"
+          [matTooltip]="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+    <mat-icon>{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+  </button>
+
+  <mat-card class="sidebar-card">
+    <mat-nav-list>
+      <div mat-subheader *ngIf="!isCollapsed">Menu</div>
+      
+      <!-- Home -->
+      <a mat-list-item 
+         [routerLink]="to('')" 
+         routerLinkActive="active"
+         [matTooltip]="isCollapsed ? 'Home' : ''"
+         [matTooltipDisabled]="!isCollapsed">
+        <mat-icon matListIcon>home</mat-icon>
+        <span matLine *ngIf="!isCollapsed">Home</span>
+      </a>
+      
+      <!-- User Management -->
+      <a *ngIf="showUserManagement" 
+         mat-list-item 
+         [routerLink]="to('user-management')"
+         routerLinkActive="active"
+         [matTooltip]="isCollapsed ? 'User Management' : ''"
+         [matTooltipDisabled]="!isCollapsed">
+        <img matListIcon src="assets/images/management.png" width="24" height="24" />
+        <span matLine class="mx-2" *ngIf="!isCollapsed">User Management</span>
+      </a>
+      
+      <!-- Department -->
+      <a *ngIf="showDepartment" 
+         mat-list-item 
+         [routerLink]="to('department')"
+         routerLinkActive="active"
+         [matTooltip]="isCollapsed ? 'Department Management' : ''"
+         [matTooltipDisabled]="!isCollapsed">
+        <img matListIcon src="assets/images/university.png" width="24" height="24" />
+        <span matLine class="mx-2" *ngIf="!isCollapsed">Department Management</span>
+      </a>
+      
+      <!-- My Subject -->
+      <a *ngIf="showMySubject" 
+         mat-list-item 
+         [routerLink]="to('subjects')"
+         routerLinkActive="active"
+         [matTooltip]="isCollapsed ? 'My Subject' : ''"
+         [matTooltipDisabled]="!isCollapsed">
+        <img matListIcon src="assets/images/book.png" width="24" height="24" />
+        <span matLine class="mx-2" *ngIf="!isCollapsed">My Subject</span>
+      </a>
+      
+      <!-- Archive collapsible -->
+      <ng-container *ngIf="showArchive">
+        <a mat-list-item 
+           (click)="!isCollapsed && (archiveOpen = !archiveOpen)"
+           [class.clickable]="!isCollapsed"
+           [matTooltip]="isCollapsed ? 'Archive File' : ''"
+           [matTooltipDisabled]="!isCollapsed">
+          <mat-icon matListIcon>folder</mat-icon>
+          <span matLine *ngIf="!isCollapsed">Archive File</span>
+          <mat-icon matListIcon *ngIf="!isCollapsed">{{ archiveOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </a>
+        
+        <div class="submenu" *ngIf="archiveOpen && !isCollapsed">
+          <a mat-list-item 
+             [routerLink]="to('archive','all')" 
+             routerLinkActive="active"
+             class="submenu-item">
+            <span matLine>All</span>
+          </a>
+          <a mat-list-item 
+             [routerLink]="to('archive','imports')" 
+             routerLinkActive="active"
+             class="submenu-item">
+            <span matLine>Imports</span>
+          </a>
+          <a mat-list-item 
+             [routerLink]="to('archive','exports')" 
+             routerLinkActive="active"
+             class="submenu-item">
+            <span matLine>Exports</span>
+          </a>
+          <a
+             mat-list-item 
+             [routerLink]="to('archive','pending')" 
+             routerLinkActive="active"
+             class="submenu-item">
+            <span matLine>Pending review</span>
+          </a>
+          <a mat-list-item 
+             [routerLink]="to('archive','history')" 
+             routerLinkActive="active"
+             class="submenu-item">
+            <span matLine>History</span>
+          </a>
+        </div>
+      </ng-container>
+    </mat-nav-list>
+  </mat-card>
+</div>

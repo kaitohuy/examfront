@@ -1,0 +1,55 @@
+.bootstrap-wrapper {
+  width: 100%;
+}
+
+.row {
+  margin: 0;
+  display: flex;
+  width: 100%;
+}
+
+.sidebar-col {
+  flex: 0 0 250px;
+  max-width: 250px;
+  padding: 0;
+  transition: all 0.3s ease;
+}
+
+.sidebar-col.collapsed {
+  flex: 0 0 60px;
+  max-width: 60px;
+}
+
+.content-col.expanded {
+  margin-left: 0;
+}
+.content-col {
+  flex: 1;
+  padding: 0 15px;
+  transition: all 0.3s ease;
+  min-width: 0; /* Prevent overflow */
+  overflow-x: auto;
+}
+
+.content-col > * {
+  width: 100%;
+  max-width: 100%;
+}
+/* Responsive design */
+@media (max-width: 768px) {
+  .sidebar-col {
+    position: fixed;
+    z-index: 1000;
+    height: 100vh;
+    left: 0;
+    top: 0;
+  }
+  
+  .content-col {
+    margin-left: 250px;
+  }
+  
+  .content-col.expanded {
+    margin-left: 60px;
+  }
+}

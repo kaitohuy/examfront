@@ -1,0 +1,129 @@
+<h2 mat-dialog-title>Export câu hỏi đã chọn</h2>
+
+<mat-dialog-content class="content">
+
+  <!-- Hàng: Định dạng -->
+  <div class="grid-2">
+    <div class="row">
+      <label>Tên file: </label>
+      <input matInput placeholder="tên file khi xuất..." [(ngModel)]="fileName" />
+    </div>
+    <div class="row">
+      <label>Định dạng</label>
+      <mat-select [(ngModel)]="format">
+        <mat-option value="pdf">PDF</mat-option>
+        <mat-option value="docx">Word (.docx)</mat-option>
+      </mat-select>
+    </div>
+  </div>
+
+  <!-- Hàng: Kiểu file -->
+  <div class="row">
+    <label>Kiểu file</label>
+    <mat-select [(ngModel)]="variant">
+      <mat-option value="practice">Ôn tập (NHCHT)</mat-option>
+      <mat-option value="exam">Đề thi</mat-option>
+    </mat-select>
+  </div>
+
+  <!-- PRACTICE -->
+  <div *ngIf="variant==='practice'" class="grid-2">
+    <div class="row">
+      <label>Kiểu NHCHT</label>
+      <mat-select [(ngModel)]="form">
+        <mat-option value="TRAC_NGHIEM">TRẮC NGHIỆM</mat-option>
+        <mat-option value="TU_LUAN">TỰ LUẬN</mat-option>
+      </mat-select>
+    </div>
+
+    <div class="row">
+      <label>Chương trình đào tạo</label>
+      <mat-select [(ngModel)]="level">
+        <mat-option value="Đại học chính quy">Đại học chính quy</mat-option>
+        <mat-option value="Đại học từ xa">Đại học từ xa</mat-option>
+        <mat-option value="Vừa học vừa làm">Vừa học vừa làm</mat-option>
+        <mat-option value="Cao đẳng chính quy">Cao đẳng chính quy</mat-option>
+      </mat-select>
+    </div>
+  </div>
+
+  <!-- EXAM -->
+  <div *ngIf="variant==='exam'">
+    <div class="hint">Các trường dưới đây là tuỳ chọn, dùng để in header đề thi.</div>
+
+    <div class="grid-2">
+      <div class="row">
+        <label>Học kỳ</label>
+        <mat-select [(ngModel)]="semester">
+          <mat-option value="">(bỏ trống)</mat-option>
+          <mat-option value="I">I</mat-option>
+          <mat-option value="II">II</mat-option>
+          <mat-option value="Hè">Hè</mat-option>
+        </mat-select>
+      </div>
+
+      <div class="row">
+        <label>Năm học</label>
+        <input matInput placeholder="2024-2025" [(ngModel)]="academicYear" />
+      </div>
+
+      <div class="row">
+        <label>Lớp</label>
+        <input matInput placeholder="D18CN, D18AT" [(ngModel)]="classes" />
+      </div>
+
+      <div class="row">
+        <label>Mã đề</label>
+        <input matInput type="number" min="1" [(ngModel)]="paperNo" />
+      </div>
+
+      <div class="row">
+        <label>Thời lượng (phút)</label>
+        <input matInput type="number" min="1" [(ngModel)]="durationMinutes" />
+      </div>
+
+      <div class="row">
+        <label>Hình thức thi</label>
+        <mat-select [(ngModel)]="examForm">
+          <mat-option value="viết">Viết</mat-option>
+          <mat-option value="trắc nghiệm">Trắc nghiệm</mat-option>
+        </mat-select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="row">
+        <label>Bộ môn</label>
+        <input matInput placeholder="Công nghệ thông tin" [(ngModel)]="faculty" />
+      </div>
+      <div class="row">
+        <label>Mẫu</label>
+        <input matInput placeholder="Mẫu 3a" [(ngModel)]="mau" />
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-2">
+      Xuất <b>EXAM</b> sẽ <b>tự động lưu bản sao</b> để duyệt (HEAD/ADMIN: vào <b>Approved</b>, giảng viên: <b>Pending</b>).
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center gap-4 mt">
+    <mat-checkbox [(ngModel)]="includeAnswers">Bao gồm đáp án</mat-checkbox>
+
+    <!-- PRACTICE: chỉ PRACTICE mới cho bật saveCopy -->
+    <mat-checkbox *ngIf="variant==='practice'" [(ngModel)]="saveCopy">
+      Lưu bản copy (saveCopy)
+    </mat-checkbox>
+
+    <div class="note">Đã chọn: {{ data.selectedCount }} câu hỏi</div>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button mat-dialog-close>Hủy</button>
+  <button mat-flat-button color="primary" [disabled]="!canSubmit" (click)="submit()">
+    <mat-icon>download</mat-icon>
+    <span class="ms-1">Export</span>
+  </button>
+</mat-dialog-actions>
