@@ -1,0 +1,75 @@
+<div class="guide">
+  <!-- Aside -->
+  <div class="guide-aside">
+    <mat-nav-list>
+      <a mat-list-item
+         *ngFor="let t of topics"
+         (click)="select(t.id)"
+         [class.active]="t.id === selectedId">
+        {{ t.title }}
+      </a>
+    </mat-nav-list>
+
+    <ng-container *ngIf="ctaText">
+      <!-- Nếu có ctaLink thì dùng routerLink, vẫn emit cta() nếu muốn bắt log -->
+      <button *ngIf="ctaLink; else ctaClick"
+              mat-stroked-button color="primary"
+              [routerLink]="ctaLink"
+              (click)="cta.emit()">
+        {{ ctaText }}
+      </button>
+      <ng-template #ctaClick>
+        <button mat-stroked-button color="primary" (click)="cta.emit()">
+          {{ ctaText }}
+        </button>
+      </ng-template>
+    </ng-container>
+  </div>
+
+  <!-- Content -->
+  <div class="guide-content" id="guide-content" *ngIf="selected as s">
+    <h2 class="mb-3">{{ s.title }}</h2>
+
+    <!-- Ưu tiên blocks -->
+    <ng-container *ngIf="s.blocks?.length; else legacy">
+      <ng-container *ngFor="let b of s.blocks; trackBy: trackBlock">
+        <h3 *ngIf="b.type==='h3'">{{ b.text }}</h3>
+
+        <p *ngIf="b.type==='p'" [innerHTML]="b.html"></p>
+
+        <ul *ngIf="b.type==='ul'">
+          <li *ngFor="let it of b.items" [innerHTML]="it"></li>
+        </ul>
+
+        <ol *ngIf="b.type==='ol'">
+          <li *ngFor="let it of b.items" [innerHTML]="it"></li>
+        </ol>
+
+        <!-- IMG -->
+        <figure *ngIf="b.type==='img'" class="guide-figure" [class.caption-top]="b.captionAt==='above'">
+          <img [src]="b.src" [alt]="b.alt || s.title" />
+          <figcaption *ngIf="b.caption">{{ b.caption }}</figcaption>
+        </figure>
+
+        <!-- GALLERY -->
+        <div *ngIf="b.type==='gallery'" class="img-grid" [class.one-per-row]="b.layout==='one-per-row'">
+          <figure *ngFor="let im of b.images" class="guide-figure" [class.caption-top]="im.captionAt==='above'">
+            <img [src]="im.src" [alt]="im.alt || ''" />
+            <figcaption *ngIf="im.caption">{{ im.caption }}</figcaption>
+          </figure>
+        </div>
+
+        <!-- CALLOUT -->
+        <div *ngIf="b.type==='callout'" class="callout" [ngClass]="b.tone" [innerHTML]="b.html"></div>
+      </ng-container>
+    </ng-container>
+
+    <!-- Fallback legacy -->
+    <ng-template #legacy>
+      <figure class="guide-img" *ngIf="s.img">
+        <img [src]="s.img" [alt]="s.title" />
+      </figure>
+      <div [innerHTML]="s.html"></div>
+    </ng-template>
+  </div>
+</div>

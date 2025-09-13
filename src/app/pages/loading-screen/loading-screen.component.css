@@ -1,0 +1,76 @@
+/* Overlay toàn màn hình – NHẠT HƠN */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2); /* 0.78 -> 0.6 */
+  display: grid;
+  place-items: center;
+  z-index: 2000;
+}
+/* Nếu muốn blur nền sau này thì bật blurBackground; text vẫn không bị mờ */
+.loading-overlay.blur { backdrop-filter: blur(3px); }
+
+/* Card trung tâm – giữ text rõ, không dim */
+.loading-card {
+  text-align: center;
+  color: #2c2c2c;
+  max-width: 560px;
+  width: calc(100% - 32px);
+  margin: 0 auto;
+  padding: 28px 16px;
+}
+
+/* Spinner: mỏng hơn + có chấm ở đầu mỗi viên thuốc */
+.spinner-logo {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px auto;
+}
+.spinner-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: spin 1.6s linear infinite; /* quay chậm hơn nhẹ */
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Nhịp thở rất nhẹ cho dash */
+.spinner-icon .ring circle {
+  animation: dash 1.25s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes dash {
+  0%, 100% { stroke-dashoffset: 0; }
+  50%      { stroke-dashoffset: -5; }
+}
+
+/* Tiêu đề & phụ đề (giữ mặc định, không làm mờ) */
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 10px 0 6px;
+}
+.subtitle {
+  color: #6c757d;
+  margin: 0 0 14px;
+  font-size: 15px;
+}
+
+/* Hint + action (xuống dòng + icon thùng rác) */
+.hint {
+  margin: 10px 0 0;
+  color: #6c757d;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.action-link {
+  color: #e23b3b;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.action-link:hover { text-decoration: underline; }
+.action-link .trash { display: inline-block; }

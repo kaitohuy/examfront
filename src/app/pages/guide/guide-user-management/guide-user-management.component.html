@@ -1,0 +1,57 @@
+<!-- guide-user-management.component.html -->
+<div class="guide">
+  <div class="guide-aside">
+    <mat-nav-list>
+      <a mat-list-item *ngFor="let t of topics" (click)="select(t.id)" [class.active]="t.id === selectedId">
+        {{ t.title }}
+      </a>
+    </mat-nav-list>
+    <button mat-stroked-button color="primary" (click)="goToUserManagement()">
+      Mở trang Quản lý nhân sự
+    </button>
+  </div>
+
+  <div class="guide-content" id="guide-content">
+    <h2 class="mb-3">{{ selected.title }}</h2>
+
+    <!-- Ưu tiên blocks; nếu không có thì dùng legacy img + html -->
+    <ng-container *ngIf="selected.blocks?.length; else legacy">
+      <ng-container *ngFor="let b of selected.blocks; trackBy: trackBlock">
+        <h3 *ngIf="b.type==='h3'">{{ b.text }}</h3>
+
+        <p *ngIf="b.type==='p'" [innerHTML]="b.html"></p>
+
+        <ul *ngIf="b.type==='ul'">
+          <li *ngFor="let it of b.items" [innerHTML]="it"></li>
+        </ul>
+
+        <ol *ngIf="b.type==='ol'">
+          <li *ngFor="let it of b.items" [innerHTML]="it"></li>
+        </ol>
+
+        <!-- IMG đơn -->
+        <figure *ngIf="b.type==='img'" class="guide-figure" [class.caption-top]="b.captionAt==='above'">
+          <img [src]="b.src" [alt]="b.alt || selected.title" />
+          <figcaption *ngIf="b.caption">{{ b.caption }}</figcaption>
+        </figure>
+
+        <!-- GALLERY -->
+        <div *ngIf="b.type==='gallery'" class="img-grid" [class.one-per-row]="b.layout==='one-per-row'">
+          <figure *ngFor="let im of b.images" class="guide-figure" [class.caption-top]="im.captionAt==='above'">
+            <img [src]="im.src" [alt]="im.alt || ''" />
+            <figcaption *ngIf="im.caption">{{ im.caption }}</figcaption>
+          </figure>
+        </div>
+
+        <div *ngIf="b.type==='callout'" class="callout" [ngClass]="b.tone" [innerHTML]="b.html"></div>
+      </ng-container>
+    </ng-container>
+
+    <ng-template #legacy>
+      <figure class="guide-img" *ngIf="selected.img">
+        <img [src]="selected.img" [alt]="selected.title" />
+      </figure>
+      <div [innerHTML]="selected.html"></div>
+    </ng-template>
+  </div>
+</div>

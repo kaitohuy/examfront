@@ -11,8 +11,11 @@ import { ExportOptions } from '../../../models/exportOptions';
 import { ExportQuestionsDialogComponent } from '../export-questions-dialog/export-questions-dialog.component';
 import { QuestionEditDialogComponent } from '../question-edit-dialog/question-edit-dialog.component';
 import { QuestionEvent, QuestionEventsService } from '../../../services/question-events.service';
-import { Subscription } from 'rxjs';
-import { CloneQuickEditDialogComponent } from '../clone-quick-edit-dialog/clone-quick-edit-dialog.component';
+import { Subscription, from, of } from 'rxjs';
+import { catchError, concatMap, toArray } from 'rxjs/operators';
+
+import { withLoading } from '../../../shared/with-loading';
+import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 
 type CloneState = { items: any[]; open: boolean; loading: boolean };
 
@@ -23,6 +26,7 @@ type CloneState = { items: any[]; open: boolean; loading: boolean };
     ...sharedImports,
     MatPaginator,
     MatDialogModule,
+    LoadingScreenComponent
   ],
   templateUrl: './question.component.html',
   styleUrls: ['./question.component.css']
@@ -34,10 +38,12 @@ export class QuestionComponent implements OnInit, OnDestroy {
   @Input() labelFilter: 'ALL' | 'PRACTICE' | 'EXAM' = 'ALL';
   @Input() requireHeadForAnswers = false;
 
+  // Overlay loading (thống nhất)
+  isLoading = false;
+
   clonesState: Partial<Record<number, CloneState>> = {};
 
   questions: any[] = [];
-  isLoadingQuestions = true;
 
   // Filters
   searchText = '';
@@ -101,11 +107,11 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   // ===== Load & normalize =====
   loadQuestions(): void {
-    this.isLoadingQuestions = true;
-
     const labels = this.labelFilter !== 'ALL' ? [this.labelFilter] as ('PRACTICE' | 'EXAM')[] : undefined;
 
-    this.questionService.getQuestionsBySubject(this.subjectId, labels).subscribe({
+    this.questionService.getQuestionsBySubject(this.subjectId, labels).pipe(
+      withLoading(v => this.isLoading = v)
+    ).subscribe({
       next: (data) => {
         this.questions = (data || []).map((q: any) => ({
           ...q,
@@ -113,11 +119,9 @@ export class QuestionComponent implements OnInit, OnDestroy {
           labels: Array.isArray(q.labels) ? q.labels : []
         }));
         this.updateDataSource();
-        this.isLoadingQuestions = false;
       },
       error: (err) => {
         this.showError('Lỗi khi tải danh sách câu hỏi: ' + (err.error?.message || 'Không xác định'));
-        this.isLoadingQuestions = false;
       }
     });
   }
@@ -303,7 +307,10 @@ export class QuestionComponent implements OnInit, OnDestroy {
       cancelButtonText: 'Hủy'
     }).then((result) => {
       if (!result.isConfirmed) return;
-      this.questionService.deleteQuestion(this.subjectId, questionId).subscribe({
+
+      this.questionService.deleteQuestion(this.subjectId, questionId).pipe(
+        withLoading(v => this.isLoading = v)
+      ).subscribe({
         next: () => {
           this.questions = this.questions.filter(q => q.id !== questionId);
           this.updateDataSource();
@@ -421,24 +428,25 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
       const ids = Array.from(this.selectedIds);
 
-      this.questionService.exportQuestions(this.subjectId, ids, opts)
-        .subscribe({
-          next: (resp) => {
-            const blob = resp.body!;
-            const cd = resp.headers.get('content-disposition') || '';
-            const suggested = this.tryParseFileName(cd) || this.fallbackFileName(opts);
+      this.questionService.exportQuestions(this.subjectId, ids, opts).pipe(
+        withLoading(v => this.isLoading = v)
+      ).subscribe({
+        next: (resp) => {
+          const blob = resp.body!;
+          const cd = resp.headers.get('content-disposition') || '';
+          const suggested = this.tryParseFileName(cd) || this.fallbackFileName(opts);
 
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = suggested;
-            a.click();
-            URL.revokeObjectURL(url);
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = suggested;
+          a.click();
+          URL.revokeObjectURL(url);
 
-            this.showSuccess('Export thành công.');
-          },
-          error: err => this.showError('Export thất bại: ' + (err.error?.message || 'Không xác định'))
-        });
+          this.showSuccess('Export thành công.');
+        },
+        error: err => this.showError('Export thất bại: ' + (err.error?.message || 'Không xác định'))
+      });
     });
   }
 
@@ -474,40 +482,47 @@ export class QuestionComponent implements OnInit, OnDestroy {
     }).then(result => {
       if (!result.isConfirmed) return;
       const ids = Array.from(this.selectedIds);
-      let remaining = ids.length;
-      let ok = 0; let fail = 0;
-      ids.forEach(id => {
-        this.questionService.deleteQuestion(this.subjectId, id).subscribe({
-          next: () => { ok++; if (--remaining === 0) this.afterBulk('delete', ok, fail); },
-          error: () => { fail++; if (--remaining === 0) this.afterBulk('delete', ok, fail); }
-        });
+
+      from(ids).pipe(
+        withLoading(v => this.isLoading = v),
+        concatMap(id =>
+          this.questionService.deleteQuestion(this.subjectId, id).pipe(
+            catchError(() => of(null))
+          )
+        ),
+        toArray()
+      ).subscribe({
+        next: (arr) => {
+          const okIds = ids.filter((_, i) => arr[i] !== null);
+          const fail = ids.length - okIds.length;
+
+          this.questions = this.questions.filter(q => !okIds.includes(q.id));
+          this.clearSelection();
+          this.updateDataSource();
+          this.showSuccess(`Đã xóa ${okIds.length} câu hỏi. Lỗi ${fail}.`);
+        },
+        error: () => {
+          // hiếm khi vào đây do đã catch từng item
+          this.showError('Có lỗi khi xoá các câu hỏi đã chọn.');
+        }
       });
     });
-  }
-
-  private afterBulk(action: 'delete' | 'export', ok: number, fail: number) {
-    if (action === 'delete') {
-      this.questions = this.questions.filter(q => !this.selectedIds.has(q.id));
-      this.clearSelection();
-      this.updateDataSource();
-      this.showSuccess(`Đã xóa ${ok} câu hỏi. Lỗi ${fail}.`);
-    }
   }
 
   // ===== Import (preview) =====
   openImportDryRun(): void {
     Swal.fire({
-      title: 'Import (dry-run)',
+      title: 'Tải câu hỏi lên',
       html: `
       <input type="file" id="impFile" class="swal2-file" accept=".docx,.pdf">
       <div class="form-check mt-2">
         <input id="impSaveCopy" class="form-check-input" type="checkbox">
-        <label for="impSaveCopy" class="form-check-label">Lưu bản copy (saveCopy)</label>
+        <label for="impSaveCopy" class="form-check-label">Lưu vào kho chung</label>
       </div>
       <div class="text-muted small mt-2">Hỗ trợ .docx / .pdf</div>
     `,
       showCancelButton: true,
-      confirmButtonText: 'Xem preview',
+      confirmButtonText: 'Bản xem trước',
       preConfirm: () => {
         const f = (document.getElementById('impFile') as HTMLInputElement).files?.[0];
         const saveCopy = (document.getElementById('impSaveCopy') as HTMLInputElement).checked;
@@ -518,11 +533,12 @@ export class QuestionComponent implements OnInit, OnDestroy {
       if (!res.isConfirmed) return;
 
       const { file, saveCopy } = res.value as { file: File; saveCopy: boolean };
-
       const labels: ('PRACTICE' | 'EXAM')[] =
         this.labelFilter === 'EXAM' ? ['EXAM'] : ['PRACTICE'];
 
-      this.questionService.importPreview(this.subjectId, file, saveCopy, labels).subscribe({
+      this.questionService.importPreview(this.subjectId, file, saveCopy, labels).pipe(
+        withLoading(v => this.isLoading = v)
+      ).subscribe({
         next: (preview: any) => {
           const ref = this.dialog.open(ImportPreviewDialogComponent, {
             width: '1100px',
@@ -532,12 +548,12 @@ export class QuestionComponent implements OnInit, OnDestroy {
           });
           ref.afterClosed().subscribe((r) => {
             if (r?.committed) {
-              this.showSuccess(`Import xong: ${r.result?.success}/${r.result?.total}`);
+              this.showSuccess(`Đã tải câu hỏi xong: ${r.result?.success}/${r.result?.total}`);
               this.loadQuestions();
             }
           });
         },
-        error: err => this.showError('Preview lỗi: ' + (err.error?.message || 'Không xác định'))
+        error: err => this.showError('Bản xem trước lỗi: ' + (err.error?.message || 'Không xác định'))
       });
     });
   }
@@ -575,33 +591,41 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
       const req = { count, copyImages };
 
-      this.questionService.cloneQuestion(this.subjectId, q.id, req).subscribe({
-        next: (clones) => {
-          const editable = (clones || []).map(c => ({
+      this.questionService.cloneQuestion(this.subjectId, q.id, req).pipe(
+        withLoading(v => this.isLoading = v)
+      ).subscribe({
+        next: async (clones) => {
+          const editable = (clones || []).map((c: any) => ({
             ...c,
             answer: c.questionType === 'MULTIPLE_CHOICE' ? '' : c.answer,
             answerText: c.questionType === 'ESSAY' ? '' : c.answerText
           }));
 
-          this.dialog.open(CloneQuickEditDialogComponent, {
-            width: '1000px',
-            maxHeight: '90vh',
-            data: { subjectId: this.subjectId, clones: editable },
-            autoFocus: false
-          }).afterClosed().subscribe((updatedList?: any[]) => {
-            if (!updatedList) return;
+          const { CloneQuickEditDialogComponent } =
+            await import('../clone-quick-edit-dialog/clone-quick-edit-dialog.component');
 
-            const st = this.clonesState[q.id];
-            if (st?.open) {
-              st.loading = true;
-              this.questionService.getClones(this.subjectId, q.id).subscribe({
-                next: list => { st.items = (list || []).map(x => this.normalize(x)); st.loading = false; },
-                error: () => { st.loading = false; }
-              });
-            }
+          this.dialog
+            .open(CloneQuickEditDialogComponent, {
+              width: '1000px',
+              maxHeight: '90vh',
+              data: { subjectId: this.subjectId, clones: editable },
+              autoFocus: false
+            })
+            .afterClosed()
+            .subscribe((updatedList?: any[]) => {
+              if (!updatedList) return;
 
-            this.showSuccess(`Đã lưu ${updatedList.length} bản sao.`);
-          });
+              const st = this.clonesState[q.id];
+              if (st?.open) {
+                st.loading = true;
+                this.questionService.getClones(this.subjectId, q.id).subscribe({
+                  next: list => { st.items = (list || []).map(x => this.normalize(x)); st.loading = false; },
+                  error: () => { st.loading = false; }
+                });
+              }
+
+              this.showSuccess(`Đã lưu ${updatedList.length} bản sao.`);
+            });
         },
         error: (err) => {
           this.showError(err?.error?.message || 'Tạo bản sao thất bại');
@@ -615,7 +639,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
     if (!st.open) {
       st.open = true;
       if (!st.items.length) {
-        st.loading = true;
+        st.loading = true; // dùng loading cục bộ cho khu clones (không bật overlay toàn trang)
         this.questionService.getClones(this.subjectId, q.id).subscribe({
           next: list => { st.items = (list || []).map(x => this.normalize(x)); st.loading = false; },
           error: () => { st.loading = false; }
@@ -654,7 +678,9 @@ export class QuestionComponent implements OnInit, OnDestroy {
       cancelButtonText: 'Hủy'
     }).then(res => {
       if (!res.isConfirmed) return;
-      this.questionService.deleteQuestion(this.subjectId, clone.id).subscribe({
+      this.questionService.deleteQuestion(this.subjectId, clone.id).pipe(
+        withLoading(v => this.isLoading = v)
+      ).subscribe({
         next: () => {
           const st = this.clonesState[clone.parentId];
           if (st) {

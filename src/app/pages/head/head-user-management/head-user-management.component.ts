@@ -1,9 +1,10 @@
-// src/app/pages/head/head-user-management/head-user-management.component.ts
-import { Component, OnInit, ViewChild } from '@angular/core';
+// src/app/pages/head/user-management/head-user-management.component.ts
+import { Component, OnInit, ViewChild, inject, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { sharedImports } from '../../../shared/shared-imports';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import Swal from 'sweetalert2';
 
@@ -12,83 +13,99 @@ import { DepartmentService } from '../../../services/department.service';
 import { User } from '../../../models/user';
 import { UserWithRolesAndDeptDTO } from '../../../models/user-dto';
 import { mapDtoToUser } from '../../../utils/mapper';
+import { Router } from '@angular/router';
+import { LoginService } from '../../../services/login.service';
+import { HeadDeptStats } from '../../../models/stats';
+import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
+import { withLoading } from '../../../shared/with-loading';
 
 @Component({
   selector: 'app-head-user-management',
   standalone: true,
-  imports: [...sharedImports, MatSortModule, MatPaginator],
-  templateUrl: '../../admin/user-management/user-management.component.html',   // dùng chung HTML admin
-  styleUrls: ['../../admin/user-management/user-management.component.css']     // dùng chung CSS admin
+  imports: [...sharedImports, MatPaginator, MatDialogModule, MatSortModule, LoadingScreenComponent],
+  templateUrl: './head-user-management.component.html',
+  styleUrls: ['../../admin/user-management/user-management.component.css']
 })
-export class HeadUserManagementComponent implements OnInit {
+export class HeadUserManagementComponent implements OnInit, AfterViewInit {
   users: User[] = [];
   dataSource = new MatTableDataSource<User>([]);
   searchTerm = '';
   activeFilters: string[] = [];
   pageSize = 5;
+  isLoading = false;
 
   @ViewChild(MatPaginator) paginator?: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatSort) sort?: MatSort;
 
-  // Thống kê cho phạm vi dept của HEAD
-  statistics = { totalUsers: 0, activeUsers: 0, lockedUsers: 0, totalTeachers: 0 };
+  statistics: HeadDeptStats = { subjectCount: 0, teacherCount: 0, unassignedSubjectCount: 0 };
 
-  // HEAD có nút Add User (theo yêu cầu)
-  canCreateUser = true;
+  private userSvc = inject(UserService);
+  private deptSvc = inject(DepartmentService);
+  private snack = inject(MatSnackBar);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+  private login = inject(LoginService);
 
   private headDepartmentId!: number;
 
-  constructor(
-    private userSvc: UserService,
-    private deptSvc: DepartmentService,
-    private snack: MatSnackBar
-  ) { }
-
   ngOnInit(): void {
-    const headUserId = Number(localStorage.getItem('headUserId') || '0');
+    const headUserId =
+      this.login.getUserId() ?? this.login.getUser()?.id ?? Number(localStorage.getItem('headUserId') || '0');
 
-    // 1) Lấy department của HEAD
-    this.deptSvc.getDepartmentsByHead(headUserId).subscribe({
-      next: (depts) => {
-        if (!depts?.length) return;
-        this.headDepartmentId = depts[0].id;
+    this.deptSvc.getDepartmentsByHead(headUserId)
+      .pipe(withLoading(v => (this.isLoading = v)))
+      .subscribe({
+        next: (depts) => {
+          if (!depts?.length) {
+            this.snack.open('Bạn chưa được gán HEAD bộ môn nào', 'Đóng', { duration: 3000 });
+            return;
+          }
+          this.headDepartmentId = depts[0].id;
+          this.loadHeadStats();
+          this.loadUsers();
+        },
+        error: () => this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000 })
+      });
+  }
 
-        // 2) Lấy users toàn hệ thống (có department trong DTO) -> lọc theo dept
-        this.loadUsers();
-      },
-      error: () => {
-        this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000 });
-      }
-    });
+  private loadHeadStats() {
+    this.deptSvc.getDepartmentStats(this.headDepartmentId)
+      .pipe(withLoading(v => (this.isLoading = v)))
+      .subscribe((s) => {
+        this.statistics.subjectCount = s.subjectCount;
+        this.statistics.teacherCount = s.teacherCount;
+        this.statistics.unassignedSubjectCount = s.unassignedSubjectCount ?? 0;
+      });
   }
 
   ngAfterViewInit(): void {
-    this.setupDataSource();
+    if (this.sort) {
+      this.dataSource.sort = this.sort;
+      Promise.resolve().then(() => {
+        if (!this.sort?.active) {
+          this.sort!.sort({ id: 'id', start: 'asc', disableClear: false });
+          this.cdr.detectChanges();
+        }
+      });
+    }
   }
 
-  private setupDataSource(): void {
-    // Filter theo username / fullName / email
+  private setupDataSource() {
+    // Search
     this.dataSource.filterPredicate = (data: User, filter: string) => {
       const q = (filter || '').toLowerCase();
       const username = (data.username || '').toLowerCase();
       const email = (data.email || '').toLowerCase();
       const fullName = `${data.lastName || ''} ${data.firstName || ''}`.toLowerCase();
-
       return username.includes(q) || fullName.includes(q) || email.includes(q);
     };
 
-    // Sort theo các cột (id header khớp HTML admin)
+    // Sort
     this.dataSource.sortingDataAccessor = (data: User, sortHeaderId: string) => {
       switch (sortHeaderId) {
+        case 'id': return Number(data.id) || 0;
+        case 'teacherCode': return (data.teacherCode || '').toLowerCase();
         case 'FullName': return `${data.lastName || ''} ${data.firstName || ''}`.toLowerCase();
-        case 'id': return data.id ?? 0;
-        case 'studentCode': return data.studentCode ?? '';
-        case 'username': return data.username ?? '';
-        case 'email': return data.email ?? '';
-        case 'phone': return data.phone ?? '';
-        case 'status': return data.status ?? '';
-        case 'roles': return (data.roles || []).join(', ');
-        case 'enabled': return data.enabled ? 1 : 0;
         default: return (data as any)?.[sortHeaderId];
       }
     };
@@ -98,18 +115,41 @@ export class HeadUserManagementComponent implements OnInit {
   }
 
   loadUsers(): void {
-    this.userSvc.getAllUsers().subscribe({
-      next: (all: UserWithRolesAndDeptDTO[]) => {
-        const ofMyDept = (all ?? []).filter(u => u.department?.id === this.headDepartmentId);
-        this.users = ofMyDept.map(mapDtoToUser);    // map DTO -> User
-        this.dataSource.data = this.users;
-        this.applyFilters();
-      },
-      error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000 })
-    });
+    this.userSvc.getAllUsers()
+      .pipe(withLoading(v => (this.isLoading = v)))
+      .subscribe({
+        next: (all: UserWithRolesAndDeptDTO[]) => {
+          const list = (all ?? [])
+            .filter(u => u.department?.id === this.headDepartmentId)
+            .map(mapDtoToUser);
+
+          this.users = list;
+          this.dataSource.data = list;
+
+          this.setupDataSource();
+
+          // trì hoãn sort mặc định để tránh NG0100
+          Promise.resolve().then(() => {
+            if (this.sort && !this.sort.active) {
+              this.sort.sort({ id: 'id', start: 'asc', disableClear: false });
+              this.cdr.detectChanges();
+            }
+          });
+
+          this.applyFilters();
+        },
+        error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000 })
+      });
   }
 
-  // ================== Actions giống admin ==================
+  addUser() {
+    this.router.navigate(['/head-dashboard/add-user/']);
+  }
+
+  editUser(user: User): void {
+    this.router.navigate(['/head-dashboard/user-management', user.id, 'edit']);
+  }
+
   deleteUser(userId: number): void {
     Swal.fire({
       title: 'Delete User',
@@ -118,109 +158,39 @@ export class HeadUserManagementComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Delete',
       cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (!result.isConfirmed) return;
-      this.userSvc.deleteUser(userId).subscribe({
-        next: () => {
-          Swal.fire('Successful', 'This user has been deleted!!!', 'success');
-          this.loadUsers();
-        },
-        error: () => Swal.fire('Error!', 'Can not delete this user. Please try again', 'error')
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.userSvc.deleteUser(userId)
+        .pipe(withLoading(v => (this.isLoading = v)))
+        .subscribe({
+          next: () => { Swal.fire('Successful', 'This user has been deleted!!!', 'success'); this.loadUsers(); },
+          error: () => Swal.fire('Error!', 'Can not delete this user. Please try again', 'error')
+        });
+    });
+  }
+
+  resetPassword(user: User): void {
+    const newPassword = '123abc';
+    this.userSvc.resetPassword(user.id, newPassword)
+      .pipe(withLoading(v => (this.isLoading = v)))
+      .subscribe({
+        next: () => this.snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 4500 }),
+        error: () => this.snack.open('Failed to reset password.', 'Đóng', { duration: 3000 })
       });
-    });
   }
 
-  toggleEnabled(user: User): void {
-    const newStatus = !user.enabled;
-    this.userSvc.toggleEnabled(user.id, newStatus).subscribe({
-      next: () => {
-        user.enabled = newStatus;
-        this.snack.open(`User status updated to ${newStatus ? 'enabled' : 'disabled'}.`, 'Close', { duration: 3000 });
-        this.loadUsers();
-      },
-      error: () => Swal.fire('Error', 'Failed to update user status.', 'error')
-    });
-  }
-
-  resetPassword(userId: number, newPassword: string): void {
-    this.userSvc.resetPassword(userId, newPassword).subscribe({
-      next: () => this.snack.open('Password reset successfully!', 'Close', { duration: 3000 }),
-      error: () => Swal.fire('Error', 'Failed to reset password.', 'error')
-    });
-  }
-
-  updateRole(userId: number, roles: string[]): void {
-    this.userSvc.updateRoles(userId, roles).subscribe({
-      next: () => {
-        this.snack.open('Role assigned successfully!', 'Close', { duration: 3000 });
-        this.loadUsers();
-      },
-      error: () => Swal.fire('Error', 'Failed to assign role.', 'error')
-    });
-  }
-
-  exportToCSV(): void {
-    const list = this.dataSource.filteredData?.length
-      ? this.dataSource.filteredData
-      : this.users;
-
-    const headers = ['ID', 'Code User', 'Username', 'Email', 'Phone', 'Full Name', 'Roles', 'Status', 'Enabled'];
-    const rows = list.map(u => [
-      u.id,
-      u.studentCode ?? '',
-      u.username ?? '',
-      u.email ?? '',
-      u.phone ?? '',
-      `${u.lastName ?? ''} ${u.firstName ?? ''}`.trim(),
-      (u.roles ?? []).join('; '),
-      u.status ?? '',
-      u.enabled ? 'true' : 'false',
-    ]);
-
-    let csv = '\uFEFF' + headers.join(',') + '\n';
-    rows.forEach(r => {
-      csv += r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'users.csv'; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ================== Filter/Sort helpers (khớp HTML admin) ==================
-  onSearch(event: Event): void {
-    this.searchTerm = (event.target as HTMLInputElement).value || '';
-    this.applyFilters();
-  }
+  onSearch(e: Event) { this.searchTerm = (e.target as HTMLInputElement).value || ''; this.applyFilters(); }
 
   filterBy(type: string): void {
-    if (type === 'all') {
-      this.activeFilters = [];
-    } else {
-      this.activeFilters = this.activeFilters.includes(type)
+    this.activeFilters = type === 'all'
+      ? []
+      : this.activeFilters.includes(type)
         ? this.activeFilters.filter(x => x !== type)
         : [...this.activeFilters, type];
-    }
     this.applyFilters();
   }
 
-  clearFilters(): void {
-    this.activeFilters = [];
-    this.searchTerm = '';
-    this.applyFilters();
-  }
-
-  sortBy(type: string): void {
-    if (!this.sort) return;
-    switch (type) {
-      case 'newest': this.sort.sort({ id: 'id', start: 'desc', disableClear: false }); break;
-      case 'oldest': this.sort.sort({ id: 'id', start: 'asc', disableClear: false }); break;
-      case 'a-z': this.sort.sort({ id: 'FullName', start: 'asc', disableClear: false }); break;
-      case 'z-a': this.sort.sort({ id: 'FullName', start: 'desc', disableClear: false }); break;
-    }
-  }
+  clearFilters(): void { this.activeFilters = []; this.searchTerm = ''; this.applyFilters(); }
 
   applyFilters(): void {
     let filtered = [...this.users];
@@ -243,43 +213,44 @@ export class HeadUserManagementComponent implements OnInit {
     this.dataSource.filter = this.searchTerm.trim().toLowerCase();
 
     if (this.paginator) this.paginator.firstPage();
-
-    // Thống kê theo danh sách sau filter + search
-    const list = this.dataSource.filteredData;
-    this.statistics.totalUsers = list.length;
-    this.statistics.activeUsers = list.filter(u => u.status === 'ACTIVE').length;
-    this.statistics.lockedUsers = list.filter(u => u.status === 'LOCKED').length;
-    this.statistics.totalTeachers = list.filter(u => u.roles?.includes('TEACHER')).length;
   }
 
-  getStatusBadge(s: string) {
-    switch (s) {
-      case 'ACTIVE': return 'status-active';
-      case 'INACTIVE': return 'status-inactive';
-      case 'LOCKED': return 'status-locked';
-      default: return 'status-unknown';
-    }
-  }
-
-  getFilterLabel(filter: string): string {
-    const labels: Record<string, string> = {
+  getFilterLabel(f: string) {
+    const m: Record<string, string> = {
       teacher: 'Giảng viên',
       head: 'Trưởng bộ môn',
       active: 'Đang hoạt động',
       inactive: 'Không hoạt động',
-      all: 'Tất cả',
+      all: 'Tất cả'
     };
-    return labels[filter] ?? filter;
+    return m[f] ?? f;
   }
 
-  getFilterClass(filter: string): string {
-    const classes: Record<string, string> = {
+  getFilterClass(f: string) {
+    const m: Record<string, string> = {
       teacher: 'bg-primary',
       head: 'bg-info',
       active: 'bg-success',
-      inactive: 'bg-warning text-dark',
+      inactive: 'bg-warning text-dark'
     };
-    return classes[filter] ?? 'bg-secondary';
+    return m[f] ?? 'bg-secondary';
   }
 
+    exportToCSV(): void {
+    if (this.isLoading) return;
+    const headers = ['ID', 'Code User', 'Username', 'Email', 'Phone', 'Full Name', 'Roles'];
+    const rows = this.users.map(u => [
+      u.id, u.teacherCode, u.username, u.email, u.phone,
+      `${u.lastName} ${u.firstName}`, u.roles.join('; ')
+    ]);
+
+    let csvContent = '\uFEFF' + headers.join(',') + '\n';
+    rows.forEach(row => { csvContent += row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',') + '\n'; });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url); link.setAttribute('download', 'users.csv'); link.click();
+    URL.revokeObjectURL(url);
+  }
 }

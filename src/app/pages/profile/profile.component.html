@@ -1,46 +1,115 @@
-<mat-card *ngIf = "user">
-    <h1>Your Profile Details</h1>
-    <mat-card-content>
-        <div class="bootstrap-wrapper">
-            <div class="container">
+<!-- src/app/pages/profile/profile.component.html -->
+<mat-card *ngIf="user() as u" class="profile-card">
+  <!-- Header -->
+  <div class="header">
+    <img [src]="avatarUrl()" alt="avatar" class="avatar" />
+    <div class="meta">
+      <h2 class="fullname">{{ u.firstName }} {{ u.lastName }}</h2>
+      <div class="row-ids">
+        <span class="username">{{ '@' + (u.username || 'user') }}</span>
+        <span class="chip id">EXAM{{ u.id }}</span>
+        <span class="chip state" [class.inactive]="u.enabled === false">
+          {{ u.enabled === false ? 'NOT_ACTIVE' : 'ACTIVE' }}
+        </span>
+        <span *ngIf="u.status" class="chip status">{{ u.status }}</span>
+      </div>
+    </div>
 
-                <div class="container text-center">
-                    <img src="../../../assets/images/male.jpg" alt="" class="profile-image">
-                    <h2 class="mt-3">{{ user.firstName }} {{ user.lastName }}</h2>
-                </div>
+    <div class="actions">
+      <button mat-stroked-button color="primary" (click)="openResetPassword()" [disabled]="!u?.id">
+        Đổi mật khẩu
+      </button>
+      <button mat-flat-button color="accent" class="ml8" (click)="goToEditProfile()">
+        Chỉnh sửa hồ sơ
+      </button>
+    </div>
+  </div>
 
-                <div class="row">
-                    <div class="col-md-10 offset-md-1">
-                        <!-- table Details -->
-                        <table class="table table-bordered">
-                            <tr>
-                                <td>Username</td>
-                                <td> {{ user.username}}</td>
-                            </tr>
-                            <tr>
-                                <td>UserId</td>
-                                <td> EXAM{{ user.id}}</td>
-                            </tr>
-                            <tr>
-                                <td>Phone</td>
-                                <td> {{ user.phone}}</td>
-                            </tr>
-                            <tr>
-                                <td>Role</td>
-                                <td> {{ user.authorities[0].authority}}</td>
-                            </tr>
-                            <tr>
-                                <td>Status</td>
-                                <td> {{ user.enable?"ACTIVE":"NOT_ACTIVE"}}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
+  <!-- Tabs -->
+  <mat-tab-group mat-stretch-tabs>
+    <!-- Tab 1: Thông tin -->
+    <mat-tab label="Thông tin">
+      <div class="pad">
+        <table class="info-table">
+          <tr>
+            <td class="label">Mã giảng viên</td>
+            <td class="value">{{ u.teacherCode || '—' }}</td>
+          </tr>
+          <tr>
+            <td class="label">Email</td>
+            <td class="value">{{ u.email || '—' }}</td>
+          </tr>
+          <tr>
+            <td class="label">Điện thoại</td>
+            <td class="value">{{ u.phone || '—' }}</td>
+          </tr>
+          <tr>
+            <td class="label">Giới tính</td>
+            <td class="value">{{ u.gender || '—' }}</td>
+          </tr>
+          <tr>
+            <td class="label">Ngày sinh</td>
+            <td class="value">{{ u.birthDate | date:'dd/MM/yyyy' }}</td>
+          </tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Giảng dạy & Quyền -->
+    <mat-tab label="Giảng dạy & Quyền">
+      <div class="pad">
+        <!-- Quyền -->
+        <div class="section">
+          <div class="section-title">Vai trò</div>
+          <div class="chip-row">
+            <span *ngFor="let r of roles" class="chip role">{{ r }}</span>
+            <span *ngIf="roles.length === 0" class="muted">—</span>
+          </div>
         </div>
-    </mat-card-content>
-    <mat-card-actions style="justify-content: center;">
-        <button mat-raised-button color="primary" routerLink="/admin" style="margin-right: 1em;">Back to Dashboard</button>
-        <button mat-raised-button color="accent" routerLink="/admin/profile/edit">Edit Profile</button>
-    </mat-card-actions>
+
+        <!-- Khoa/Bộ môn -->
+        <div class="section">
+          <div class="section-title">Khoa/Bộ môn</div>
+          <div>
+            <span *ngIf="departmentName(); else emptyDept">
+              {{ departmentName() }}
+            </span>
+            <ng-template #emptyDept>
+              <span class="muted">Chưa xác định (chưa có môn giảng dạy hoặc BE chưa trả tên khoa).</span>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Môn giảng dạy -->
+        <div class="section">
+          <div class="section-title">Môn đang giảng dạy</div>
+
+          <ng-container *ngIf="!loadingSubjects(); else loadingTpl">
+            <ng-container *ngIf="subjects().length > 0; else emptySubjects">
+              <mat-list>
+                <mat-list-item
+                  *ngFor="let s of subjects(); trackBy: trackById"
+                  [routerLink]="['/user-dashboard/subjects', s.id]"
+                  class="subject-item">
+                  <div matListItemTitle>{{ s.name }}</div>
+                  <div matListItemLine class="muted">
+                    Mã: {{ s.code }} • Khoa: {{ s.department?.name || '—' }}
+                  </div>
+                  <mat-icon matListItemMeta>chevron_right</mat-icon>
+                </mat-list-item>
+              </mat-list>
+            </ng-container>
+          </ng-container>
+
+          <ng-template #loadingTpl>
+            <div class="muted">Đang tải danh sách môn…</div>
+          </ng-template>
+
+          <ng-template #emptySubjects>
+            <div class="muted">Chưa có môn giảng dạy hoặc bạn chưa được phân công.</div>
+          </ng-template>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </mat-card>

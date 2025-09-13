@@ -23,7 +23,6 @@
 
 .card-text {
   margin-bottom: 0.75rem;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", Arial, sans-serif;
 }
 
 .card-footer {
@@ -64,6 +63,6 @@ pre.card-text {
   background-color: #f8f9fa;
   padding: 0.5rem;
   border-radius: 4px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", Arial, sans-serif;
+  /* font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", Arial, sans-serif; */
 }
 

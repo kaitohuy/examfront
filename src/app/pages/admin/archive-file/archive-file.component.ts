@@ -15,6 +15,8 @@ import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { VN_DATE_FORMATS } from '../../../models/dateFormats';
 import { LoginService } from '../../../services/login.service';
 import { ReviewReminderService } from '../../../services/review-reminder.service';
+import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
+import { withLoading } from '../../../shared/with-loading';
 
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
@@ -26,7 +28,8 @@ type ExVariantTab = 'PRACTICE' | 'EXAM';
   selector: 'app-archive-file',
   standalone: true,
   imports: [
-    ...sharedImports
+    ...sharedImports,
+    LoadingScreenComponent
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'vi-VN' },
@@ -70,7 +73,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   pageIndex = 0;
   pageSize = 10;
 
-  loading = false;
+  isLoading = false;
   downloading = new Set<number>();
   headStatus = new Map<number, boolean | undefined>();
 
@@ -218,7 +221,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     if (this.downloading.has(r.id)) return;
     this.downloading.add(r.id);
     this.api.getDownloadUrl(r.id)
-      .pipe(finalize(() => this.downloading.delete(r.id)))
+      .pipe(finalize(() => this.downloading.delete(r.id)), withLoading(v => this.isLoading = v))
       .subscribe({
         next: ({ url }) => {
           const a = document.createElement('a');
@@ -282,7 +285,9 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     });
     if (!res.isConfirmed) return;
 
-    this.api.delete(r.id).subscribe({
+    this.api.delete(r.id).pipe(
+      withLoading(v => this.isLoading = v)
+    ).subscribe({
       next: () => {
         this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
         Swal.fire({ icon: 'success', title: 'Đã xoá', timer: 1200, showConfirmButton: false });
@@ -303,7 +308,9 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     })).isConfirmed;
     if (!ok) return;
 
-    this.api.approve(r.id).subscribe({
+    this.api.approve(r.id).pipe(
+      withLoading(v => this.isLoading = v)
+    ).subscribe({
       next: () => {
         this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
         if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
@@ -525,16 +532,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     if (this.finalKind) opts.kind = this.finalKind;
     if (this.currentVariant) opts.variant = this.currentVariant;
 
-    // Ưu tiên dropdown trạng thái nếu có chọn
     const sel = (this.statusSel.value || '').toUpperCase();
     if (sel === 'PENDING' || sel === 'APPROVED' || sel === 'REJECTED') {
       opts.reviewStatus = sel;
     } else if (this.reviewStatusFilter) {
-      // nếu route ép (Pending/History)
       opts.reviewStatus = this.reviewStatusFilter;
     } else if (!this.moderationMode) {
-      // danh sách thường: chỉ hiển thị APPROVED cho EXPORT để tránh PENDING lẫn vào
-      if ((this.finalKind || '') === 'EXPORT') opts.reviewStatus = 'APPROVED';
+      opts.reviewStatus = 'APPROVED';
     }
 
     const q = this.search.value?.trim(); if (q) opts.q = q;
@@ -555,26 +559,24 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     const args = this.buildListArgs();
 
     const hadCache = this.api.isCached(args);
-    this.loading = !hadCache;
-    if (!hadCache) {
-      this.rows = []; this.total = 0;
-    }
 
-    this.api.listCached(args)
+    const stream$ = this.api.listCached(args);
+
+    // Chỉ bật overlay khi KHÔNG có cache (giữ UX mượt)
+    (hadCache ? stream$ : stream$.pipe(withLoading(v => this.isLoading = v)))
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: PageResult<FileArchive>) => {
-          this.loading = false;
           this.rows = page.content;
           this.total = page.totalElements;
-          this.buildColumns(); // có thể thay đổi cột status theo filter
+          this.buildColumns(); // status col có thể thay đổi theo filter
+
           this.rows.forEach(r => {
             if (!this.headStatus.has(r.id)) this.headStatus.set(r.id, undefined);
             this.lazyHead(r.id);
           });
         },
         error: err => {
-          this.loading = false;
           Swal.fire('Lỗi', 'Không tải được danh sách file.', 'error');
           console.error(err);
         }
@@ -614,7 +616,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     this.rr.reset({ clearForever: true }); // chỉ bật lại nhắc (giữ danh sách approved đã seen)
     Swal.fire({ icon: 'success', title: 'Đã bật lại thông báo', timer: 1200, showConfirmButton: false });
     // tuỳ chọn: gọi check ngay để hiện popup nếu có
-    this.rr.checkOnEnterDashboard().catch(() => {});
+    this.rr.checkOnEnterDashboard().catch(() => { });
   }
 
   get isPendingTab() {

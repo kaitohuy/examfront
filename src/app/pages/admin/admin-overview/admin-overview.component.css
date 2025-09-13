@@ -1,0 +1,5 @@
+.dense-field { width: 220px; }
+.kpi .kpi-title { font-size: 12px; color: #6c757d; text-transform: uppercase; letter-spacing: .5px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; margin-top: 2px; }
+.kpi .kpi-sub { margin-top: 6px; font-size: 12px; }
+.progress { background-color: #f1f3f5; }

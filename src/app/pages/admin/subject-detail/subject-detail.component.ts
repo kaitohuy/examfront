@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { sharedImports } from '../../../shared/shared-imports';
-import { QuizComponent } from '../quiz/quiz.component';
 import { PracticeQuestionTabComponent } from "../practice-question-tab/practice-question-tab.component";
 import { ExamQuestionTabComponent } from "../exam-question-tab/exam-question-tab.component";
 @Component({
@@ -9,7 +8,6 @@ import { ExamQuestionTabComponent } from "../exam-question-tab/exam-question-tab
   standalone: true,
   imports: [
     ...sharedImports,
-    QuizComponent,
     PracticeQuestionTabComponent,
     ExamQuestionTabComponent
 ],

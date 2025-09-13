@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Export câu hỏi đã chọn</h2>
+<h2 mat-dialog-title>Xuất file các câu hỏi đã chọn</h2>
 
 <mat-dialog-content class="content">
 
@@ -21,7 +21,7 @@
   <div class="row">
     <label>Kiểu file</label>
     <mat-select [(ngModel)]="variant">
-      <mat-option value="practice">Ôn tập (NHCHT)</mat-option>
+      <mat-option value="practice">Ôn tập</mat-option>
       <mat-option value="exam">Đề thi</mat-option>
     </mat-select>
   </div>
@@ -29,7 +29,7 @@
   <!-- PRACTICE -->
   <div *ngIf="variant==='practice'" class="grid-2">
     <div class="row">
-      <label>Kiểu NHCHT</label>
+      <label>Kiểu Câu hỏi</label>
       <mat-select [(ngModel)]="form">
         <mat-option value="TRAC_NGHIEM">TRẮC NGHIỆM</mat-option>
         <mat-option value="TU_LUAN">TỰ LUẬN</mat-option>
@@ -98,12 +98,12 @@
       </div>
       <div class="row">
         <label>Mẫu</label>
-        <input matInput placeholder="Mẫu 3a" [(ngModel)]="mau" />
+        <input matInput placeholder="3a" [(ngModel)]="mau" />
       </div>
     </div>
 
     <div class="alert alert-info mt-2">
-      Xuất <b>EXAM</b> sẽ <b>tự động lưu bản sao</b> để duyệt (HEAD/ADMIN: vào <b>Approved</b>, giảng viên: <b>Pending</b>).
+      Xuất file <b>Câu hỏi ôn tập</b> sẽ <b>tự động lưu bản sao</b> để duyệt (HEAD/ADMIN: vào <b>Duyệt</b>, giảng viên: <b>Chờ duyệt</b>).
     </div>
   </div>
 
@@ -112,7 +112,7 @@
 
     <!-- PRACTICE: chỉ PRACTICE mới cho bật saveCopy -->
     <mat-checkbox *ngIf="variant==='practice'" [(ngModel)]="saveCopy">
-      Lưu bản copy (saveCopy)
+      Lưu vào kho lưu trữ
     </mat-checkbox>
 
     <div class="note">Đã chọn: {{ data.selectedCount }} câu hỏi</div>
@@ -124,6 +124,6 @@
   <button mat-stroked-button mat-dialog-close>Hủy</button>
   <button mat-flat-button color="primary" [disabled]="!canSubmit" (click)="submit()">
     <mat-icon>download</mat-icon>
-    <span class="ms-1">Export</span>
+    <span class="ms-1">Xuất file</span>
   </button>
 </mat-dialog-actions>

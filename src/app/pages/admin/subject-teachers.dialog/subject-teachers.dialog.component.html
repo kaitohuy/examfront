@@ -1,0 +1,35 @@
+<h2 class="mx-3 my-3" mat-dialog-title>Giảng viên: {{ subject.name }}</h2>
+
+<mat-dialog-content class="dialog-body mx-3 my-3">
+  <div class="mb-2">
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Tìm giảng viên (tên / mã GV)</mat-label>
+      <input matInput [formControl]="searchCtrl" autocomplete="off" />
+      <button mat-icon-button matSuffix type="button" (click)="searchCtrl.setValue('')"><mat-icon>close</mat-icon></button>
+    </mat-form-field>
+  </div>
+
+  <div class="selected mb-2" *ngIf="selected.length">
+    <span class="chip" *ngFor="let t of selected" (click)="toggleSelect(t)">
+      {{ t.firstName }} {{ t.lastName }}
+      <small *ngIf="t.teacherCode" class="muted">— {{ t.teacherCode }}</small>
+      <i class="bi bi-x ms-1"></i>
+    </span>
+  </div>
+
+  <div class="list">
+    <div class="row-item" *ngFor="let u of filtered" (click)="toggleSelect(u)">
+      <mat-checkbox [checked]="isSelected(u)" (click)="$event.stopPropagation(); toggleSelect(u)"></mat-checkbox>
+      <div class="info">
+        <div class="name">{{ u.firstName }} {{ u.lastName }}</div>
+        <div class="muted" *ngIf="u.teacherCode">Mã GV: {{ u.teacherCode }}</div>
+      </div>
+    </div>
+    <div class="muted" *ngIf="!filtered.length">Không có kết quả</div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button (click)="cancel()">Hủy</button>
+  <button mat-flat-button color="primary" (click)="save()">Lưu</button>
+</mat-dialog-actions>

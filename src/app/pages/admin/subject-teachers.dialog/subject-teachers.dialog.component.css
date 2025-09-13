@@ -1,0 +1,16 @@
+.dialog-body { padding: 8px 4px; }
+.w-100 { width: 100%; }
+.row-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,.06);
+  cursor: pointer;
+}
+.row-item:hover { background: rgba(0,0,0,.03); }
+.info .name { font-weight: 500; }
+.muted { color: rgba(0,0,0,.55); font-size: 12px; }
+.selected .chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #e8f0fe; border: 1px solid #c7d2fe; padding: 4px 8px;
+  border-radius: 999px; margin-right: 6px; margin-bottom: 6px; cursor: pointer;
+}
+.dialog-actions { padding: 8px 12px; }

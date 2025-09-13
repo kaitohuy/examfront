@@ -1,17 +1,66 @@
-.profile-image {
-    max-width: 150px;
-    max-height: 150px;
-    border: 2px solid black;
-    border-radius: 50%;
-    margin-top: 20px;
+.profile-card { padding: 0; overflow: hidden; }
+
+/* Header */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  padding: 20px 24px;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.meta .fullname { margin: 0; font-weight: 600; }
+.row-ids { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
+.username { color: rgba(0,0,0,.6); }
+
+.chip {
+  font-size: 12px; padding: 2px 8px; border-radius: 999px;
+  background: rgba(0,0,0,.06);
+}
+.chip.id { background: rgba(33,150,243,.12); }
+.chip.state { background: rgba(76,175,80,.14); }
+.chip.state.inactive { background: rgba(0,0,0,.08); color: rgba(0,0,0,.55); }
+.chip.status { background: rgba(255,152,0,.18); }
+.chip.role { background: rgba(63,81,181,.16); margin-right: 6px; }
+
+.actions .ml8 { margin-left: 8px; }
+
+.pad { padding: 16px 24px 24px; }
+
+.section { margin: 10px 0 20px; }
+.section-title { font-weight: 600; margin-bottom: 8px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.muted { color: rgba(0,0,0,.55); }
+
+.subject-item { cursor: pointer; }
+
+/* Bảng 2 cột, căn giữa */
+.info-table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+.info-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.info-table .label {
+  font-weight: 500;
+  color: rgba(0,0,0,0.65);
+  text-align: right;
+  width: 200px;
+}
+.info-table .value {
+  text-align: left;
+  font-weight: 500;
+  color: #000;
 }
 
-.table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.table tr td {
-    padding: 20px 50px;
-    border: 1px solid black;
+/* Responsive */
+@media (max-width: 680px) {
+  .header { grid-template-columns: auto 1fr; }
+  .actions { grid-column: 1 / -1; }
+  .info-table { min-width: unset; width: 100%; }
+  .info-table .label { text-align: left; width: 40%; }
 }

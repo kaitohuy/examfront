@@ -1,9 +1,9 @@
-<!-- head-subject-list.component.html -->
-<div class="container mt-4">
+<!-- src/app/pages/head/head-subject-list/head-subject-list.component.html -->
+<div class="container mt-4 position-relative">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <!-- đổi về head-dashboard -->
-      <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']">
+      <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']" [disabled]="isLoading">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
       <h2 class="d-inline-block mb-0">Danh Sách Môn học</h2>
@@ -11,7 +11,7 @@
     <div *ngIf="department">
       <h4 class="text-muted mb-0">{{ department.name }}</h4>
     </div>
-    <button class="btn btn-primary" (click)="openCreateDialog()">
+    <button class="btn btn-primary" (click)="openCreateDialog()" [disabled]="isLoading">
       <i class="bi bi-plus-circle me-1"></i> Thêm Môn học
     </button>
   </div>
@@ -22,27 +22,27 @@
         <span class="input-group-text bg-white border-end-0">
           <i class="bi bi-search"></i>
         </span>
-        <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm môn học..."
-               [(ngModel)]="searchText">
+        <input
+          type="text"
+          class="form-control border-start-0"
+          placeholder="Tìm kiếm môn học..."
+          [(ngModel)]="searchText"
+          [disabled]="isLoading"
+        />
       </div>
     </div>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2">Đang tải dữ liệu...</p>
-      </div>
-
+      <!-- Empty -->
       <div *ngIf="!isLoading && subjects.length === 0" class="text-center py-5">
         <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
         <h4 class="mt-3">Chưa có môn học nào</h4>
         <p class="text-muted">Hãy thêm môn học mới cho bộ môn này</p>
       </div>
 
+      <!-- Table -->
       <div *ngIf="!isLoading && subjects.length > 0" class="table-responsive">
         <table class="table table-hover">
           <thead class="table-light">
@@ -61,9 +61,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let subject of filteredSubjects"
-                [routerLink]="['/head-dashboard','department', departmentId, 'subjects', subject.id]"
-                style="cursor: pointer;">
+            <tr
+              *ngFor="let subject of filteredSubjects"
+              [routerLink]="['/head-dashboard','department', departmentId, 'subjects', subject.id]"
+              style="cursor: pointer;"
+            >
               <td>{{ subject.id }}</td>
               <td>{{ subject.name }}</td>
               <td>{{ subject.code }}</td>
@@ -79,17 +81,28 @@
               </td>
               <td class="text-end">
                 <div class="btn-group">
-                  <!-- nhớ chặn nổi bọt để không trigger routerLink của <tr> -->
-                  <button class="btn btn-sm btn-outline-primary me-2"
-                          (click)="openEditDialog(subject); $event.stopPropagation()">
+                  <!-- chặn bubble để không trigger routerLink -->
+                  <button
+                    class="btn btn-sm btn-outline-primary me-2"
+                    (click)="openEditDialog(subject); $event.stopPropagation()"
+                    [disabled]="isLoading"
+                  >
                     <i class="bi bi-pencil"></i> Sửa
                   </button>
-                  <button class="btn btn-sm btn-outline-success me-2"
-                          (click)="openManageTeachersDialog(subject); $event.stopPropagation()">
+
+                  <button
+                    class="btn btn-sm btn-outline-success me-2"
+                    (click)="openManageTeachersDialog(subject); $event.stopPropagation()"
+                    [disabled]="isLoading"
+                  >
                     <i class="bi bi-people"></i> Giảng viên
                   </button>
-                  <button class="btn btn-sm btn-outline-danger"
-                          (click)="deleteSubject(subject.id); $event.stopPropagation()">
+
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="deleteSubject(subject.id); $event.stopPropagation()"
+                    [disabled]="isLoading"
+                  >
                     <i class="bi bi-trash"></i> Xóa
                   </button>
                 </div>
@@ -98,6 +111,9 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Overlay Loading -->
+      <app-loading-screen *ngIf="isLoading" [blurBackground]="false"></app-loading-screen>
     </div>
   </div>
 </div>

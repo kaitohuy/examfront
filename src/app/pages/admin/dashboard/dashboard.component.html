@@ -3,11 +3,17 @@
         <div class="row" style="margin-top: 1em;">
             <div class="sidebar-col" [class.collapsed]="isSidebarCollapsed">
                 <app-sidebar 
-                    [base]="'admin'" 
+                    [base]="'admin-dashboard'" 
                     [showUserManagement]="true" 
                     [showDepartment]="true" 
                     [showMySubject]="false"
                     [showArchive]="true"
+                    [showGuideGeneral]="true"
+                    [showUserManagement]="true"
+                    [showGuideDepartment]="true"
+                    [showGuideSubject]="true"
+                    [showGuideQuestion]="true"
+                    [showGuideFile]="true"
                     [isCollapsed]="isSidebarCollapsed"
                     (toggleSidebar)="onSidebarToggle($event)">
                 </app-sidebar>

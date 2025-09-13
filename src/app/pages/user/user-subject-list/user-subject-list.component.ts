@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { sharedImports } from '../../../shared/shared-imports';
 import { SubjectService } from '../../../services/subject.service';
+import { Subject as SubjectModel } from '../../../models/subject';
 
 @Component({
   selector: 'app-user-subject-list',
@@ -10,7 +11,7 @@ import { SubjectService } from '../../../services/subject.service';
   templateUrl: './user-subject-list.component.html'
 })
 export class UserSubjectListComponent implements OnInit {
-  subjects: any[] = [];
+  subjects: SubjectModel[] = [];
   isLoading = true;
   searchText = '';
 
@@ -18,18 +19,27 @@ export class UserSubjectListComponent implements OnInit {
 
   ngOnInit(): void {
     this.subjectSvc.getMySubjects().subscribe({
-      next: (data) => { this.subjects = data; this.isLoading = false; },
+      next: (data) => {
+        this.subjects = Array.isArray(data) ? data : [];
+        this.isLoading = false;
+      },
       error: () => { this.isLoading = false; }
     });
   }
 
-  get filtered(): any[] {
-    const t = this.searchText.trim().toLowerCase();
+  get filtered(): SubjectModel[] {
+    const t = (this.searchText || '').trim().toLowerCase();
     if (!t) return this.subjects;
-    return this.subjects.filter(s => s.name.toLowerCase().includes(t) || s.code.toLowerCase().includes(t));
+    return this.subjects.filter(s => {
+      const name = (s.name || '').toLowerCase();
+      const code = (s.code || '').toLowerCase();
+      return name.includes(t) || code.includes(t);
+    });
   }
 
-  openSubject(s: any) {
-    this.router.navigate(['/user-dashboard','subjects', s.id]);
+  trackById(_: number, s: SubjectModel) { return s?.id; }
+
+  openSubject(s: SubjectModel) {
+    this.router.navigate(['/user-dashboard', 'subjects', s.id, 'practice']);
   }
 }

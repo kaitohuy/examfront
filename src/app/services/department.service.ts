@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import baseUrl from './helper';
 import { Department } from '../models/department';
+import { HeadDeptStats } from '../models/stats';
 
 
 @Injectable({
@@ -44,5 +45,9 @@ export class DepartmentService {
 
   public getDepartmentsByHead(headUserId: number) {
     return this._http.get<Department[]>(`${baseUrl}/department/head/${headUserId}`);
+  }
+
+  getDepartmentStats(id: number) {
+    return this._http.get<HeadDeptStats>(`${baseUrl}/department/${id}/stats`);
   }
 }

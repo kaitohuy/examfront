@@ -1,62 +1,50 @@
 import { Component, Inject, QueryList, ViewChildren } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { from, of, concatMap, catchError, toArray } from 'rxjs';
+
 import { sharedImports } from '../../../shared/shared-imports';
 import { QuestionFormComponent } from '../question-form/question-form.component';
 import { QuestionService } from '../../../services/question.service';
 import { CreateQuestion } from '../../../models/createQuestion';
-import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
+import { withLoading } from '../../../shared/with-loading';
 
 @Component({
   selector: 'app-clone-quick-edit-dialog',
   standalone: true,
-  imports: [MatDialogModule, QuestionFormComponent, ...sharedImports],
-  template: `
-    <h2 mat-dialog-title>Sửa nhanh các bản sao</h2>
-    <mat-dialog-content class="pt-0">
-      <div class="muted mb-2">Điền đáp án cho mỗi câu; có thể chỉnh content, options...</div>
-      <div class="grid" style="gap:12px">
-        <div class="card p-3" *ngFor="let c of clones; let i = index">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <b>Bản sao #{{ c.parentId }}.{{ c.cloneIndex }}</b>
-            <span class="badge text-bg-light">{{ c.questionType === 'MULTIPLE_CHOICE' ? 'Trắc nghiệm' : 'Tự luận' }}</span>
-          </div>
-          <app-question-form [value]="c"></app-question-form>
-        </div>
-      </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-stroked-button (click)="ref.close()">Để sau</button>
-      <button mat-flat-button color="primary" (click)="saveAll()" [disabled]="saving">Lưu tất cả</button>
-    </mat-dialog-actions>
-  `,
-  styles:[`.muted{color:#6c757d;font-size:12px;}`]
+  imports: [MatDialogModule, QuestionFormComponent, ...sharedImports, LoadingScreenComponent],
+  templateUrl: './clone-quick-edit-dialog.component.html',
+  styleUrls: ['./clone-quick-edit-dialog.component.css']
 })
 export class CloneQuickEditDialogComponent {
   @ViewChildren(QuestionFormComponent) forms!: QueryList<QuestionFormComponent>;
-  saving = false;
+
+  isLoading = false;
   clones: any[] = [];
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { subjectId:number; clones:any[] },
+    @Inject(MAT_DIALOG_DATA) public data: { subjectId: number; clones: any[] },
     public ref: MatDialogRef<CloneQuickEditDialogComponent>,
     private qs: QuestionService,
-    private snack: MatSnackBar 
-  ){
+    private snack: MatSnackBar
+  ) {
     // xoá đáp án mặc định để buộc user điền
     this.clones = (data?.clones || []).map(c => ({
       ...c,
-      answer: c.questionType==='MULTIPLE_CHOICE' ? '' : c.answer,
-      answerText: c.questionType==='ESSAY' ? '' : c.answerText
+      answer: c.questionType === 'MULTIPLE_CHOICE' ? '' : c.answer,
+      answerText: c.questionType === 'ESSAY' ? '' : c.answerText
     }));
   }
 
-  saveAll(){
-    const items = this.forms.toArray();
+  saveAll() {
+    const items = this.forms?.toArray() ?? [];
 
-    // validate
-    for (const comp of items){
+    // validate tất cả form trước khi gửi
+    for (const comp of items) {
       const f = (comp as any).form as any;
-      if (!f || f.invalid){
+      if (!f || f.invalid) {
         f?.markAllAsTouched();
         this.snack.open('Vui lòng điền đầy đủ các trường bắt buộc.', 'Đóng', {
           duration: 3000, panelClass: ['error-snackbar']
@@ -65,23 +53,38 @@ export class CloneQuickEditDialogComponent {
       }
     }
 
-    this.saving = true;
-    const results:any[] = [];
-    const step = (i:number)=>{
-      if (i>=items.length){
-        this.saving=false;
-        this.ref.close(results); // parent sẽ show snackbar “Đã lưu … bản sao.”
-        return;
-      }
-      const comp = items[i];
-      const payload: CreateQuestion = comp.toPayload();
-      const id = this.clones[i].id;
+    const payloads = items.map((comp, i) => ({
+      id: this.clones[i].id as number,
+      payload: comp.toPayload() as CreateQuestion
+    }));
 
-      this.qs.updateQuestion(this.data.subjectId, id, payload, null).subscribe({
-        next: (q)=>{ results.push(q); step(i+1); },
-        error: ()=> { step(i+1); } // có thể gom lỗi chi tiết nếu muốn
-      });
-    };
-    step(0);
+    from(payloads).pipe(
+      withLoading(v => this.isLoading = v),
+      // cập nhật tuần tự từng bản sao
+      concatMap(({ id, payload }) =>
+        this.qs.updateQuestion(this.data.subjectId, id, payload, null).pipe(
+          catchError(err => {
+            // bỏ qua lỗi để tiếp tục các bản còn lại
+            console.error('Update clone failed:', id, err);
+            return of(null);
+          })
+        )
+      ),
+      toArray()
+    ).subscribe({
+      next: (arr) => {
+        const results = arr.filter(x => x != null);
+        if (results.length < payloads.length) {
+          this.snack.open('Một số bản sao lưu không thành công.', 'Đóng', { duration: 3000 });
+        } else {
+          this.snack.open('Đã lưu tất cả bản sao.', 'Đóng', { duration: 2000 });
+        }
+        this.ref.close(results);
+      },
+      error: (err) => {
+        console.error(err);
+        this.snack.open('Có lỗi khi lưu các bản sao.', 'Đóng', { duration: 3000 });
+      }
+    });
   }
 }

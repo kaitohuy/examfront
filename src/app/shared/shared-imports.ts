@@ -21,6 +21,9 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatOptionModule } from '@angular/material/core';
 
 export const sharedImports = [
   CommonModule,
@@ -48,6 +51,9 @@ export const sharedImports = [
   MatPaginatorModule, 
   MatIconModule, 
   MatButtonModule,
-
+  MatAutocompleteModule,
+  MatChipsModule,
+  MatOptionModule,
+  ReactiveFormsModule,
 ];
 

@@ -1,0 +1,194 @@
+<div class="container mt-3" [attr.aria-busy]="isLoading">
+  <!-- Bộ lọc thời gian -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-flex flex-wrap align-items-center gap-2">
+      <mat-form-field appearance="outline">
+        <mat-label>Từ ngày</mat-label>
+        <input matInput [matDatepicker]="fromPicker" [formControl]="from">
+        <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Đến ngày</mat-label>
+        <input matInput [matDatepicker]="toPicker" [formControl]="to">
+        <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+      </mat-form-field>
+
+      <div class="ms-auto d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-secondary" (click)="resetRange()">Reset</button>
+        <button class="btn btn-outline-secondary" (click)="quick('week')">Tuần này</button>
+        <button class="btn btn-outline-secondary" (click)="quick('month')">Tháng này</button>
+        <button class="btn btn-outline-secondary" (click)="quick('quarter')">Quý này</button>
+        <button class="btn btn-outline-secondary" (click)="quick('year')">Năm nay</button>
+        <button class="btn btn-primary" (click)="reload()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hàng thẻ tổng quan -->
+  <div class="row g-3">
+    <!-- Người dùng trong khoa -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted">GIẢNG VIÊN (TRONG KHOA)</div>
+          <div class="display-6 fw-bold">{{ data?.users?.total || 0 }}</div>
+          <div class="small text-muted mt-2">
+            ADMIN: {{ data?.users?.byRole?.['ADMIN'] || 0 }} ·
+            HEAD: {{ data?.users?.byRole?.['HEAD'] || 0 }} ·
+            GV: {{ data?.users?.byRole?.['TEACHER'] || 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Khoa/Bộ môn -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted">KHOA/BỘ MÔN</div>
+          <div class="display-6 fw-bold">1</div>
+          <div class="small"
+               [class.text-success]="(data?.departments?.withoutHead||0)===0"
+               [class.text-warning]="(data?.departments?.withoutHead||0)>0">
+            Chưa có trưởng bộ môn: {{ data?.departments?.withoutHead || 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Môn học -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted">MÔN HỌC</div>
+          <div class="display-6 fw-bold">{{ data?.subjects?.count || 0 }}</div>
+          <div class="small text-primary">
+            Chưa phân công GV: {{ data?.subjects?.withoutTeachers || 0 }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kho đề -->
+    <div class="col-12 col-lg-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="text-muted">KHO ĐỀ (REVIEW)</div>
+          <div class="display-6 fw-bold">
+            {{ (data?.archive?.approved || 0) + (data?.archive?.pending || 0) + (data?.archive?.rejected || 0) }}
+          </div>
+          <div class="d-flex gap-2 mt-1 small">
+            <span class="badge text-bg-success">APP {{ data?.archive?.approved || 0 }}</span>
+            <span class="badge text-bg-warning">PEN {{ data?.archive?.pending || 0 }}</span>
+            <span class="badge text-bg-danger">REJ {{ data?.archive?.rejected || 0 }}</span>
+          </div>
+          <div class="small text-muted mt-1">T/g duyệt TB: {{ data?.archive?.avgReviewHours || 0 }}h</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Questions & Coverage -->
+  <div class="row g-3 mt-1">
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-semibold mb-2">Câu hỏi (theo khoa)</div>
+          <div class="mb-2"><b>Tổng:</b> {{ data?.questions?.total || 0 }}</div>
+          <div class="mb-2">
+            <div class="text-muted">Theo loại</div>
+            <div>Trắc nghiệm: {{ data?.questions?.byType?.['MULTIPLE_CHOICE'] || 0 }}</div>
+            <div>Tự luận: {{ data?.questions?.byType?.['ESSAY'] || 0 }}</div>
+          </div>
+          <div>
+            <div class="text-muted">Theo nhãn</div>
+            <div>Ôn tập: {{ data?.questions?.byLabel?.['PRACTICE'] || 0 }}</div>
+            <div>Thi cử: {{ data?.questions?.byLabel?.['EXAM'] || 0 }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coverage -->
+    <div class="col-12 col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-semibold mb-2">Phủ chương (0–7)</div>
+
+          <div *ngFor="let c of [0,1,2,3,4,5,6,7]">
+            <div class="d-flex justify-content-between">
+              <div class="small fw-semibold">CHAPTER{{ c }}</div>
+              <div class="small">{{ data?.coverage?.['chapter'+c] || 0 }}</div>
+            </div>
+            <div class="progress mb-2 progress-thin">
+              <div class="progress-bar"
+                   role="progressbar"
+                   [style.width.%]="coveragePct('chapter'+c)"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top lists -->
+  <div class="row g-3 mt-1">
+    <!-- Top môn -->
+    <div class="col-12 col-lg-6" *ngIf="topSubjects.length">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-semibold mb-2">Top môn theo số câu hỏi</div>
+
+          <div class="stat-item" *ngFor="let s of topSubjects; trackBy: trackById">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="truncate">{{ s.subjectName || ('#' + s.subjectId) }}</div>
+              <div class="small text-muted">{{ s.count }}</div>
+            </div>
+            <div class="progress progress-thin mt-1">
+              <div class="progress-bar"
+                   [style.width.%]="barPct(s.count, maxTopSubject)"
+                   [attr.aria-label]="s.subjectName"></div>
+            </div>
+            <div class="x-small text-muted mt-1">
+              {{ ofTotalPct(s.count) | number:'1.0-1' }}% tổng câu hỏi khoa
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Top GV -->
+    <div class="col-12 col-lg-6" *ngIf="topTeachers.length">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="fw-semibold mb-2">Top GV tạo câu hỏi</div>
+
+          <div class="stat-item" *ngFor="let t of topTeachers; trackBy: trackById">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="truncate">{{ t.teacherName || ('User #' + t.userId) }}</div>
+              <div class="small text-muted">{{ t.count }}</div>
+            </div>
+            <div class="progress progress-thin mt-1">
+              <div class="progress-bar"
+                   [style.width.%]="barPct(t.count, maxTopTeacher)"
+                   [attr.aria-label]="t.teacherName"></div>
+            </div>
+            <div class="x-small text-muted mt-1">
+              {{ ofTotalPct(t.count) | number:'1.0-1' }}% tổng câu hỏi khoa
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-loading-screen *ngIf="isLoading"></app-loading-screen>
+</div>

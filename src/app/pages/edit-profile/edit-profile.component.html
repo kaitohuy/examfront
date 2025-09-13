@@ -1,0 +1,76 @@
+<mat-card class="ep-card position-relative">
+  <!-- Header -->
+  <div class="ep-header">
+    <div class="left">
+      <h2>Chỉnh sửa hồ sơ</h2>
+      <div class="subtitle">Cập nhật thông tin cá nhân & tài khoản</div>
+    </div>
+    <div class="right">
+      <img [src]="avatarPreview" alt="avatar" class="avatar" />
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <!-- Form -->
+  <form [formGroup]="form" (ngSubmit)="submit()" class="ep-grid">
+    <mat-form-field appearance="fill">
+      <mat-label>Mã giảng viên</mat-label>
+      <input matInput formControlName="teacherCode" [disabled]="isLoading" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Giới tính</mat-label>
+      <mat-select formControlName="gender" [disabled]="isLoading">
+        <mat-option [value]="''">—</mat-option>
+        <mat-option value="MALE">Nam</mat-option>
+        <mat-option value="FEMALE">Nữ</mat-option>
+        <mat-option value="OTHER">Khác</mat-option>
+      </mat-select>
+    </mat-form-field>
+    
+    <mat-form-field appearance="fill">
+      <mat-label>Họ *</mat-label>
+      <input matInput formControlName="lastName" required [disabled]="isLoading" />
+      <mat-error *ngIf="form.controls.lastName.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Tên *</mat-label>
+      <input matInput formControlName="firstName" required [disabled]="isLoading" />
+      <mat-error *ngIf="form.controls.firstName.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email" [disabled]="isLoading" />
+      <mat-error *ngIf="form.controls.email.hasError('email')">Email không hợp lệ</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Điện thoại</mat-label>
+      <input matInput formControlName="phone" [disabled]="isLoading" />
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Ngày sinh</mat-label>
+      <input matInput [matDatepicker]="dp" formControlName="birthDate" [disabled]="isLoading" />
+      <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+      <mat-datepicker
+        #dp
+        startView="multi-year"
+        (opened)="onDatepickerOpened()"
+        (closed)="onDatepickerClosed()">
+      </mat-datepicker>
+    </mat-form-field>
+  </form>
+
+  <!-- Footer actions -->
+  <div class="ep-actions">
+    <button mat-stroked-button (click)="cancel()" [disabled]="isLoading">Hủy</button>
+    <button mat-flat-button color="primary" (click)="submit()" [disabled]="form.invalid || isLoading">Lưu</button>
+  </div>
+
+  <!-- Overlay Loading (không mờ nền) -->
+  <app-loading-screen *ngIf="isLoading" [blurBackground]="false"></app-loading-screen>
+</mat-card>

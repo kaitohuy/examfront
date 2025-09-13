@@ -4,7 +4,7 @@ import { UserWithRolesAndDeptDTO } from '../models/user-dto';
 export function mapDtoToUser(u: UserWithRolesAndDeptDTO): User {
   return {
     id: u.id,
-    studentCode: u.studentCode ?? '',
+    teacherCode: u.teacherCode ?? '',
     username: u.username,
     lastName: u.lastName ?? '',
     firstName: u.firstName ?? '',

@@ -1,0 +1,33 @@
+.dense-field .mdc-text-field { height: 40px; }
+.dense-field .mat-mdc-form-field-infix { padding-top: 8px; padding-bottom: 8px; }
+
+.metric {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chapter-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: .5rem 0;
+}
+.chapter-label {
+  width: 110px;
+  font-weight: 600;
+  color: #4b5563; /* gray-600 */
+}
+.chapter-count {
+  width: 36px;
+  text-align: right;
+  color: #6b7280; /* gray-500 */
+}
+
+.progress {
+  height: 8px;
+  background-color: #eef2f7;
+}
+.progress-bar {
+  background-color: #3b82f6; /* indigo-ish */
+}

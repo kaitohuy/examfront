@@ -1,210 +1,194 @@
-    <div class="mt-4">
-        <div class="page-header">
-            <div>
-                <h1 class="header-title">User Management</h1>
-                <p class="text-muted mb-0">Manager all users in system</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-primary" [routerLink]="['/admin/add-user/']">
-                    <i class="bi bi-plus-circle me-1"></i> Add User
-                </button>
-                <button class="btn btn-outline-secondary" (click)="exportToCSV()">
-                    <i class="bi bi-download me-1"></i> Export CSV
-                </button>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stats-card card">
-                    <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
-                    <div class="stats-value">{{ statistics.totalUsers }}</div>
-                    <div class="stats-label">Totally User</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card card">
-                    <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
-                    <div class="stats-value">{{ statistics.activeUsers }}</div>
-                    <div class="stats-label">Đang hoạt động</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card card">
-                    <i class="bi bi-lock-fill text-danger" style="font-size: 2rem;"></i>
-                    <div class="stats-value">{{ statistics.lockedUsers }}</div>
-                    <div class="stats-label">Tài khoản bị khóa</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stats-card card">
-                    <i class="bi bi-person-badge-fill text-warning" style="font-size: 2rem;"></i>
-                    <div class="stats-value">{{ statistics.totalTeachers }}</div>
-                    <div class="stats-label">Giảng viên</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="search-container card">
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm người dùng..."
-                            [(ngModel)]="searchTerm" (input)="onSearch($event)">
-                        <button class="btn btn-primary" (click)="applyFilters()">Tìm kiếm</button>
-                    </div>
-
-                    <!-- Hiển thị nhãn lọc -->
-                    <div class="mt-2" *ngIf="activeFilters.length > 0">
-                        <div class="d-flex flex-wrap gap-2 align-items-center">
-                            <span class="badge filter-tag" *ngFor="let filter of activeFilters" style="cursor: pointer;"
-                                [ngClass]="getFilterClass(filter)" (click)="filterBy(filter)">
-                                {{ getFilterLabel(filter) }}
-                                <i class="bi bi-x ms-1" style="font-size: 0.8rem;"></i>
-                            </span>
-                            <a href="javascript:void(0);"
-                                class="text-danger link-offset-2 link-underline link-underline-opacity-0"
-                                (click)="clearFilters()">Xóa tất cả</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown">
-                                <i class="bi bi-filter me-1"></i> Lọc
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" (click)="filterBy('all')">Tất cả</a></li>
-                                <li><a class="dropdown-item" (click)="filterBy('teacher')">Giảng viên</a></li>
-                                <li><a class="dropdown-item" (click)="filterBy('head')">Trưởng bộ môn</a></li>
-                                <li><a class="dropdown-item" (click)="filterBy('inactive')">Không hoạt động</a>
-                                </li>
-                                <li><a class="dropdown-item" (click)="filterBy('active')">Đang hoạt động</a></li>
-                            </ul>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown">
-                                <i class="bi bi-sort-down me-1"></i> Sắp xếp
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" (click)="sortBy('newest')">Mới nhất</a></li>
-                                <li><a class="dropdown-item" (click)="sortBy('oldest')">Cũ nhất</a></li>
-                                <li><a class="dropdown-item" (click)="sortBy('a-z')">Tên A-Z</a></li>
-                                <li><a class="dropdown-item" (click)="sortBy('z-a')">Tên Z-A</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card table-container">
-            <div class="table-responsive">
-                <table matSort class="table table-hover mb-0">
-                    <thead class="table-header">
-                        <tr>
-                            <th mat-header-cell *matHeaderCellDef mat-sort-header="id" sortDirection="asc" disableClear>ID
-                            </th>
-                            <th mat-sort-header="studentCode">Code User</th>
-                            <th mat-sort-header="username">Username</th>
-                            <th mat-sort-header="email">Email</th>
-                            <th mat-sort-header="phone">Phone</th>
-                            <th mat-sort-header="FullName">FullName</th>
-                            <th mat-sort-header="roles">Roles</th>
-                            <th mat-sort-header="status">Status</th>
-                            <th mat-sort-header="enabled">Enable</th>
-                            <th class="text-end">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let user of dataSource.connect() | async"
-                            [ngClass]="{'disabled-row': user.enabled === false}">
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.studentCode }}</td>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.phone }}</td>
-                            <td>{{ user.lastName + ' ' + user.firstName }}</td>
-                            <td>
-                                <ng-container *ngFor="let role of user.roles">
-                                    <span class="badge" [ngClass]="'badge-' + role.toLowerCase()">{{ role }}</span>
-                                </ng-container>
-                            </td>
-                            <td>
-                                <span class="status-badge" [ngClass]="getStatusBadge(user.status)">
-                                    <i class="bi" *ngIf="user.status === 'ACTIVE'" [ngClass]="'bi-check-circle-fill'"></i>
-                                    <i class="bi" *ngIf="user.status === 'INACTIVE'" [ngClass]="'bi-x-circle-fill'"></i>
-                                    <i class="bi" *ngIf="user.status === 'LOCKED'" [ngClass]="'bi-lock-fill'"></i>
-                                    {{ user.status }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="mx-2" *ngIf="user.enabled; else locked">
-                                    <img src="../../../../assets/images/check.png" alt="">
-                                </span>
-                                <ng-template #locked>
-                                    <span style="color: red;"><i class="bi bi-lock-fill"></i> Bị khóa</span>
-                                </ng-template>
-                            </td>
-
-                            <td class="text-end">
-                                <div class="dropdown action-dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                                        data-bs-toggle="dropdown">
-                                        <i class="bi bi-gear"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item" (click)="resetPassword(user.id, 'abc13579')">
-                                                <i class="bi bi-key action-icon text-warning"></i> Reset mật khẩu
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" (click)="toggleEnabled(user)">
-                                                <i class="bi" [ngClass]="user.enabled ? 'bi-lock' : 'bi-unlock'"
-                                                    class="action-icon text-secondary"></i>
-                                                {{ user.enabled ? 'Khóa tài khoản' : 'Mở khóa' }}
-                                            </a>
-                                        </li>
-
-                                        <li *ngIf="user.roles.includes('TEACHER') && !user.roles.includes('HEAD')">
-                                            <a class="dropdown-item" (click)="updateRole(user.id, ['HEAD', 'TEACHER'])">
-                                                <i class="bi bi-person-plus action-icon text-primary"></i> Gán HEAD
-                                            </a>
-                                        </li>
-
-                                        <li *ngIf="user.roles.includes('TEACHER') && user.roles.includes('HEAD')">
-                                            <a class="dropdown-item" (click)="updateRole(user.id, ['TEACHER'])">
-                                                <i class="bi bi-person-dash action-icon text-danger"></i> Gỡ HEAD
-                                            </a>
-                                        </li>
-
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" (click)="deleteUser(user.id)">
-                                                <i class="bi bi-trash action-icon"></i> Xóa người dùng
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <mat-paginator [length]="dataSource.filteredData.length" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 20]"
-                showFirstLastButtons>
-            </mat-paginator>
-            <!-- (page)="onPageChange($event)"  -->
-        </div>
+<div class="mt-4">
+  <div class="page-header">
+    <div>
+      <h1 class="header-title mx-3">QUẢN LÝ NHÂN SỰ</h1>
+      <p class="text-muted mb-0 mx-3">Quản lý toàn bộ người dùng hệ thống</p>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="addUser()" [disabled]="isLoading">
+        <i class="bi bi-plus-circle me-1"></i> Thêm giảng viên
+      </button>
+      <button class="btn btn-outline-secondary" (click)="exportToCSV()" [disabled]="isLoading">
+        <i class="bi bi-download me-1"></i> Xuất excel
+      </button>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="stats-card card">
+        <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+        <div class="stats-value">{{ statistics.totalUsers }}</div>
+        <div class="stats-label">Tổng số người dùng</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card card">
+        <i class="bi bi-building text-success" style="font-size:2rem;"></i>
+        <div class="stats-value">{{ statistics.totalDepartments }}</div>
+        <div class="stats-label">Tổng số khoa</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card card">
+        <i class="bi bi-person-gear text-info" style="font-size: 2rem;"></i>
+        <div class="stats-value">{{ statistics.totalHeads }}</div>
+        <div class="stats-label">Tổng số trưởng bộ môn</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card card">
+        <i class="bi bi-person-badge-fill text-warning" style="font-size: 2rem;"></i>
+        <div class="stats-value">{{ statistics.totalTeachers }}</div>
+        <div class="stats-label">Tổng số giảng viên</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-container card">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control border-start-0"
+            placeholder="Tìm kiếm người dùng..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch($event)"
+            [disabled]="isLoading">
+          <button class="btn btn-primary" (click)="applyFilters()" [disabled]="isLoading">Tìm kiếm</button>
+        </div>
+
+        <div class="mt-2" *ngIf="activeFilters.length > 0">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span
+              class="badge filter-tag"
+              *ngFor="let filter of activeFilters"
+              style="cursor: pointer;"
+              [ngClass]="getFilterClass(filter)"
+              (click)="filterBy(filter)">
+              {{ getFilterLabel(filter) }}
+              <i class="bi bi-x ms-1" style="font-size: 0.8rem;"></i>
+            </span>
+            <a
+              href="javascript:void(0);"
+              class="text-danger link-offset-2 link-underline link-underline-opacity-0"
+              (click)="clearFilters()">Xóa tất cả</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="d-flex gap-2 justify-content-end">
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="isLoading">
+              <i class="bi bi-filter me-1"></i> Lọc
+            </button>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" (click)="filterBy('all')">Tất cả</a></li>
+              <li><a class="dropdown-item" (click)="filterBy('teacher')">Giảng viên</a></li>
+              <li><a class="dropdown-item" (click)="filterBy('head')">Trưởng bộ môn</a></li>
+            </ul>
+          </div>
+          <!-- Không có dropdown Sắp xếp; dùng MatSort ở header -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card table-container position-relative">
+    <div class="table-responsive">
+      <!-- bật matSort -->
+      <table class="table table-hover" matSort>
+        <thead class="table-header">
+          <tr>
+            <th mat-sort-header="id">ID</th>
+            <th mat-sort-header="teacherCode">Mã giảng viên</th>
+            <th>Tài khoản</th>
+            <th>Email</th>
+            <th>Số điện thoại</th>
+            <th mat-sort-header="FullName">Họ và tên</th>
+            <th>Chức vụ</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let user of dataSource.connect() | async">
+            <td>{{ user.id }}</td>
+            <td>{{ user.teacherCode }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>{{ user.lastName + ' ' + user.firstName }}</td>
+            <td>
+              <ng-container *ngFor="let role of user.roles">
+                <span class="badge" [ngClass]="'badge-' + role.toLowerCase()">{{ role }}</span>
+              </ng-container>
+            </td>
+            <td>
+              <div class="dropdown action-dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="isLoading">
+                  <i class="bi bi-gear"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li>
+                    <a class="dropdown-item" (click)="editUser(user)">
+                      <i class="bi bi-pencil-square action-icon text-primary"></i> Sửa
+                    </a>
+                  </li>
+
+                  <li>
+                    <a class="dropdown-item" (click)="resetPassword(user)">
+                      <i class="bi bi-key action-icon text-warning"></i> Reset mật khẩu
+                    </a>
+                  </li>
+
+                  <li *ngIf="user.roles.includes('TEACHER') && !user.roles.includes('HEAD')">
+                    <a class="dropdown-item" (click)="openAssignHeadDialog(user)">
+                      <i class="bi bi-person-plus action-icon text-primary"></i> Gán HEAD
+                    </a>
+                  </li>
+
+                  <li *ngIf="user.roles.includes('TEACHER') && user.roles.includes('HEAD')">
+                    <a class="dropdown-item" (click)="removeHead(user)">
+                      <i class="bi bi-person-dash action-icon text-danger"></i> Gỡ HEAD
+                    </a>
+                  </li>
+
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a class="dropdown-item text-danger" (click)="deleteUser(user.id)">
+                      <i class="bi bi-trash action-icon"></i> Xóa người dùng
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+
+          <tr *ngIf="!(dataSource.connect() | async)?.length">
+            <td colspan="9" class="text-center py-5 text-muted">
+              <i class="bi bi-people me-2"></i>Không có dữ liệu phù hợp
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="dataSource.filteredData.length"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[5, 10, 20]"
+      showFirstLastButtons>
+    </mat-paginator>
+
+    <!-- Overlay loading mới -->
+    <app-loading-screen *ngIf="isLoading"></app-loading-screen>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

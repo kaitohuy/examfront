@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, Subject, takeUntil, finalize } from 'rxjs';
+import { debounceTime, Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { FileArchiveService } from '../../../services/file-archive.service';
@@ -14,13 +14,19 @@ import { sharedImports } from '../../../shared/shared-imports';
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { VN_DATE_FORMATS } from '../../../models/dateFormats';
 
+// 🔹 Loading overlay helpers
+import { withLoading } from '../../../shared/with-loading';
+import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
+
 type ARStatus = 'ALL' | Extract<ReviewStatus, 'APPROVED' | 'REJECTED'>;
 
 @Component({
   selector: 'app-archive-history',
   standalone: true,
   imports: [
-    ...sharedImports
+    ...sharedImports,
+    ReactiveFormsModule,
+    LoadingScreenComponent
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'vi-VN' },
@@ -32,13 +38,16 @@ type ARStatus = 'ALL' | Extract<ReviewStatus, 'APPROVED' | 'REJECTED'>;
 export class ArchiveHistoryComponent implements OnInit, OnDestroy {
   private api = inject(FileArchiveService);
 
+  // ===== loading (overlay) =====
+  isLoading = false;
+
   // ===== bộ lọc =====
   showFilters = false;
 
   q = new FormControl<string>('', { nonNullable: true });
-  statusSel = new FormControl<ARStatus>('ALL', { nonNullable: true });      // ⬅️ mặc định ALL
+  statusSel = new FormControl<ARStatus>('ALL', { nonNullable: true });
   subjectText = new FormControl<string>('', { nonNullable: true });
-  from = new FormControl<Date | null>(null); // dùng Datepicker
+  from = new FormControl<Date | null>(null);
   to = new FormControl<Date | null>(null);
 
   // ===== table =====
@@ -48,7 +57,6 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
   pageIndex = 0;
   pageSize = 10;
 
-  loading = false;
   downloading = new Set<number>();
 
   private destroy$ = new Subject<void>();
@@ -92,7 +100,6 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     subjectId?: number;
     page: number;
     size: number;
-    // cho phép truyền chuỗi ghép để BE hiểu
     opts: ArchiveQuery & { kind: 'EXPORT'; variant: 'EXAM'; reviewStatus: string }
   } {
     const opts: any = { kind: 'EXPORT', variant: 'EXAM' };
@@ -103,7 +110,7 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     const f = this.ymd(this.from.value); if (f) opts.from = f;
     const t = this.ymd(this.to.value); if (t) opts.to = t;
 
-    // ⬇️ ALL => gửi “APPROVED,REJECTED”
+    // ALL => gửi “APPROVED,REJECTED”
     const s = this.statusSel.value;
     opts.reviewStatus = (s === 'ALL') ? 'APPROVED,REJECTED' : s;
 
@@ -112,9 +119,9 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
 
   load() {
     const args = this.buildArgs();
-    this.loading = true;
+
     this.api.list(args.subjectId, args.page, args.size, args.opts)
-      .pipe(finalize(() => this.loading = false))
+      .pipe(withLoading(v => this.isLoading = v), takeUntil(this.destroy$))
       .subscribe({
         next: (page: PageResult<FileArchive>) => {
           this.rows = page.content;
@@ -132,7 +139,10 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     ev?.stopPropagation();
     const win = window.open('about:blank', '_blank');
     this.api.getViewUrl(r.id).subscribe({
-      next: ({ url }) => { if (!url) { win?.close(); return; } try { win!.location.replace(url); } catch { win?.close(); window.open(url, '_blank'); } },
+      next: ({ url }) => {
+        if (!url) { win?.close(); return; }
+        try { win!.location.replace(url); } catch { win?.close(); window.open(url, '_blank'); }
+      },
       error: err => { win?.close(); Swal.fire('Lỗi', 'Không lấy được link xem file.', 'error'); console.error(err); }
     });
   }
@@ -142,11 +152,15 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     if (this.downloading.has(r.id)) return;
     this.downloading.add(r.id);
     this.api.getDownloadUrl(r.id)
-      .pipe(finalize(() => this.downloading.delete(r.id)))
       .subscribe({
-        next: ({ url }) => { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); },
+        next: ({ url }) => {
+          const a = document.createElement('a');
+          a.href = url; a.target = '_blank'; a.rel = 'noopener';
+          document.body.appendChild(a); a.click(); a.remove();
+        },
         error: err => { Swal.fire('Lỗi', 'Không lấy được link tải.', 'error'); console.error(err); }
-      });
+      })
+      .add(() => this.downloading.delete(r.id));
   }
 
   openInfo(r: FileArchive) {

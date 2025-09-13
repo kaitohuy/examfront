@@ -1,17 +1,28 @@
-<div class="container mt-4" *ngIf="ready">
+<div class="container mt-4" *ngIf="ready; else loadingTpl">
   <h2 class="mb-3">Chi tiết môn học</h2>
 
   <mat-tab-group [selectedIndex]="selectedIndex" (selectedTabChange)="onTabChange($event.index)">
-    <mat-tab label="Quizzes">
-      <app-quiz [subjectId]="subjectId" [departmentId]="departmentId"></app-quiz>
-    </mat-tab>
-
     <mat-tab label="Câu hỏi Ôn tập">
-      <app-practice-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-practice-question-tab>
+      <app-practice-question-tab
+        [subjectId]="subjectId"
+        [departmentId]="departmentId">
+      </app-practice-question-tab>
     </mat-tab>
 
     <mat-tab label="Câu hỏi Thi cử">
-      <app-exam-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-exam-question-tab>
+      <app-exam-question-tab
+        [subjectId]="subjectId"
+        [departmentId]="departmentId">
+      </app-exam-question-tab>
     </mat-tab>
   </mat-tab-group>
 </div>
+
+<ng-template #loadingTpl>
+  <div class="container mt-4 text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted">Đang tải thông tin môn học…</p>
+  </div>
+</ng-template>

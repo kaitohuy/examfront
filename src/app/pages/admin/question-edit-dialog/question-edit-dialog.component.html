@@ -1,14 +1,29 @@
-<h2 mat-dialog-title>{{ data.mode === 'create' ? 'Thêm câu hỏi' : 'Chỉnh sửa câu hỏi' }}</h2>
-<mat-dialog-content class="pt-0">
-  <app-question-form [value]="data.question" (formReady)="captureForm($event)"></app-question-form>
+<h2 mat-dialog-title aria-live="polite">
+  {{ data.mode === 'create' ? 'Thêm câu hỏi' : 'Chỉnh sửa câu hỏi' }}
+</h2>
+
+<mat-dialog-content class="pt-0" [attr.aria-busy]="isLoading">
+  <app-question-form
+    [value]="data.question"
+    (formReady)="captureForm($event)">
+  </app-question-form>
+
   <div class="mt-2">
     <div class="muted mb-1">Hình ảnh (nếu có)</div>
-    <input type="file" accept="image/*" (change)="onImagePicked($event)">
+    <input
+      type="file"
+      accept="image/*"
+      (change)="onImagePicked($event)"
+      [disabled]="isLoading">
   </div>
 </mat-dialog-content>
+
 <mat-dialog-actions align="end">
-  <button mat-stroked-button mat-dialog-close>Hủy</button>
-  <button mat-flat-button color="primary" (click)="save()">
+  <button mat-stroked-button mat-dialog-close [disabled]="isLoading">Hủy</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="isLoading">
     {{ data.mode === 'create' ? 'Thêm' : 'Cập nhật' }}
   </button>
 </mat-dialog-actions>
+
+<!-- Overlay loading mới -->
+<app-loading-screen *ngIf="isLoading"></app-loading-screen>

@@ -24,12 +24,12 @@ type QuestionLabel = 'PRACTICE' | 'EXAM';
       <div class="mb-2">
         <div class="muted mb-1">Nhãn</div>
         <mat-checkbox [checked]="labels.includes('PRACTICE')" (change)="toggleLabel('PRACTICE',$event.checked)">
-          Ôn tập (PRACTICE)
+          Ôn tập
         </mat-checkbox>
         <mat-checkbox class="ms-3" [checked]="labels.includes('EXAM')" (change)="toggleLabel('EXAM',$event.checked)">
-          Thi cử (EXAM)
+          Thi cử
         </mat-checkbox>
-        <div class="muted">Không chọn gì ⇒ mặc định PRACTICE.</div>
+        <div class="muted">Không chọn gì ⇒ mặc định ôn tập.</div>
       </div>
 
       <div class="two-col">

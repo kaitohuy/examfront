@@ -29,13 +29,22 @@ export class SidebarComponent {
   @Input() showMySubject: boolean = false;
   @Input() showArchive: boolean = false;
   @Input() isCollapsed: boolean = false;
-  
+  @Input() showGuideGeneral = false;
+  @Input() showGuideDepartment = false;
+  @Input() showGuideSubject = false;
+  @Input() showGuideQuestion = false;
+  @Input() showGuideFile = false;
   @Output() toggleSidebar = new EventEmitter<boolean>();
-  
+
   archiveOpen = false;
+  guideOpen = false;
 
   to(...paths: string[]): string {
     return `/${this.base}/${paths.join('/')}`;
+  }
+
+  get hasAnyGuide(): boolean {
+    return this.showGuideGeneral || this.showUserManagement || this.showGuideDepartment || this.showGuideSubject;
   }
 
   onToggleSidebar() {

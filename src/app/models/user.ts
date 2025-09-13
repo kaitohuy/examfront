@@ -1,6 +1,6 @@
 export interface User {
   id: number;
-  studentCode?: string | null;
+  teacherCode?: string | null;
   username: string;
   lastName?: string | null;
   firstName?: string | null;

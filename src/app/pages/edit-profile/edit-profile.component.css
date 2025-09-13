@@ -1,0 +1,50 @@
+.ep-card { padding: 0; overflow: hidden; }
+
+/* Header */
+.ep-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 20px 24px 12px;
+  align-items: center;
+}
+.ep-header h2 { margin: 0 0 4px; font-weight: 700; }
+.subtitle { color: rgba(0,0,0,.6); font-size: 14px; }
+.avatar {
+  width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+
+mat-divider { opacity: .6; }
+
+/* Grid form */
+.ep-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  padding: 16px 24px 88px; /* chừa chỗ cho footer actions */
+}
+.ep-grid > * { grid-column: span 6; }
+.col-span-2 { grid-column: span 12; }
+.row-inline {
+  display: flex; align-items: center; gap: 12px;
+}
+
+/* Footer actions (dính cạnh dưới card) */
+.ep-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(0,0,0,.08);
+  background: #fff;
+}
+
+/* Responsive */
+@media (max-width: 760px) {
+  .ep-grid { grid-template-columns: repeat(6, 1fr); }
+  .ep-grid > * { grid-column: span 6; }
+  .col-span-2 { grid-column: span 6; }
+}

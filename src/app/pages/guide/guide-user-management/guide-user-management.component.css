@@ -1,0 +1,54 @@
+/* guide-user-management.component.css */
+.guide { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+.guide-aside { position: sticky; top: 12px; align-self: start; }
+.guide-aside a.active { font-weight: 600; }
+.guide-content { background: #fff; padding: 16px; border-radius: 8px; }
+
+.guide-img img { width: 100%; border-radius: 8px; }
+
+.img-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.img-grid figure { margin: 0; }
+.img-grid img { width: 100%; border-radius: 8px; }
+
+.callout { padding: 12px 14px; border-radius: 8px; margin: 12px 0; }
+.callout.info { background: #e8f2ff; border-left: 4px solid #2f6fed; }
+.callout.warning { background: #fff7e6; border-left: 4px solid #f59e0b; }
+.callout.success { background: #e9f7ef; border-left: 4px solid #16a34a; }
+
+/* Mỗi figure là một “hàng”, ảnh full width + caption căn giữa */
+.guide-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 12px 0;
+}
+.guide-figure img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+.guide-figure figcaption {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #6b7280; /* gray-500 */
+}
+
+/* Cho caption nằm TRÊN ảnh nếu muốn */
+.guide-figure.caption-top figcaption {
+  order: -1;
+  margin: 0 0 6px 0;
+}
+
+/* Gallery “tự co giãn” */
+.img-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+/* Ép 1 ảnh / 1 hàng */
+.img-grid.one-per-row { grid-template-columns: 1fr; }

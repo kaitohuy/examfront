@@ -1,1 +1,29 @@
-<p>clone-quick-edit-dialog works!</p>
+<h2 mat-dialog-title>Sửa nhanh các bản sao</h2>
+
+<mat-dialog-content class="pt-0" [attr.aria-busy]="isLoading">
+  <div class="muted mb-2">Điền đáp án cho mỗi câu; có thể chỉnh nội dung, đáp án...</div>
+
+  <div class="grid" style="gap:12px">
+    <div class="card p-3" *ngFor="let c of clones; let i = index">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <b>Bản sao #{{ c.parentId }}.{{ c.cloneIndex }}</b>
+        <span class="badge text-bg-light">
+          {{ c.questionType === 'MULTIPLE_CHOICE' ? 'Trắc nghiệm' : 'Tự luận' }}
+        </span>
+      </div>
+
+      <app-question-form [value]="c"></app-question-form>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="ref.close()" [disabled]="isLoading">Để sau</button>
+  <button mat-flat-button color="primary" (click)="saveAll()" [disabled]="isLoading">Lưu tất cả</button>
+</mat-dialog-actions>
+
+<!-- Overlay Loading (dùng đúng input của component) -->
+<app-loading-screen *ngIf="isLoading"
+  [title]="'Đang lưu các bản sao...'"
+  [subtitle]="'Vui lòng đợi trong giây lát'">
+</app-loading-screen>

@@ -1,51 +1,32 @@
-<div class="bootstrap-wrapper">
-    <div class="container">
-        <div class="row" style="margin-top: 4em;">
-            <div class="col-md-6 offset-md-3">
-
-                <mat-card class="p-4">
-                <div class="container text-center">
-                    <img src="../../../assets/images/logo.png" alt="">
-                </div>
-                <h1 class="text-center">Login Here!!</h1>
-
-                <!-- <pre>{{ loginData | json }}</pre> -->
-
-                <form (ngSubmit)="formSubmit()">
-                    <!-- username -->
-                    <mat-form-field class="full-width" appearance="outline">
-                        <mat-label>Username</mat-label>
-                        <input 
-                        name="username"
-                        [(ngModel)]="loginData.username"
-                        matInput type="text" 
-                        placeholder="Enter your username" 
-                        required>
-                    </mat-form-field>
-
-                    <!-- password -->
-                     <mat-form-field class="full-width" appearance="outline">
-                        <mat-label>Password</mat-label>
-                        <input 
-                        matInput type="password" 
-                        [(ngModel)]="loginData.password"
-                        name="password"
-                        placeholder="Enter your password" required>
-                    </mat-form-field>
-
-                    <!-- button register -->
-                    <div class="container text-center">
-                        <button type="submit" mat-raised-button color="primary">Login</button>
-                        <button 
-                            type="button" (click)="forgotPassword()" 
-                            style="margin-left: 1em;" 
-                            mat-raised-button color="accent">
-                            Forgotten Password
-                        </button>
-                    </div>
-                </form>
-                </mat-card>
-            </div>
-        </div>
+<!-- src/app/pages/login/login.component.html -->
+<div class="login-shell" [ngClass]="{ dimmed: isLoading }">
+  <mat-card class="login-card p-4">
+    <div class="text-center mb-3">
+      <img src="../../../assets/images/banner.png" style="width:55%" alt="">
     </div>
+
+    <h1 class="text-center loginTitle">ĐĂNG NHẬP</h1>
+
+    <form (ngSubmit)="formSubmit()" [attr.aria-busy]="isLoading">
+      <!-- username -->
+      <mat-form-field class="full-width" appearance="outline">
+        <mat-label>Username</mat-label>
+        <input name="username" [(ngModel)]="loginData.username" matInput required [disabled]="isLoading">
+      </mat-form-field>
+
+      <!-- password -->
+      <mat-form-field class="full-width" appearance="outline">
+        <mat-label>Password</mat-label>
+        <input name="password" [(ngModel)]="loginData.password" matInput type="password" required [disabled]="isLoading">
+      </mat-form-field>
+
+      <div class="text-center">
+        <button type="submit" mat-raised-button color="primary" [disabled]="isLoading">Login</button>
+        <button type="button" class="ms-3" mat-raised-button color="accent"
+                (click)="forgotPassword()" [disabled]="isLoading">Forgotten Password</button>
+      </div>
+    </form>
+  </mat-card>
 </div>
+
+<app-loading-screen *ngIf="isLoading"></app-loading-screen>

@@ -1,44 +1,19 @@
 <mat-toolbar color="primary">
-  <a 
-    [routerLink]="['/']"
-    mat-button aria-label="Menu">
+  <a [routerLink]="['/login']" mat-button aria-label="Menu">
     <img matListIcon src="../../../assets/images/ptit.png" width="36" height="36" />
   </a>
 
-  <a [routerLink]="['/']">
-    <span>ExamPortal</span>   
+  <a [routerLink]="['/login']">
+    <span>ExamPortal</span>
   </a>
   <span class="example-spacer"></span>
 
-  <a 
-    *ngIf="!isLoggedIn"
-    [routerLink]="['/login']"
-     mat-button aria-label="Login" class="fs-7">
-    Login
-  </a>
-
-  <a 
-    *ngIf="!isLoggedIn"
-    [routerLink]="['/signup']"
-    mat-button aria-label="Register" class="mx-3 fs-7">
-    Register
-  </a>
-
-  <a 
-    (click)="logout()"
-    *ngIf="isLoggedIn"
-    [routerLink]="['/login']"
-     mat-button aria-label="Login" class="fs-7">
-    Logout
-  </a>
-
-  <button 
-    *ngIf="isLoggedIn && user"
-    routerLink="/admin/profile"
-    mat-button aria-label="Login" class="mx-3 fs-7">
+  <button *ngIf="isLoggedIn && user" [routerLink]="profileLink" mat-button class="fs-7">
     {{ user.username }}
-</button>
+  </button>
 
+  <a *ngIf="!isLoggedIn" [routerLink]="['/login']" mat-button class="fs-7">Đăng nhập</a>
+  <a *ngIf="!isLoggedIn" [routerLink]="['/signup']" mat-button class="mx-3 fs-7">Đăng ký</a>
 
-
+  <a (click)="logout()" *ngIf="isLoggedIn" mat-button class="fs-7 mx-3">Đăng xuất</a>
 </mat-toolbar>

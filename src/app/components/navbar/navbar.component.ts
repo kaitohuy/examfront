@@ -9,7 +9,6 @@ import { DOCUMENT } from '@angular/common';
   standalone: true,
   imports: [
     ...sharedImports,
-
   ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css'
@@ -33,29 +32,24 @@ export class NavbarComponent implements OnInit {
     });
   }
 
-  // Đây là sự kiện "trước khi unload"
-  @HostListener('window:beforeunload')
-  beforeUnloadHandler() {
-    // const token = this.login.getToken();
-    // if (!token) return;
-    // const url = `${baseUrl}/logout-silent?token=${encodeURIComponent(token)}`;
-    // this.isLoggedIn = false;
-    // this.login.loginStatusSubject.next(false);
-    // localStorage.removeItem("token");
-    // localStorage.removeItem("user");
-    // // sendBeacon chỉ gửi URL (không cần body)
-    // navigator.sendBeacon(url);
+  get profileLink(): string {
+    const role = this.login.getUserRole();
+    if (role === 'ADMIN') return '/admin-dashboard/profile';
+    if (role === 'HEAD') return '/head-dashboard/profile';
+    return '/user-dashboard/profile';
   }
+
 
   public logout() {
     this.login.logout().subscribe({
-      next: (data: any) => {
+      next: () => {
         this.isLoggedIn = false;
         this.login.loginStatusSubject.next(false);
-        this._router.navigate(['/']);
+        this._router.navigate(['/login']);
       },
       error: (err: any) => {
-        console.error("Logout error", err);
+        console.error('Logout error', err);
+        this._router.navigate(['/login']);
       }
     });
   }

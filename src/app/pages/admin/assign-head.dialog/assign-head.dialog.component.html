@@ -1,0 +1,14 @@
+<div class="card p-3">
+  <h3 class="mb-3">Gán HEAD cho {{data.userName}}</h3>
+  <div class="form-floating mb-3">
+    <select class="form-select" [formControl]="deptId" id="deptSelect">
+      <option [ngValue]="null">— Chọn —</option>
+      <option *ngFor="let d of depts" [ngValue]="d.id">{{d.name}} — ID: {{d.id}}</option>
+    </select>
+    <label for="deptSelect">Chọn Bộ môn</label>
+  </div>
+  <div class="d-flex justify-content-end gap-2">
+    <button class="btn btn-outline-secondary" (click)="close()">Hủy</button>
+    <button class="btn btn-primary" [disabled]="!deptId.value" (click)="ok()">Xác nhận</button>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<h2 class="mx-2 my-2" mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content class="dialog-body">
+  <form [formGroup]="form" class="grid">
+    <mat-form-field appearance="outline" class="span-12">
+      <mat-label>Tên bộ môn *</mat-label>
+      <input matInput formControlName="name" />
+      <mat-error *ngIf="form.controls.name.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-12">
+      <mat-label>Mô tả</mat-label>
+      <textarea matInput formControlName="description" rows="3"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-12">
+      <mat-label>Trưởng bộ môn (TEACHER)</mat-label>
+      <input
+        matInput
+        [matAutocomplete]="userAuto"
+        [formControl]="headUserText"
+        placeholder="Gõ họ tên / username / CODE / ID để tìm…"
+        autocomplete="off" />
+      <button mat-icon-button matSuffix type="button" (click)="clearHeadUser()" aria-label="Xóa">
+        <mat-icon>close</mat-icon>
+      </button>
+
+      <mat-autocomplete #userAuto="matAutocomplete" (optionSelected)="selectHeadUser($event.option.value)">
+        <mat-option *ngIf="loadingTeachers" disabled>Đang tải…</mat-option>
+        <mat-option *ngFor="let u of filteredTeachers" [value]="u">
+          {{ u.firstName }} {{ u.lastName }}
+          <span class="muted">— {{ u.teacherCode || 'NO-CODE' }} — {{ u.username }} — ID: {{ u.id }}</span>
+        </mat-option>
+      </mat-autocomplete>
+      <mat-hint>Để trống nếu chưa phân công HEAD</mat-hint>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-stroked-button (click)="cancel()">Hủy</button>
+  <button mat-flat-button color="primary" (click)="save()">Lưu</button>
+</mat-dialog-actions>

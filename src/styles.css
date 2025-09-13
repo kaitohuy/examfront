@@ -1,19 +1,77 @@
 /* You can add global styles to this file, and also import other style files */
-
-html, body {
-    height: 100%;
-    background-color: #f5f5f5;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans",
-               "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol",
-               Arial, sans-serif;
-}
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
 
 .text-center {
     text-align: center;
 } 
 
-.badge-lg { border-radius: 999px; padding: .35rem .6rem; font-weight: 600; font-size: .8rem; }
-.badge-exam { background:#1976d2; color:#fff; }
-.badge-practice { background:#17a2b8; color:#fff; }
-.badge-pending { background:#6c757d; color:#fff; }
+/* 1) Toàn trang & vùng typography của Material */
+html, body, body.mat-typography, .mat-typography {
+  height: 100%;
+  background-color: #f5f5f5;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* 2) Headings do Material set bằng `font:` → chỉ ghi đè family */
+.mat-typography .mat-h1,
+.mat-typography .mat-h2,
+.mat-typography .mat-h3,
+.mat-typography .mat-h4,
+.mat-typography .mat-h5,
+.mat-typography .mat-h6,
+.mat-typography h1,
+.mat-typography h2,
+.mat-typography h3,
+.mat-typography h4,
+.mat-typography h5,
+.mat-typography h6 {
+  font-family: inherit !important; /* bắt buộc vì bên kia dùng `font:` */
+}
+
+/* 3) Các component MDC hay “lì” (list/button/input/menu…) */
+.mdc-list-item__primary-text,
+.mdc-button__label,
+.mdc-text-field,
+.mdc-text-field__input,
+.mat-mdc-form-field,
+.mat-mdc-menu-item .mdc-list-item__primary-text,
+.mat-mdc-tab .mdc-tab__text-label,
+.mat-mdc-chip .mdc-evolution-chip__text-label {
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+body.auth-bg {
+  background: url('/assets/images/illustration.jpg') center / cover no-repeat fixed;
+}
+body.auth-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);                 /* độ “chìm” */
+  pointer-events: none;
+}
+/* Base: bo góc + đổ bóng + viền trái kiểu “alert” */
+.mat-mdc-snack-bar-container.snack .mdc-snackbar__surface {
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  padding-inline: 16px;
+}
+
+/* SUCCESS – xanh lá nhạt, chữ xanh đậm */
+.mat-mdc-snack-bar-container.snack-success {
+  --mdc-snackbar-container-color: #dcfce7;        /* nền xanh nhạt */
+  --mdc-snackbar-supporting-text-color: #14532d;  /* chữ */
+  --mdc-snackbar-action-color: #14532d;           /* nút Đóng */
+}
+
+/* ERROR – đỏ nhạt, chữ đỏ đậm */
+.mat-mdc-snack-bar-container.snack-error {
+  --mdc-snackbar-container-color: #fee2e2;        /* nền đỏ nhạt */
+  --mdc-snackbar-supporting-text-color: #991b1b;  /* chữ */
+  --mdc-snackbar-action-color: #991b1b;           /* nút Đóng */
+}
+
+

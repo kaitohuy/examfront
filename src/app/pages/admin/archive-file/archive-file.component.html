@@ -4,10 +4,9 @@
     <div class="card-body">
 
       <div class="d-flex flex-wrap gap-2 align-items-center">
-        <button class="btn btn-outline-secondary btn-sm" (click)="toggleFilters()">
+        <button class="btn btn-outline-secondary btn-sm" (click)="toggleFilters()" [disabled]="isLoading">
           <i class="bi bi-funnel me-1"></i> Bộ lọc
         </button>
-
         <div class="flex-grow-1 col-6">
           <div class="input-group">
             <span class="input-group-text bg-white border-end-0">
@@ -19,7 +18,7 @@
         </div>
 
         <button *ngIf="isPendingTab" class="btn btn-outline-primary btn-sm ms-auto" (click)="resetSnooze()"
-          matTooltip="Bật lại thông báo đã bị tạm ẩn">
+          [disabled]="isLoading" matTooltip="Bật lại thông báo đã bị tạm ẩn">
           <i class="bi bi-bell"></i> Bật thông báo
         </button>
       </div>
@@ -94,12 +93,6 @@
     </div>
 
     <div class="position-relative mt-3">
-      <div *ngIf="loading" class="loading-overlay">
-        <div class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-      </div>
-
       <div class="table-responsive border rounded">
         <table mat-table [dataSource]="viewRows" class="mat-elevation-z0 mb-0">
 
@@ -181,32 +174,32 @@
               <!-- Moderation: View / Approve / Reject -->
               <ng-container *ngIf="moderationMode; else normalActions">
                 <button mat-button color="primary" (click)="view(r)" matTooltip="Xem nhanh">
-                  <mat-icon>open_in_new</mat-icon> View
+                  <mat-icon>open_in_new</mat-icon> Xem
                 </button>
                 <button mat-button color="accent" (click)="approveFile(r)"
-                  [disabled]="(r.reviewStatus || '').toUpperCase() !== 'PENDING'">
-                  <mat-icon>check_circle</mat-icon> Approve
+                  [disabled]="isLoading || ( (r.reviewStatus || '').toUpperCase() !== 'PENDING')">
+                  <mat-icon>check_circle</mat-icon> Duyệt
                 </button>
                 <button mat-button color="warn" (click)="rejectFile(r)"
-                  [disabled]="(r.reviewStatus || '').toUpperCase() !== 'PENDING'">
-                  <mat-icon>cancel</mat-icon> Reject
+                  [disabled]="isLoading || ( (r.reviewStatus || '').toUpperCase() !== 'PENDING')">
+                  <mat-icon>cancel</mat-icon> Hủy
                 </button>
               </ng-container>
 
               <!-- Normal: View / Download / Delete (không có nút "Info" nữa) -->
               <ng-template #normalActions>
                 <span class="actions-wrap">
-                  <button mat-button color="primary" (click)="view(r)">
-                    <mat-icon>open_in_new</mat-icon> View
+                  <button mat-button color="primary" (click)="view(r)" [disabled]="isLoading">
+                    <mat-icon>open_in_new</mat-icon> Xem
                   </button>
 
                   <button *ngIf="(r.reviewStatus || '').toUpperCase() === 'APPROVED'" mat-button color="accent"
-                    (click)="download(r)">
-                    <mat-icon>download</mat-icon> Download
+                    (click)="download(r)" [disabled]="isLoading">
+                    <mat-icon>download</mat-icon> Tải về
                   </button>
 
-                  <button mat-button color="warn" (click)="confirmDelete(r)">
-                    <mat-icon>delete</mat-icon> Delete
+                  <button mat-button color="warn" (click)="confirmDelete(r)" [disabled]="isLoading">
+                    <mat-icon>delete</mat-icon> Xóa
                   </button>
                 </span>
               </ng-template>
@@ -216,7 +209,7 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
-          <tr *ngIf="!loading && viewRows.length === 0">
+          <tr *ngIf="!isLoading && viewRows.length === 0">
             <td [attr.colspan]="displayedColumns.length" class="text-center py-4 text-muted">
               Không có file nào.
             </td>
@@ -229,3 +222,5 @@
       </mat-paginator>
     </div>
   </div>
+
+  <app-loading-screen *ngIf="isLoading"></app-loading-screen>
