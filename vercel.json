@@ -2,9 +2,14 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist/examfront/browser",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+
+  "redirects": [
+    { "source": "/", "destination": "/login", "permanent": false }
   ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+
   "headers": [
     {
       "source": "/assets/(.*)",
