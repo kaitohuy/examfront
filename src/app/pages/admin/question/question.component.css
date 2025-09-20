@@ -1,68 +1,92 @@
-.container {
-  max-width: 1200px;
-}
+/* Styles cho danh sách câu hỏi */
+.container { max-width: 1200px; }
 
-.item-card {
-  border-radius: 8px;
-  transition: transform 0.2s;
-}
+.item-card { border-radius: 8px; transition: transform .2s, box-shadow .2s, background-color .2s; cursor: pointer; }
+.item-card:hover { transform: translateY(-5px); }
+.item-card.selected { background: #e6f7ff; box-shadow: 0 0 0 2px #91d5ff inset; }
 
-.item-card:hover {
-  transform: translateY(-5px);
-}
+.card-body { padding: 1.5rem; position: relative; }
+.card-title { font-size: 1.25rem; margin-bottom: 1rem; }
+.card-text { margin-bottom: .75rem; }
+.card-footer { background-color: transparent; border-top: none; padding: 1rem 1.5rem; }
+.card-footer .text-muted { opacity: .6; font-size: .875rem; }
+.btn-group .btn { font-size: .875rem; }
 
-.card-body {
-  padding: 1.5rem;
-  position: relative;
-}
-
-.card-title {
-  font-size: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.card-text {
-  margin-bottom: 0.75rem;
-}
-
-.card-footer {
-  background-color: transparent;
-  border-top: none;
-  padding: 1rem 1.5rem;
-}
-
-.card-footer .text-muted {
-  opacity: 0.6;
-  font-size: 0.875rem;
-}
-
-.btn-group .btn {
-  font-size: 0.875rem;
-}
-
-.input-group,
-.form-select,
-.form-control {
-  max-width: 400px;
-}
-
-.row {
-  align-items: center;
-}
-
+.input-group, .form-select, .form-control { max-width: 400px; }
+.row { align-items: center; }
 .date-eq { flex: 1 1 0; min-width: 0; width: 100%; }
+.img-fluid { border-radius: 4px; }
 
-.img-fluid {
-  border-radius: 4px;
+pre.card-text { white-space: pre-wrap; word-wrap: break-word; font-size: .9rem; background-color: #f8f9fa; padding: .5rem; border-radius: 4px; }
+
+/* Checkbox lớn hơn trong item */
+.item-card .item-checkbox.form-check-input { transform: scale(1.25); margin-right: .25rem; }
+
+/* Tăng độ nổi bật tóm tắt filter */
+.filter-summary .chips { font-weight: 600; }
+.filter-summary .btn-link .text-danger { color: #e23b3b !important; }
+/* Clone: chọn = viền xanh, không phủ nền */
+.clone-card.selected-border {
+  box-shadow: 0 0 0 2px #91d5ff inset, 0 2px 8px rgba(0,0,0,.06);
+  background: #f7ebca;
 }
 
-pre.card-text {
-  white-space: pre-wrap; /* Giữ khoảng trắng, cho phép wrap */
-  word-wrap: break-word; /* Ngắt từ nếu cần */
-  font-size: 0.9rem;
-  background-color: #f8f9fa;
-  padding: 0.5rem;
-  border-radius: 4px;
-  /* font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "DejaVu Sans", "Noto Sans Symbols 2", "Segoe UI Symbol", Arial, sans-serif; */
+/* Stripe trái để phân biệt */
+.clone-card.selected-border::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 4px;
+  background: #69c0ff;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
 
+/* Áp dụng riêng cho checkbox trong danh sách câu hỏi */
+.item-checkbox {
+  width: 15px;    
+  height: 15px;
+  border: 2px solid #555; 
+  transition: all 0.2s ease-in-out;
+}
+
+/* 1) Key–Value 1 hàng bằng CSS Grid (không bị dãn) */
+.kv-row{
+  display:grid;
+  grid-template-columns:max-content 1fr; /* nhãn vừa đủ, nội dung ăn hết */
+  column-gap:8px;
+  align-items:flex-start;
+}
+
+/* 2) Nhãn cố định, không wrap */
+.kv-label{
+  white-space:nowrap;
+  font-weight:600;
+  color:#111;
+}
+
+/* 3) Giá trị chiếm phần còn lại, cho phép xuống dòng */
+.kv-value{
+  min-width:0;
+  white-space:normal;
+  line-height:1.6;
+}
+
+/* 4) Bỏ khoảng thừa của MathJax và ép inline */
+.kv-value mjx-container{
+  display:inline !important;  /* thay vì block */
+  margin:0 !important;        /* MathJax mặc định có margin .2em–.75em */
+  padding:0 !important;
+}
+
+/* 5) Nếu có công thức block (display="true") cũng để inline cho gọn hàng */
+.kv-value mjx-container[display="true"]{
+  display:inline !important;
+}
+
+/* 6) Mobile: khi màn hình hẹp thì cho nhãn lên dòng riêng */
+@media (max-width: 576px){
+  .kv-row{
+    grid-template-columns:1fr; /* stack */
+    row-gap:4px;
+  }
+}

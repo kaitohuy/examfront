@@ -75,15 +75,15 @@ export class CloneQuickEditDialogComponent {
       next: (arr) => {
         const results = arr.filter(x => x != null);
         if (results.length < payloads.length) {
-          this.snack.open('Một số bản sao lưu không thành công.', 'Đóng', { duration: 3000 });
+          this.snack.open('Một số bản sao lưu không thành công.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
         } else {
-          this.snack.open('Đã lưu tất cả bản sao.', 'Đóng', { duration: 2000 });
+          this.snack.open('Đã lưu tất cả bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
         }
         this.ref.close(results);
       },
       error: (err) => {
         console.error(err);
-        this.snack.open('Có lỗi khi lưu các bản sao.', 'Đóng', { duration: 3000 });
+        this.snack.open('Có lỗi khi lưu các bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
       }
     });
   }

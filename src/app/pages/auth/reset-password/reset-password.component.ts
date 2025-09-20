@@ -44,23 +44,23 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
     const p = this.form.value.password?.trim() || '';
     const c = this.form.value.confirm?.trim() || '';
     if (!p || p.length < 6) {
-      this.snack.open('Mật khẩu tối thiểu 6 ký tự', 'OK', { duration: 2500 }); return;
+      this.snack.open('Mật khẩu tối thiểu 6 ký tự', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});; return;
     }
     if (p !== c) {
-      this.snack.open('Xác nhận mật khẩu không khớp', 'OK', { duration: 2500 }); return;
+      this.snack.open('Xác nhận mật khẩu không khớp', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});; return;
     }
     if (!this.token) {
-      this.snack.open('Token không hợp lệ hoặc đã hết hạn', 'OK', { duration: 3000 }); return;
+      this.snack.open('Token không hợp lệ hoặc đã hết hạn', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']}); return;
     }
 
     this.auth.resetPassword(this.token, p)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: () => {
-          this.snack.open('Đổi mật khẩu thành công. Vui lòng đăng nhập.', 'OK', { duration: 3000 });
+          this.snack.open('Đổi mật khẩu thành công. Vui lòng đăng nhập.', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
           this.router.navigate(['/login']);
         },
-        error: () => this.snack.open('Token không hợp lệ/hết hạn hoặc có lỗi hệ thống.', 'OK', { duration: 3000 })
+        error: () => this.snack.open('Token không hợp lệ/hết hạn hoặc có lỗi hệ thống.', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
       });
   }
 }

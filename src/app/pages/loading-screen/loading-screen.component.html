@@ -1,15 +1,10 @@
-<div class="loading-overlay" [class.blur]="blurBackground">
+<div class="loading-overlay" [class.blur]="blurBackground" [class.embedded]="embedded">
   <div class="loading-card">
-
-    <!-- Spinner: 4 viên thuốc mỏng + 1 chấm nhỏ ở đầu mỗi viên -->
     <div class="spinner-logo" aria-hidden="true">
       <svg class="spinner-icon" viewBox="0 0 44 44" role="img" aria-label="Đang tải">
-        <!-- Vòng dash (viên thuốc) -->
         <g class="ring" fill="none" stroke="#e23b3b" stroke-width="2" stroke-linecap="round">
           <circle cx="22" cy="22" r="18" pathLength="100" stroke-dasharray="15 10" />
         </g>
-
-        <!-- 4 chấm nhỏ nằm ở đầu mỗi đoạn -->
         <g class="caps" transform="translate(22 22)" fill="#e23b3b">
           <circle class="dot" r="3.2" transform="rotate(0)   translate(0,-18)" />
           <circle class="dot" r="3.2" transform="rotate(90)  translate(0,-18)" />
@@ -19,21 +14,28 @@
       </svg>
     </div>
 
-    <!-- Texts (không làm mờ) -->
     <h2 class="title">{{ title }}</h2>
     <p class="subtitle">{{ subtitle }}</p>
 
-    <!-- Hint xuống dòng + icon thùng rác -->
-    <p class="hint">
-      <span class="hint-line">{{ hintPrefix }}</span><br>
-      <a href="#" (click)="onActionClick($event)" class="action-link">
-        <svg class="trash" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path fill="currentColor"
-            d="M9 3h6a1 1 0 0 1 1 1v1h4v2h-1v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7H3V5h4V4a1 1 0 0 1 1-1Zm1 2h4v0H10ZM6 7v12h12V7H6Zm3 3h2v8H9v-8Zm6 0h-2v8h2v-8Z" />
-        </svg>
-        <span>{{ actionText }}</span>
-      </a>
-    </p>
+    <div *ngIf="showProgressBar" class="progress-wrap" aria-live="polite">
+      <div class="ls-progress">
+        <!-- determinate -->
+        <div *ngIf="progress !== null; else indeterminate"
+             class="ls-progress-bar determinate"
+             [style.transform]="'scaleX(' + (safeProgress/100) + ')'">
+        </div>
+        <!-- indeterminate -->
+        <ng-template #indeterminate>
+          <div class="ls-progress-bar indeterminate"></div>
+        </ng-template>
+      </div>
+      <div class="progress-label">
+        {{ progress !== null ? (safeProgress + '%') : 'Đang xử lý…' }}
+      </div>
+    </div>
+
+    <p class="hint"><span class="hint-line">{{ hintPrefix }}</span><br></p>
+    <p class="action-link"><a href="#" (click)="onActionClick($event)">{{ actionText }}</a></p>
 
     <ng-content select=".footer"></ng-content>
   </div>

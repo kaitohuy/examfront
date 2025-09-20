@@ -39,7 +39,6 @@ export class NavbarComponent implements OnInit {
     return '/user-dashboard/profile';
   }
 
-
   public logout() {
     this.login.logout().subscribe({
       next: () => {

@@ -30,14 +30,14 @@ export class ForgotPasswordComponent implements OnInit, OnDestroy {
   submit() {
     const e = this.email.trim();
     if (!e) {
-      this.snack.open('Vui lòng nhập email', 'OK', { duration: 2500 });
+      this.snack.open('Vui lòng nhập email', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
       return;
     }
     this.auth.forgotPassword(e)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
-        next: () => this.snack.open('Nếu email tồn tại, chúng tôi đã gửi hướng dẫn đặt lại.', 'OK', { duration: 3500 }),
-        error: () => this.snack.open('Có lỗi khi gửi yêu cầu. Thử lại sau.', 'OK', { duration: 3000 })
+        next: () => this.snack.open('Nếu email tồn tại, chúng tôi đã gửi hướng dẫn đặt lại.', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']}),
+        error: () => this.snack.open('Có lỗi khi gửi yêu cầu. Thử lại sau.', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']})
       });
   }
 }

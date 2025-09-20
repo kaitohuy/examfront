@@ -1,134 +1,185 @@
 <h2 mat-dialog-title>Xem trước kết quả tải câu hỏi lên</h2>
 
-<div class="px-2 pb-2 text-sm text-muted">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <div>
-      <!-- <b>Session:</b> {{data.preview.sessionId}} -->
-      <span class="ms-3"><b>Số câu hỏi:</b> {{data.preview.totalBlocks}}</span>
-    </div>
+<div class="content-wrap">
 
-    <div class="d-flex align-items-center gap-3">
-      <mat-checkbox [(ngModel)]="selectAll" (change)="toggleSelectAll()">Chọn tất cả</mat-checkbox>
-      <mat-checkbox [checked]="data.saveCopy" disabled>Lưu bản copy</mat-checkbox>
+  <!-- Chú thích đầu trang -->
+  <div class="alert alert-info mx-4 py-2 small mb-2" role="alert">
+    <div>* Tick chọn vào các card (hoặc checkbox) muốn tải lên hệ thống.</div>
+    <div>* Lưu vào kho chung để người dùng khác có thể sử dụng file hiện tại của bạn.</div>
+    <div>* Khi muốn chèn công thức toán học hay kí tự đặc biệt, trỏ chuột tới nội dung cần chèn rồi click chọn <b>tool
+        Math</b>.</div>
+  </div>
+
+  <!-- Thanh top: tool Math + checkboxes cân hàng -->
+  <div class="px-2 pb-2 text-sm text-muted">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="ms-1"><b>Số câu hỏi:</b> {{ data.preview.totalBlocks }}</span>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- tool Math có viền -->
+        <app-tool-math [dense]="true" [label]="'tool Math'" [roundedIcon]="true" class="toolmath-inline"
+          (insert)="insertToFocused($event.tpl, $event.inline)">
+        </app-tool-math>
+
+        <span class="divider-vert" aria-hidden="true"></span>
+
+        <mat-checkbox [(ngModel)]="selectAll" (change)="toggleSelectAll()" [disabled]="loading">
+          Chọn tất cả
+        </mat-checkbox>
+
+        <mat-checkbox [(ngModel)]="saveCopy" [disabled]="loading">
+          Lưu vào kho chung
+        </mat-checkbox>
+      </div>
     </div>
   </div>
+
+  <mat-dialog-content class="pt-0" style="max-height: 56vh; overflow: auto;">
+    <mat-card class="mb-3 import-card" *ngFor="let s of state; let i = index; trackBy: trackByIndex"
+      [class.selected]="s.include" (click)="onCardClick($event, s)">
+      <mat-card-content>
+
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div class="d-flex align-items-center gap-2" (click)="$event.stopPropagation()">
+            <mat-checkbox [(ngModel)]="s.include" [disabled]="loading" (click)="$event.stopPropagation()">
+            </mat-checkbox>
+            <div class="fw-bold">#{{ s.index }}</div>
+          </div>
+
+          <div class="d-flex gap-3 flex-wrap" style="min-width:260px;" (click)="$event.stopPropagation()">
+            <mat-form-field appearance="outline" style="width:150px;">
+              <mat-label>Loại</mat-label>
+              <mat-select [(ngModel)]="s.questionType" [disabled]="loading">
+                <mat-option value="MULTIPLE_CHOICE">Trắc nghiệm</mat-option>
+                <mat-option value="ESSAY">Tự luận</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:110px;">
+              <mat-label>Chương</mat-label>
+              <mat-select [(ngModel)]="s.chapter" [disabled]="loading">
+                <mat-option *ngFor="let c of chapters" [value]="c">{{ c }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:110px;">
+              <mat-label>Độ khó</mat-label>
+              <mat-select [(ngModel)]="s.difficulty" [disabled]="loading">
+                <mat-option *ngFor="let d of diffs" [value]="d">{{ d }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:180px;">
+              <mat-label>Nhãn</mat-label>
+              <mat-select [(ngModel)]="s.labels" multiple [disabled]="loading">
+                <mat-option *ngFor="let opt of labelOptions" [value]="opt">{{ opt }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Nội dung (TeX) -->
+        <mat-form-field appearance="outline" class="w-100" (click)="$event.stopPropagation()">
+          <mat-label>Nội dung (TeX)</mat-label>
+          <textarea id="tex-content-{{i}}" matInput rows="3" [(ngModel)]="s.content" [disabled]="loading"
+            (focus)="setFocus(i,'content')" (click)="$event.stopPropagation()"
+            placeholder="Ví dụ: Bài toán $x^2+y^2=1$ hay \(\frac{a}{b}\)">
+          </textarea>
+        </mat-form-field>
+
+        <!-- Preview nội dung -->
+        <div class="rounded border p-2 mb-1" style="white-space: pre-wrap" [appMathjax]="s.content"></div>
+
+        <!-- Trắc nghiệm -->
+        <div *ngIf="s.questionType === 'MULTIPLE_CHOICE'" class="mt-1" (click)="$event.stopPropagation()">
+          <div class="row g-2">
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Đáp án A</mat-label>
+                <input id="tex-optionA-{{i}}" matInput [(ngModel)]="s.optionA" [disabled]="loading"
+                  (focus)="setFocus(i,'optionA')">
+              </mat-form-field>
+              <div class="rounded border p-2" [appMathjax]="s.optionA ?? ''"></div>
+            </div>
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Đáp án B</mat-label>
+                <input id="tex-optionB-{{i}}" matInput [(ngModel)]="s.optionB" [disabled]="loading"
+                  (focus)="setFocus(i,'optionB')">
+              </mat-form-field>
+              <div class="rounded border p-2" [appMathjax]="s.optionB ?? ''"></div>
+            </div>
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Đáp án C</mat-label>
+                <input id="tex-optionC-{{i}}" matInput [(ngModel)]="s.optionC" [disabled]="loading"
+                  (focus)="setFocus(i,'optionC')">
+              </mat-form-field>
+              <div class="rounded border p-2" [appMathjax]="s.optionC ?? ''"></div>
+            </div>
+            <div class="col-6">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Đáp án D</mat-label>
+                <input id="tex-optionD-{{i}}" matInput [(ngModel)]="s.optionD" [disabled]="loading"
+                  (focus)="setFocus(i,'optionD')">
+              </mat-form-field>
+              <div class="rounded border p-2" [appMathjax]="s.optionD ?? ''"></div>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Đáp án (A/B/C/D hoặc text)</mat-label>
+            <input matInput [(ngModel)]="s.answer" [disabled]="loading">
+          </mat-form-field>
+          <div class="rounded border p-2" [appMathjax]="s.answer ?? ''"></div>
+        </div>
+
+        <!-- Tự luận -->
+        <div *ngIf="s.questionType === 'ESSAY'" class="mt-1" (click)="$event.stopPropagation()">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Giải thích / đáp án</mat-label>
+            <textarea id="tex-answerText-{{i}}" matInput rows="2" [(ngModel)]="s.answerText" [disabled]="loading"
+              (focus)="setFocus(i,'answerText')"></textarea>
+          </mat-form-field>
+          <div class="rounded border p-2" [appMathjax]="s.answerText ?? ''"></div>
+        </div>
+
+        <!-- Ảnh đính kèm -->
+        <div *ngIf="s.allImageIndexes?.length" class="mt-1" (click)="$event.stopPropagation()">
+          <div class="small text-muted mb-1">Ảnh đính kèm:</div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <label class="img-check" *ngFor="let idx of s.allImageIndexes; trackBy: trackByImgIdx">
+              <input type="checkbox" [checked]="isImgIncluded(s, idx)" (change)="onImgToggleIndex(s, idx, $event)"
+                [disabled]="loading" (click)="$event.stopPropagation()">
+              <img [src]="imageUrl(idx)" alt="img" (error)="onImageError($event)" />
+              <span class="small text-muted">#{{ idx + 1 }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="text-danger small mt-1" *ngIf="s.warnings?.length" (click)="$event.stopPropagation()">
+          • {{ (s.warnings || []).join(' • ') }}
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+  </mat-dialog-content>
+
+  <app-loading-screen *ngIf="loading" [embedded]="true" [blurBackground]="false"
+    [title]="'Đang xác nhận các mục đã chọn…'" [subtitle]="'Hệ thống đang lưu câu hỏi vào ngân hàng dữ liệu'"
+    [showProgressBar]="true" [progress]="commitProgress" [hintPrefix]="'Nếu thấy bất thường, bạn có thể'"
+    [actionText]="'Đóng và thử lại'" (action)="ref.close({ committed: false })">
+    <div class="footer small text-muted">Đừng rời hộp thoại cho đến khi hoàn tất.</div>
+  </app-loading-screen>
 </div>
-
-<mat-dialog-content class="pt-0" style="max-height: 65vh; overflow: auto;">
-  <mat-card class="mb-3" *ngFor="let s of state; trackBy: trackByIndex">
-    <mat-card-content>
-      <!-- header -->
-      <div class="d-flex justify-content-between align-items-start gap-2">
-        <div class="d-flex align-items-center gap-2">
-          <mat-checkbox [(ngModel)]="s.include"></mat-checkbox>
-          <div class="fw-bold">#{{s.index}}</div>
-        </div>
-
-        <div class="d-flex gap-3 flex-wrap" style="min-width:260px;">
-          <mat-form-field appearance="outline" style="width:150px;">
-            <mat-label>Loại</mat-label>
-            <mat-select [(ngModel)]="s.questionType">
-              <mat-option value="MULTIPLE_CHOICE">Trắc nghiệm</mat-option>
-              <mat-option value="ESSAY">Tự luận</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" style="width:110px;">
-            <mat-label>Chương</mat-label>
-            <mat-select [(ngModel)]="s.chapter">
-              <mat-option *ngFor="let c of chapters" [value]="c">{{c}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" style="width:110px;">
-            <mat-label>Độ khó</mat-label>
-            <mat-select [(ngModel)]="s.difficulty">
-              <mat-option *ngFor="let d of diffs" [value]="d">{{d}}</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <!-- 🔹 Nhãn per-block -->
-          <mat-form-field appearance="outline" style="width:180px;">
-            <mat-label>Nhãn</mat-label>
-            <mat-select [(ngModel)]="s.labels" multiple>
-              <mat-option *ngFor="let opt of labelOptions" [value]="opt">{{ opt }}</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-
-      <!-- RTE host -->
-      <mat-form-field appearance="outline" class="w-100 mt-2">
-        <mat-label>Nội dung</mat-label>
-        <textarea #rteArea matInput rows="3"></textarea>
-      </mat-form-field>
-
-      <!-- MULTIPLE CHOICE -->
-      <div *ngIf="s.questionType==='MULTIPLE_CHOICE'" class="mt-1">
-        <div class="row g-2">
-          <div class="col-6">
-            <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Đáp án A</mat-label>
-              <input matInput [(ngModel)]="s.optionA">
-            </mat-form-field>
-          </div>
-          <div class="col-6">
-            <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Đáp án B</mat-label>
-              <input matInput [(ngModel)]="s.optionB">
-            </mat-form-field>
-          </div>
-          <div class="col-6">
-            <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Đáp án C</mat-label>
-              <input matInput [(ngModel)]="s.optionC">
-            </mat-form-field>
-          </div>
-          <div class="col-6">
-            <mat-form-field appearance="outline" class="w-100">
-              <mat-label>Đáp án D</mat-label>
-              <input matInput [(ngModel)]="s.optionD">
-            </mat-form-field>
-          </div>
-        </div>
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Đáp án (A/B/C/D hoặc text)</mat-label>
-          <input matInput [(ngModel)]="s.answer">
-        </mat-form-field>
-      </div>
-
-      <!-- ESSAY -->
-      <div *ngIf="s.questionType==='ESSAY'" class="mt-1">
-        <mat-form-field appearance="outline" class="w-100">
-          <mat-label>Giải thích / đáp án</mat-label>
-          <textarea matInput rows="2" [(ngModel)]="s.answerText"></textarea>
-        </mat-form-field>
-      </div>
-
-      <!-- Images -->
-      <div *ngIf="s.imageIndexes?.length" class="mt-1">
-        <div class="small text-muted mb-1">Ảnh đính kèm:</div>
-        <div class="d-flex flex-wrap gap-2">
-          <label class="img-check" *ngFor="let idx of s.imageIndexes; let i = index">
-            <input type="checkbox" [checked]="true" (change)="onImgToggle(s, idx, $event)">
-            <img [src]="imageUrl(idx)" alt="img" />
-            <span class="small text-muted">#{{idx+1}}</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="text-danger small mt-1" *ngIf="s.warnings?.length">
-        • {{ (s.warnings || []).join(' • ') }}
-      </div>
-    </mat-card-content>
-  </mat-card>
-</mat-dialog-content>
 
 <mat-dialog-actions [align]="'end'">
   <button mat-stroked-button mat-dialog-close [disabled]="loading">Đóng</button>
   <button mat-flat-button color="primary" (click)="commit()" [disabled]="loading">
-    <mat-icon *ngIf="!loading">publish</mat-icon>
-    <mat-icon *ngIf="loading" class="spin">autorenew</mat-icon>
+    <mat-icon>publish</mat-icon>
     <span class="ms-1">Xác nhận các mục đã chọn</span>
   </button>
 </mat-dialog-actions>

@@ -1,38 +1,70 @@
-.content {
-  max-width: 900px;
-  min-width: 520px;
+/* === Typography – đồng bộ màu label & tiêu đề khối === */
+.content .form-label,
+.content label,
+.content .section-title,
+.content .hdr,
+.content .fmt .lbl {
+  color: #1f2937;                 /* = slate-800 */
+  font-weight: 550;
 }
 
-.hint {
-  color: rgba(0,0,0,.54);
-  font-size: 12px;
-  margin: 4px 0 12px;
-  text-align: center;
+/* === Form controls – viền 1px rõ ràng, full 4 cạnh === */
+.content .form-control,
+.content .form-select {
+  border: 1px solid #D0D5DD !important;   /* viền xám rõ ràng */
+  border-radius: 8px;
+  background-color: #fff;
 }
 
-.grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+/* Hover: nhấn viền một chút */
+.content .form-control:hover,
+.content .form-select:hover {
+  border-color: #C3CAD5;
 }
 
-.row {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 0;
+/* Focus: xanh + halo nhẹ, đồng bộ cho cả input & select */
+.content .form-control:focus,
+.content .form-select:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+  outline: 0;
 }
 
-.row > label {
-  justify-self: end;
-  font-weight: 600;
+/* === Input group – nút X xóa tên file đồng bộ chiều cao/viền === */
+.content .input-group .btn {
+  border: 1px solid #D0D5DD !important;   /* có viền đủ 4 cạnh */
+  border-left: 0 !important;              /* liền mạch với ô input bên trái */
+  border-radius: 0 8px 8px 0 !important;  /* bo góc phải như input */
+  height: 100%;
 }
 
-.mt { margin-top: 10px; }
-.note { margin-left: 12px; color: rgba(0,0,0,.54); }
-@media (max-width: 640px) {
-  .grid-2 { grid-template-columns: 1fr; }
-  .row { grid-template-columns: 1fr; }
-  .row > label { justify-self: start; }
+/* Nếu muốn bo góc trái của ô input mượt mà với nút */
+.content .input-group > .form-control {
+  border-right: 0 !important;             /* nối liền viền với nút bên phải */
+  border-radius: 8px 0 0 8px !important;
+}
+
+/* === Trạng thái lỗi (required) – viền đỏ rõ ràng === */
+.content .is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, .12);
+}
+
+/* === Nhẹ tay với các vùng info (nếu dùng) – vẫn giữ màu chữ đồng nhất === */
+.content .info {
+  border: 1px solid #E3E8FF;
+  background: #F5F7FF;
+  color: #1f2937;   /* đồng bộ màu chữ */
+}
+
+.item-checkbox {
+  width: 15px;    
+  height: 15px;
+  border: 2px solid #555; 
+  transition: all 0.2s ease-in-out;
+}
+
+/* (Tùy chọn) làm label “Học kỳ / Năm học / ...” tinh gọn hơn trên mobile */
+@media (max-width: 720px) {
+  .content .form-label { font-weight: 600; }
 }

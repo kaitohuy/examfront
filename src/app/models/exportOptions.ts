@@ -21,6 +21,6 @@ export interface ExportOptions {
   durationMinutes?: number;         // chỉ nhập số phút
   paperNo?: number;                 // 1,2,...
   examForm?: 'Viết' | 'Trắc nghiệm' | string;
-  faculty?: string;                 // Khoa
+  program?: string;                 // bộ môn
   mau?: string;                     // Nhãn "Mẫu 3a", ...
 }

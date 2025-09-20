@@ -57,14 +57,14 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (depts) => {
           if (!depts?.length) {
-            this.snack.open('Bạn chưa được gán HEAD bộ môn nào', 'Đóng', { duration: 3000 });
+            this.snack.open('Bạn chưa được gán HEAD bộ môn nào', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
             return;
           }
           this.headDepartmentId = depts[0].id;
           this.loadHeadStats();
           this.loadUsers();
         },
-        error: () => this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000 })
+        error: () => this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
       });
   }
 
@@ -138,7 +138,7 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
 
           this.applyFilters();
         },
-        error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000 })
+        error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
       });
   }
 
@@ -174,8 +174,8 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
     this.userSvc.resetPassword(user.id, newPassword)
       .pipe(withLoading(v => (this.isLoading = v)))
       .subscribe({
-        next: () => this.snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 4500 }),
-        error: () => this.snack.open('Failed to reset password.', 'Đóng', { duration: 3000 })
+        next: () => this.snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']}),
+        error: () => this.snack.open('Failed to reset password.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
       });
   }
 

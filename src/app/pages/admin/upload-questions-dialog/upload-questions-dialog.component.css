@@ -1,0 +1,129 @@
+.drive-upload {
+    display: grid;
+    gap: 12px;
+    min-width: 420px
+}
+
+.drive-drop {
+    border: 1px dashed #D0D5DD;
+    border-radius: 14px;
+    background: #FAFBFF;
+    text-align: center;
+    padding: 24px 16px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+    outline: none
+}
+
+.drive-drop:hover {
+    background: #F5F8FF;
+    border-color: #B8C4FF
+}
+
+.drive-drop.dragging {
+    background: #EEF4FF;
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, .15) inset
+}
+
+.drive-cloud {
+    margin-bottom: 8px;
+    opacity: .9
+}
+
+.drive-browse {
+    border-radius: 999px;
+    padding: 6px 16px
+}
+
+.drive-sub {
+    color: #6B7280;
+    margin-top: 6px
+}
+
+.drive-filecard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    background: #FFF;
+    padding: 8px 12px
+}
+
+.thumb {
+    width: 38px;
+    height: 48px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F1F5F9
+}
+
+.ico {
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: .3px;
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 4px;
+    background: #2563EB
+}
+
+.ico.pdf {
+    background: #EF4444
+}
+
+.meta {
+    min-width: 0;
+    flex: 1
+}
+
+.name {
+    font-weight: 600
+}
+
+.type {
+    font-size: .85rem;
+    color: #6B7280;
+    margin-top: 2px
+}
+
+.btn-x {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: #df3812;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1
+}
+
+.btn-x:hover {
+    color: #EF4444
+}
+
+.drive-row {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px
+}
+
+.item-checkbox {
+  width: 20px;    
+  height: 20px;
+  border: 2px solid #555; 
+  transition: all 0.2s ease-in-out;
+}
+
+.drive-row .align-center span {
+  font-size: 1.1rem;
+}

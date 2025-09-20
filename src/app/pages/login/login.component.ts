@@ -68,18 +68,18 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['/user-dashboard']);
           this.remind.checkOnEnterDashboard();
         } else {
-          this.snack.open('Invalid user role', 'OK', { duration: 3000 });
+          this.snack.open('Invalid user role', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
         }
 
         this.login.loginStatusSubject.next(true);
       }),
       catchError(err => {
         if (err?.status === 401) {
-          this.snack.open('Invalid credentials, please try again', 'OK', { duration: 3000 });
+          this.snack.open('Invalid credentials, please try again', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
         } else {
-          this.snack.open('Login failed, please try again', 'OK', { duration: 3000 });
+          this.snack.open('Login failed, please try again', 'OK', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
         }
-        return EMPTY; // dừng chuỗi, withLoading vẫn đảm bảo tắt loading
+        return EMPTY;
       })
     ).subscribe();
   }

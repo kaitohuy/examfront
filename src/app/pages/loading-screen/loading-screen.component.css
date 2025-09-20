@@ -1,16 +1,23 @@
-/* Overlay toàn màn hình – NHẠT HƠN */
+/* ===== Overlay ===== */
 .loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.2); /* 0.78 -> 0.6 */
+  background: rgba(255, 255, 255, 0.2);
   display: grid;
   place-items: center;
   z-index: 2000;
 }
-/* Nếu muốn blur nền sau này thì bật blurBackground; text vẫn không bị mờ */
 .loading-overlay.blur { backdrop-filter: blur(3px); }
 
-/* Card trung tâm – giữ text rõ, không dim */
+/* Nhúng trong dialog/card */
+.loading-overlay.embedded {
+  position: absolute !important;
+  inset: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, .92);
+}
+
+/* ===== Card ===== */
 .loading-card {
   text-align: center;
   color: #2c2c2c;
@@ -20,57 +27,53 @@
   padding: 28px 16px;
 }
 
-/* Spinner: mỏng hơn + có chấm ở đầu mỗi viên thuốc */
-.spinner-logo {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 14px auto;
-}
-.spinner-icon {
-  width: 100%;
-  height: 100%;
-  display: block;
-  animation: spin 1.6s linear infinite; /* quay chậm hơn nhẹ */
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+.title { font-size: 24px; font-weight: 700; margin: 10px 0 6px; }
+.loading-overlay.embedded .title { font-size: 20px; }
+.subtitle { color: #6c757d; margin: 0 0 14px; font-size: 15px; }
 
-/* Nhịp thở rất nhẹ cho dash */
-.spinner-icon .ring circle {
-  animation: dash 1.25s ease-in-out infinite;
-  transform-origin: 50% 50%;
-}
-@keyframes dash {
-  0%, 100% { stroke-dashoffset: 0; }
-  50%      { stroke-dashoffset: -5; }
-}
-
-/* Tiêu đề & phụ đề (giữ mặc định, không làm mờ) */
-.title {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 10px 0 6px;
-}
-.subtitle {
-  color: #6c757d;
-  margin: 0 0 14px;
-  font-size: 15px;
-}
-
-/* Hint + action (xuống dòng + icon thùng rác) */
-.hint {
-  margin: 10px 0 0;
-  color: #6c757d;
-  font-size: 15px;
-  line-height: 1.45;
-}
-.action-link {
-  color: #e23b3b;
-  text-decoration: none;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-}
+.hint { margin: 10px 0 0; color: #6c757d; font-size: 15px; line-height: 1.45; }
+.action-link { color: #e23b3b; text-decoration: none; font-weight: 600; display: inline-flex; gap: 6px; margin-top: 6px; }
 .action-link:hover { text-decoration: underline; }
-.action-link .trash { display: inline-block; }
+
+/* ===== Spinner ===== */
+.spinner-logo { width: 56px; height: 56px; margin: 0 auto 14px; }
+.spinner-icon { width: 100%; height: 100%; display: block; animation: spin 1.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-icon .ring circle { animation: dash 1.25s ease-in-out infinite; transform-origin: 50% 50%; }
+@keyframes dash { 0%, 100% { stroke-dashoffset: 0; } 50% { stroke-dashoffset: -5; } }
+
+/* ===== Progress (không dùng .progress của Bootstrap) ===== */
+.progress-wrap { width: 100%; max-width: 560px; margin: 8px auto 4px; }
+
+.ls-progress {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: #ececec;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* Thanh chạy dùng scaleX để không bị Bootstrap override */
+.ls-progress-bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #e23b3b, #ff7a7a);
+  transform-origin: left center;
+}
+
+.ls-progress-bar.determinate {
+  transform: scaleX(0);
+  transition: transform .18s linear;
+  will-change: transform;
+}
+
+/* Indeterminate */
+.ls-progress-bar.indeterminate {
+  width: 35%;
+  left: -35%;
+  animation: indet 1.2s infinite ease-in-out;
+}
+@keyframes indet { 0%{left:-35%} 50%{left:50%} 100%{left:100%} }
+
+.progress-label { text-align: right; font-size: 12px; color: #666; margin-top: 4px; }

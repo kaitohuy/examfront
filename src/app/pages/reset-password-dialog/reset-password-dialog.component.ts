@@ -34,12 +34,12 @@ export class ResetPasswordDialogComponent {
     const pwd = String(this.form.value.newPassword);
     this.userSvc.resetPassword(this.data.userId, pwd).subscribe({
       next: () => {
-        this.snack.open('Đã đổi mật khẩu', 'Đóng', { duration: 2500 });
+        this.snack.open('Đã đổi mật khẩu', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
         this.dialogRef.close(true);
       },
       error: (err) => {
         console.error(err);
-        this.snack.open('Đổi mật khẩu thất bại', 'Đóng', { duration: 3000 });
+        this.snack.open('Đổi mật khẩu thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
       },
     });
   }

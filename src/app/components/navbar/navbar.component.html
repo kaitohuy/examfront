@@ -3,7 +3,10 @@
     <img matListIcon src="../../../assets/images/ptit.png" width="36" height="36" />
   </a>
 
-  <a [routerLink]="['/login']">
+  <a *ngIf="!isLoggedIn" [routerLink]="['/login']">
+    <span>ExamPortal</span>
+  </a>
+  <a *ngIf="isLoggedIn">
     <span>ExamPortal</span>
   </a>
   <span class="example-spacer"></span>

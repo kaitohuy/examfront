@@ -1,0 +1,36 @@
+<div class="toolmath-bar" [class.dense]="dense">
+  <button mat-button [matMenuTriggerFor]="rootMenu" class="toolmath-trigger">
+    <span class="circle-icon" *ngIf="roundedIcon">
+      <i class="bi bi-plus-slash-minus"></i>
+    </span>
+    <span class="px-1 ml-1">{{ label }}</span>
+  </button>
+</div>
+
+<!-- Menu gốc: hiển thị danh mục theo hàng ngang -->
+<mat-menu #rootMenu="matMenu" class="toolmath-root-menu">
+  <div class="cat-row">
+    <button
+      mat-menu-item
+      *ngFor="let cat of categories"
+      [matMenuTriggerFor]="itemsMenu"
+      [matMenuTriggerData]="{ items: cat.items, name: cat.name }">
+      {{ cat.name }}
+    </button>
+  </div>
+</mat-menu>
+
+<!-- Submenu dùng chung; dữ liệu truyền qua matMenuTriggerData -->
+<mat-menu #itemsMenu="matMenu" class="toolmath-cat-menu">
+  <ng-template matMenuContent let-items="items" let-name="name">
+    <div class="items-grid">
+      <button
+        mat-menu-item
+        *ngFor="let it of items"
+        (click)="onPick(it)"
+        [title]="it.hint || ''">
+        {{ it.label }}
+      </button>
+    </div>
+  </ng-template>
+</mat-menu>

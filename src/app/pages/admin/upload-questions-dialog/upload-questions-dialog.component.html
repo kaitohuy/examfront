@@ -1,0 +1,47 @@
+<h2 mat-dialog-title class="m-3">Tải câu hỏi lên</h2>
+<div mat-dialog-content class="drive-upload m-3">
+    <!-- khu drop / chọn -->
+    <div class="drive-drop" tabindex="0" [class.dragging]="dragging()" (click)="browse()" (keydown)="onKey($event)"
+        (dragenter)="onDrag(true, $event)" (dragover)="onDrag(true, $event)" (dragleave)="onDrag(false, $event)"
+        (dragend)="onDrag(false, $event)" (drop)="onDrop($event)" *ngIf="!file()">
+        <div class="drive-cloud">
+            <svg width="120" height="70" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                    d="M38 52c-11 0-20-8-20-18 0-9 6-16 14-18 3-9 12-16 22-16 12 0 22 9 23 20h2c11 0 20 8 20 18s-9 18-20 18H38z"
+                    fill="#E5E7EB" />
+                <circle cx="30" cy="38" r="14" fill="#F1F5F9" />
+            </svg>
+        </div>
+        <button type="button" class="btn btn-primary drive-browse" (click)="$event.stopPropagation(); browse()">Duyệt
+            qua</button>
+        <div class="drive-sub">hoặc kéo tệp vào đây</div>
+        <input #fileInput type="file" class="d-none" [attr.accept]="accept" (change)="onPick($event)">
+    </div>
+
+    <!-- thẻ file sau khi chọn -->
+    <div class="drive-filecard" *ngIf="file()">
+        <div class="thumb">
+            <span class="ico" [class.pdf]="isPdf()" [class.docx]="!isPdf()">{{ isPdf() ? 'PDF' : 'DOCX' }}</span>
+        </div>
+        <div class="meta">
+            <div class="name text-truncate" [title]="file()!.name">{{ file()!.name }}</div>
+            <div class="type">{{ fileTypeLabel() }}</div>
+        </div>
+        <button type="button" class="btn-x bi bi-x-lg" (click)="clear()"></button>
+    </div>
+
+    <!-- options -->
+    <div class="drive-row">
+        <label class="form-check align-center d-flex">
+            <input type="checkbox" class="form-check-input item-checkbox" [(ngModel)]="saveCopy">
+            <span class="m-1">Lưu vào kho chung</span>
+        </label>
+        <div class="helper text-muted">Hỗ trợ {{accept}} • Tối đa {{maxSizeMb}} MB</div>
+        <div class="text-danger small" *ngIf="error()">{{ error() }}</div>
+    </div>
+</div>
+
+<div mat-dialog-actions class="actions m-3">
+    <button class="btn btn-outline-secondary" (click)="close()">Hủy</button>
+    <button class="btn btn-primary" [disabled]="!canSubmit()" (click)="submit()">Bản xem trước</button>
+</div>

@@ -100,7 +100,7 @@ export class EditProfileComponent implements OnInit {
         .subscribe({
           next: (u: any) => this.patchFormFrom(u),
           error: () => {
-            this.snack.open('Không tải được người dùng', 'Đóng', { duration: 2500 });
+            this.snack.open('Không tải được người dùng', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
             this.navigateBackList();
           },
         });
@@ -205,13 +205,13 @@ export class EditProfileComponent implements OnInit {
             };
             this.login.setUser(merged);
           }
-          this.snack.open('Cập nhật hồ sơ thành công', 'Đóng', { duration: 2500 });
+          this.snack.open('Cập nhật hồ sơ thành công', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
           if (this.editingOtherUser) this.navigateBackList();
           else this.goBackToProfileByRole();
         },
         error: (err) => {
           console.error('update error', err);
-          this.snack.open('Cập nhật thất bại', 'Đóng', { duration: 3000 });
+          this.snack.open('Cập nhật thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
         },
       });
   }
