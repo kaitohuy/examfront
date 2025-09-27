@@ -6,10 +6,10 @@
       <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']" [disabled]="isLoading">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
-      <h2 class="d-inline-block mb-0">Danh Sách Môn học</h2>
+      <h2 class="d-inline-block mb-0">DANH SÁCH MÔN HỌC</h2>
     </div>
     <div *ngIf="department">
-      <h4 class="text-muted mb-0">{{ department.name }}</h4>
+      <h2 class="mb-0">Khoa: {{ department.name }}</h2>
     </div>
     <button class="btn btn-primary" (click)="openCreateDialog()" [disabled]="isLoading">
       <i class="bi bi-plus-circle me-1"></i> Thêm Môn học
@@ -57,7 +57,7 @@
                 Mã môn học <i class="{{ sortIcons['code'] }} ms-1"></i>
               </th>
               <th>Giảng viên</th>
-              <th class="text-end">Hành động</th>
+              <th class="text-center">Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -79,7 +79,7 @@
                   <span class="text-muted">Chưa phân công</span>
                 </ng-template>
               </td>
-              <td class="text-end">
+              <td class="text-center">
                 <div class="btn-group">
                   <!-- chặn bubble để không trigger routerLink -->
                   <button

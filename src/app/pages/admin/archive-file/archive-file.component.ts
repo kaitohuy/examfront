@@ -17,7 +17,8 @@ import { LoginService } from '../../../services/login.service';
 import { ReviewReminderService } from '../../../services/review-reminder.service';
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { withLoading } from '../../../shared/with-loading';
-
+import { MatDialog } from '@angular/material/dialog';
+import { RejectDialogComponent, RejectDialogResult } from '../reject-dialog/reject-dialog.component';
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
 type Kind = 'IMPORT' | 'EXPORT' | null;
@@ -33,7 +34,7 @@ type ExVariantTab = 'PRACTICE' | 'EXAM';
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'vi-VN' },
-    { provide: MAT_DATE_FORMATS, useValue: VN_DATE_FORMATS } // tái dùng constant ở trên, có thể copy lại trong file này
+    { provide: MAT_DATE_FORMATS, useValue: VN_DATE_FORMATS }
   ],
   templateUrl: './archive-file.component.html',
   styleUrls: ['./archive-file.component.css']
@@ -99,7 +100,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  constructor(private api: FileArchiveService, private route: ActivatedRoute, private login: LoginService, private rr: ReviewReminderService) { }
+  constructor(private api: FileArchiveService, private route: ActivatedRoute, private login: LoginService, private rr: ReviewReminderService, private dialog: MatDialog) { }
 
   ngOnInit(): void {
     combineLatest([this.route.data, this.route.paramMap, this.route.queryParamMap])
@@ -353,116 +354,41 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   // === Dialog từ chối: SweetAlert2, 2 trường Reason + Duration ===
   // ... trong ArchiveFileComponent
   async rejectFile(r: FileArchive) {
-    const esc = (s: any) => String(s ?? '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]!));
-
-    await Swal.fire({
-      title: 'Từ chối file',
-      html: `
-      <div class="text-start small mb-2">
-        <div class="mb-1"><b>File:</b> ${esc(r.filename)}</div>
-        <div class="mb-1"><b>Môn:</b> ${esc(r.subjectName || ('#' + r.subjectId))}</div>
-        <div><b>Người tạo:</b> ${esc(r.uploaderName || '')}</div>
-      </div>
-
-      <textarea id="rejReason" class="swal2-textarea" placeholder="Lý do từ chối (tuỳ chọn)"></textarea>
-
-      <div class="text-start mt-2">
-        <label class="form-label fw-semibold">Hạn xử lý</label>
-        <select id="rrPreset" class="swal2-select">
-          <option value="none">Không đặt hạn</option>
-          <option value="4h">+4 giờ</option>
-          <option value="8h">+8 giờ</option>
-          <option value="24h">+24 giờ</option>
-          <option value="3d">+3 ngày</option>
-          <option value="7d">+7 ngày</option>
-          <option value="custom">Tự nhập…</option>
-        </select>
-
-        <div id="customWrap" style="display:none; margin-top:6px; gap:8px; align-items:center;">
-          <input id="cusVal" type="number" min="1" class="swal2-input" style="width:120px" placeholder="Số lượng">
-          <select id="cusUnit" class="swal2-select" style="width:120px">
-            <option value="h">giờ</option>
-            <option value="d" selected>ngày</option>
-          </select>
-        </div>
-
-        <div id="dlPreview" class="small text-muted mt-1"></div>
-      </div>
-    `,
-      showCancelButton: true,
-      confirmButtonText: 'Reject',
-      cancelButtonText: 'Huỷ',
-      focusConfirm: false,
-      didOpen: () => {
-        const preset = document.getElementById('rrPreset') as HTMLSelectElement;
-        const wrap = document.getElementById('customWrap') as HTMLDivElement;
-        const prev = document.getElementById('dlPreview') as HTMLDivElement;
-        const cusVal = document.getElementById('cusVal') as HTMLInputElement;
-        const cusUnit = document.getElementById('cusUnit') as HTMLSelectElement;
-
-        const refresh = () => {
-          const d = this.computeDeadlineFromPreset(
-            preset.value as any,
-            cusVal?.valueAsNumber,
-            (cusUnit?.value as any) || 'd'
-          );
-          prev.textContent = d ? `Sẽ đặt hạn: ${d.toLocaleString('vi-VN')}` : 'chưa đặt hạn';
-        };
-
-        preset.addEventListener('change', () => {
-          wrap.style.display = preset.value === 'custom' ? 'flex' : 'none';
-          refresh();
-        });
-        cusVal?.addEventListener('input', refresh);
-        cusUnit?.addEventListener('change', refresh);
-        refresh();
+    const ref = this.dialog.open(RejectDialogComponent, {
+      width: '560px',
+      data: {
+        filename: r.filename,
+        subjectName: r.subjectName,
+        subjectId: r.subjectId,
+        uploaderName: r.uploaderName
       },
-      preConfirm: () => {
-        const reason = (document.getElementById('rejReason') as HTMLTextAreaElement)?.value?.trim() || '';
-        const preset = (document.getElementById('rrPreset') as HTMLSelectElement).value as any;
-        const cusVal = (document.getElementById('cusVal') as HTMLInputElement)?.valueAsNumber;
-        const cusUnit = (document.getElementById('cusUnit') as HTMLSelectElement)?.value as any;
+      autoFocus: false,
+      disableClose: true,
+      panelClass: 'ep-dialog'
+    });
 
-        const dlDate = this.computeDeadlineFromPreset(preset, cusVal, cusUnit);
+    const result = await ref.afterClosed().toPromise() as RejectDialogResult | undefined;
+    if (!result) return;
 
-        const toIso = (d: Date | null) => d ? d.toISOString() : undefined;
-        const toYmd = (d: Date | null) => {
-          if (!d) return undefined;
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          return `${y}-${m}-${day}`;
-        };
+    const { reason, deadline } = result;
 
-        // preset theo GIỜ => ISO; theo NGÀY => yyyy-MM-dd
-        const deadline =
-          (preset === '4h' || preset === '8h' || preset === '24h' || (preset === 'custom' && cusUnit === 'h'))
-            ? toIso(dlDate)
-            : toYmd(dlDate);
-
-        return { reason, deadline };
-      }
-    }).then(res => {
-      if (!res.isConfirmed || !res.value) return;
-      const { reason, deadline } = res.value as { reason: string; deadline?: string };
-
-      this.api.reject(r.id, reason, deadline).subscribe({
-        next: () => {
-          this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
-          if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
-            this.rows = this.rows.filter(x => x.id !== r.id);
-            this.total = Math.max(0, this.total - 1);
-          } else {
-            (r as any).reviewStatus = 'REJECTED';
-            (r as any).reviewNote = reason;
-            (r as any).reviewDeadline = deadline as any;
-          }
-          Swal.fire({ icon: 'success', title: 'Đã từ chối', timer: 1200, showConfirmButton: false });
-        },
-        error: err => { Swal.fire('Lỗi', 'Từ chối thất bại.', 'error'); console.error(err); }
-      });
+    this.api.reject(r.id, reason, deadline).pipe(
+      withLoading(v => this.isLoading = v)
+    ).subscribe({
+      next: () => {
+        this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
+        if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
+          this.rows = this.rows.filter(x => x.id !== r.id);
+          this.total = Math.max(0, this.total - 1);
+        } else {
+          (r as any).reviewStatus = 'REJECTED';
+          (r as any).reviewNote = reason;
+          (r as any).reviewDeadline = deadline as any;
+        }
+        // feedback nhẹ nhàng bằng Toast Swal (giữ lại Swal cho toast)
+        Swal.fire({ icon: 'success', title: 'Đã từ chối', timer: 1200, showConfirmButton: false });
+      },
+      error: err => { Swal.fire('Lỗi', 'Từ chối thất bại.', 'error'); console.error(err); }
     });
   }
 

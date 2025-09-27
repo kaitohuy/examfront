@@ -74,4 +74,41 @@
 :host ::ng-deep .compact-mat .mat-mdc-form-field-subscript-wrapper { height: 0; }
 
 /* thu nhỏ icon nút lịch */
-:host ::ng-deep .compact-mat .mat-mdc-icon-button.mat-mdc-button-base { width: 28px; height: 28px; padding: 0; }
+ :host ::ng-deep .compact-mat .mat-mdc-icon-button.mat-mdc-button-base { width: 28px; height: 28px; padding: 0; } 
+
+/* Card tổng thể */
+.container .card { border: 1px solid #e9edf5; border-radius: 14px; }
+.container .card-body { padding: 16px 16px 10px; }
+
+/* Ô tìm kiếm mảnh & phẳng hơn */
+.input-group .input-group-text { border-radius: 10px 0 0 10px; }
+.input-group .form-control { border-radius: 0 10px 10px 0; }
+
+/* Bảng Material compact */
+table.mat-mdc-table { --row-py: 10px; }
+.mat-mdc-header-row, .mat-mdc-row { align-items: center; }
+.mat-mdc-header-cell { font-weight: 600; color: #4b5563; }
+.mat-mdc-header-cell, .mat-mdc-cell { padding: var(--row-py) 14px; }
+tr.mat-mdc-row:hover .mat-mdc-cell { background: #fafbff; }
+
+/* Cột hành động */
+.col-actions { width: 320px; white-space: nowrap; }
+.actions-wrap .mat-mdc-button { min-width: 0; margin-left: 6px; }
+
+/* Badge dễ đọc hơn */
+.badge { border-radius: 999px; padding: 6px 10px; font-weight: 600; font-size: 12px; }
+.text-bg-info   { background-color: #e8f4ff !important; color: #0b6bd3 !important; border: 1px solid #d6eaff; }
+.text-bg-primary{ background-color: #eef0ff !important; color: #3f51b5 !important; border: 1px solid #dfe3ff; }
+.text-bg-warning{ background-color: #fff7e6 !important; color: #b26b00 !important; border: 1px solid #ffe5b0; }
+.text-bg-success{ background-color: #eaf8f0 !important; color: #1b7f4a !important; border: 1px solid #c8efd9; }
+.text-bg-danger { background-color: #fdecec !important; color: #b42318 !important; border: 1px solid #f7c4c4; }
+
+/* Icon file lớn hơn chút */
+.file-icon { font-size: 20px !important; vertical-align: middle; }
+
+/* Paginator sát bảng hơn */
+.mat-mdc-paginator { margin-top: 8px; }
+
+
+/* Dialog class (áp cho MatDialog panelClass: 'ep-dialog') */
+.ep-dialog .mdc-dialog__surface { border-radius: 16px !important; }

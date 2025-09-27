@@ -13,4 +13,7 @@ export interface PreviewBlock {
   imageIndexes?: number[];
   warnings?: string[];
   labels?: ('PRACTICE'|'EXAM')[];
+
+  duplicateScore?: number;
+  duplicateOfIds?: number[];
 }

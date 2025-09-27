@@ -26,6 +26,16 @@ export class HeadOverviewComponent {
   // Cho gọn, nhận mọi field backend trả về (kể cả topSubjects/topTeachers)
   data: any;
 
+  readonly typeItems = [
+    { key: 'MULTIPLE_CHOICE' as const, label: 'Trắc nghiệm' },
+    { key: 'ESSAY' as const, label: 'Tự luận' }
+  ];
+
+  readonly labelItems = [
+    { key: 'PRACTICE' as const, label: 'Ôn tập' },
+    { key: 'EXAM' as const, label: 'Thi cử' }
+  ];
+
   constructor(private api: StatsService) {
     this.reload();
   }

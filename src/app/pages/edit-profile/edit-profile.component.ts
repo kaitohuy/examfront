@@ -131,7 +131,7 @@ export class EditProfileComponent implements OnInit {
     const val = this.form.get('profile')?.value;
     const url = (typeof val === 'string' ? val.trim() : '') || '';
     const g = this.form.get('gender')?.value;
-    return g === 'FEMALE' ? 'assets/images/female.jpg' : 'assets/images/male.jpg';
+    return g === 'FEMALE' ? 'assets/images/female.png' : 'assets/images/male.png';
   }
 
   /** Hủy: quay về nơi gọi */

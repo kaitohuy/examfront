@@ -4,6 +4,8 @@ import Swal from 'sweetalert2';
 import { firstValueFrom } from 'rxjs';
 import { FileArchiveService } from './file-archive.service';
 import { LoginService } from './login.service';
+import { ReviewReminderDialogComponent, ReviewReminderDialogData, ReviewReminderDialogResult } from '../pages/admin/reminder-dialog/reminder-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 type SnoozeChoice = '1h' | '3h' | '24h' | 'forever' | 'none';
 
@@ -26,24 +28,17 @@ export class ReviewReminderService {
 
   constructor(
     private fa: FileArchiveService,
-    private login: LoginService
+    private login: LoginService,
+    private dialog: MatDialog
   ) { }
 
-  /** Gọi ở Dashboard (sau login). */
   async checkOnEnterDashboard(): Promise<void> {
-    // Nếu đã tắt vĩnh viễn -> thôi
     if (this.getForever()) return;
-
-    // Nếu đang snooze -> chỉ NHẮC DEADLINE nếu snooze đã hết; approved thì không nhắc lại
     const now = Date.now();
     const snoozeUntil = this.getSnoozeUntil();
     const allowPopup = !snoozeUntil || now >= snoozeUntil;
-
-    // Lấy username hiện tại để lọc uploader
     const me = this.login.getUser();
     const uploader = me?.username || '';
-
-    // Lấy 2 lượt: APPROVED + REJECTED
     const optsBase = { kind: 'EXPORT' as const };
     const [approvedPage, rejectedPage] = await Promise.all([
       firstValueFrom(this.fa.list(undefined, 0, 50, { ...optsBase, reviewStatus: 'APPROVED', uploader })),
@@ -52,28 +47,17 @@ export class ReviewReminderService {
 
     const approved = (approvedPage?.content ?? []) as ReviewItem[];
     const rejected = (rejectedPage?.content ?? []) as ReviewItem[];
-
-    // Lọc APPROVED: chỉ những cái CHƯA thông báo lần nào
     const seen = this.getApprovedSeen();
     const newApproved = approved.filter(x => !seen.has(x.id));
-
-    // Lọc REJECTED: còn deadline trong tương lai
     const upcomings = rejected.filter(x => {
       if (!x.reviewDeadline) return false;
       const t = new Date(x.reviewDeadline).getTime();
       return Number.isFinite(t) && t > now;
     });
-
-    // Nếu đang snooze và chưa hết hạn -> bỏ qua popup
     if (!allowPopup) return;
-
-    // Logic hiển thị:
-    // - Nếu có "newApproved" (chưa báo) và/hoặc "upcomings" (deadline tới), mở 1 popup gộp.
     if ((newApproved.length + upcomings.length) === 0) return;
 
     await this.showPopup(newApproved, upcomings);
-
-    // Đánh dấu APPROVED đã báo để lần sau KHÔNG báo lại nữa
     if (newApproved.length) {
       const ids = newApproved.map(x => x.id);
       this.addApprovedSeen(ids);
@@ -82,84 +66,23 @@ export class ReviewReminderService {
 
   // ---------- UI (Swal) ----------
   private async showPopup(approved: ReviewItem[], deadlines: ReviewItem[]) {
-    const fmtVi = (iso?: string | null) =>
-      iso ? new Date(iso).toLocaleString('vi-VN') : '';
-
-    const hasApproved = approved.length > 0;
-    const hasDeadlines = deadlines.length > 0;
-
-    const htmlParts: string[] = [];
-
-    if (hasApproved) {
-      htmlParts.push(`
-      <div class="text-start mb-2">
-        <div class="fw-semibold mb-1">Đã được duyệt</div>
-        <ul class="mb-0 ps-3">
-          ${approved.map(a => `
-            <li>
-              ${this.escape(a.filename)}
-              <span class="text-muted">(${this.escape(a.subjectName || '')})</span>
-              <div class="small text-muted">
-                Lúc: ${fmtVi(a.reviewedAt)}${a.reviewedByName ? ` • bởi ${this.escape(a.reviewedByName)}` : ''}
-              </div>
-            </li>
-          `).join('')}
-        </ul>
-      </div>
-    `);
-    }
-
-    if (hasDeadlines) {
-      htmlParts.push(`
-      <div class="text-start mb-2">
-        <div class="fw-semibold mb-1">Bị từ chối (có hạn xử lý)</div>
-        <ul class="mb-0 ps-3">
-          ${deadlines.map(d => `
-          <li>
-            ${this.escape(d.filename)}
-            <span class="text-muted">(${this.escape(d.subjectName || '')})</span>
-            <div class="small text-muted">
-              Hạn: ${fmtVi(d.reviewDeadline)}${d.reviewedByName ? ` • bởi ${this.escape(d.reviewedByName)}` : ''}
-            </div>
-            ${d.reviewNote ? `<div class="small">Lý do: ${this.escape(d.reviewNote)}</div>` : ''} 
-          </li>
-        `).join('')}
-        </ul>
-      </div>
-    `);
-    }
-
-    // Dropdown ngắn gọn, không fixed width, dùng class Bootstrap để auto fit
-    htmlParts.push(`
-    <hr class="my-2">
-    <div class="text-start">
-      <label class="form-label fw-semibold mb-1">Tạm ẩn thông báo</label>
-      <select id="rr_snooze_select" class="form-select form-select-sm">
-        <option value="none">Không tạm ẩn</option>
-        <option value="1h">1 giờ</option>
-        <option value="3h">3 giờ</option>
-        <option value="24h">24 giờ</option>
-        <option value="forever">Vĩnh viễn</option>
-      </select>
-    </div>
-  `);
-
-    await Swal.fire({
-      icon: 'info',
-      title: 'Thông báo duyệt file',
-      html: htmlParts.join(''),
-      confirmButtonText: 'Đóng',
-      // Không fix width để tránh tràn – để SweetAlert tự canh.
-      customClass: {
-        popup: 'rr-swal-popup'
-      },
-      willClose: () => {
-        const sel = document.getElementById('rr_snooze_select') as HTMLSelectElement | null;
-        const choice = (sel?.value || 'none') as SnoozeChoice;
-        this.applySnooze(choice);
+    const data: ReviewReminderDialogData = { approved, deadlines };
+    const ref = this.dialog.open<ReviewReminderDialogComponent, ReviewReminderDialogData, ReviewReminderDialogResult>(
+      ReviewReminderDialogComponent,
+      {
+        width: '500px',
+        data,
+        autoFocus: false,
+        disableClose: false,
+        panelClass: 'ep-dialog'
       }
-    });
+    );
+
+    const result = await ref.afterClosed().toPromise();
+    const choice = (result?.snooze ?? 'none') as SnoozeChoice;
+    this.applySnooze(choice);
   }
+
 
   private applySnooze(choice: SnoozeChoice) {
     const now = Date.now();

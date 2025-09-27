@@ -22,33 +22,36 @@
         </button>
 
         <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 360px;">
-          <div class="mb-3">
-            <label class="form-label mb-1">Độ khó (điểm số)</label>
-            <select class="form-select" [(ngModel)]="pendingFilters.difficulty" (click)="$event.stopPropagation()"
-              [disabled]="isLoading">
-              <option value="">Tất cả</option>
-              <option value="A">A - (5 điểm)</option>
-              <option value="B">B - (4 điểm)</option>
-              <option value="C">C - (3 điểm)</option>
-              <option value="D">D - (2 điểm)</option>
-              <option value="E">E - (1 điểm)</option>
-            </select>
-          </div>
 
-          <div class="mb-3">
-            <label class="form-label mb-1">Chương</label>
-            <select class="form-select" [(ngModel)]="pendingFilters.chapter" (click)="$event.stopPropagation()"
-              [disabled]="isLoading">
-              <option [ngValue]="null">Tất cả</option>
-              <option [ngValue]="0">Chưa phân loại</option>
-              <option [ngValue]="1">1</option>
-              <option [ngValue]="2">2</option>
-              <option [ngValue]="3">3</option>
-              <option [ngValue]="4">4</option>
-              <option [ngValue]="5">5</option>
-              <option [ngValue]="6">6</option>
-              <option [ngValue]="7">7</option>
-            </select>
+          <div class="row g-2">
+            <div class="mb-3 col-6">
+              <label class="form-label mb-1">Độ khó (điểm số)</label>
+              <select class="form-select" [(ngModel)]="pendingFilters.difficulty" (click)="$event.stopPropagation()"
+                [disabled]="isLoading">
+                <option value="">Tất cả</option>
+                <option value="A">(5 điểm)</option>
+                <option value="B">(4 điểm)</option>
+                <option value="C">(3 điểm)</option>
+                <option value="D">(2 điểm)</option>
+                <option value="E">(1 điểm)</option>
+              </select>
+            </div>
+
+            <div class="mb-3 col-6">
+              <label class="form-label mb-1">Chương</label>
+              <select class="form-select" [(ngModel)]="pendingFilters.chapter" (click)="$event.stopPropagation()"
+                [disabled]="isLoading">
+                <option [ngValue]="null">Tất cả</option>
+                <option [ngValue]="0">Chưa phân loại</option>
+                <option [ngValue]="1">1</option>
+                <option [ngValue]="2">2</option>
+                <option [ngValue]="3">3</option>
+                <option [ngValue]="4">4</option>
+                <option [ngValue]="5">5</option>
+                <option [ngValue]="6">6</option>
+                <option [ngValue]="7">7</option>
+              </select>
+            </div>
           </div>
 
           <div class="mb-3">
@@ -151,7 +154,7 @@
     <div *ngIf="activeFilterSummaryParts.length" class="filter-summary mt-2">
       <span class="me-2 fw-semibold">Đang lọc:</span>
       <span class="chips">{{ activeFilterSummaryParts.join(' • ') }}</span>
-      <button class="btn btn-sm btn-link ms-2 p-0 align-baseline" (click)="clearAllFilters()">
+      <button class="btn btn-sm btn-link ms-2 p-0" (click)="clearAllFilters()">
         <span class="text-danger fw-bold">×</span> Xóa hết lọc
       </button>
     </div>
@@ -189,14 +192,14 @@
 </div>
 
 <!-- Empty state -->
-<div *ngIf="!isLoading && filteredQuestions.length === 0" class="text-center py-5">
+<div *ngIf="!isLoading && paginatedQuestions.length === 0" class="text-center py-5">
   <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
   <h4 class="mt-3">Chưa có câu hỏi nào</h4>
   <p class="text-muted">Hãy thêm câu hỏi mới cho môn học này</p>
 </div>
 
 <!-- Danh sách câu hỏi + clones -->
-<div *ngIf="!isLoading && filteredQuestions.length > 0" class="row row-cols-1 g-4">
+<div *ngIf="!isLoading && paginatedQuestions.length > 0" class="row row-cols-1 g-4">
   <div class="col" *ngFor="let question of paginatedQuestions; trackBy: trackById">
     <div class="card h-100 shadow-sm item-card" [class.selected]="isSelected(question.id)"
       (click)="onCardClick($event, question.id)">
@@ -305,14 +308,12 @@
                       [disabled]="isLoading" />
                     <h6 class="card-title m-0">Bản sao #{{ question.id }}.{{ c.cloneIndex }}</h6>
 
-                    <!-- badges giống card chính -->
                     <span *ngIf="c.labels?.includes('PRACTICE')" class="badge rounded-pill text-bg-info ms-2">Ôn
                       tập</span>
                     <span *ngIf="c.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi
                       cử</span>
                   </div>
 
-                  <!-- góc phải: chương/độ khó giống card chính -->
                   <div class="position-absolute top-0 end-0 mt-2 me-2 text-muted small text-end">
                     <p class="mb-0"><strong>Chương:</strong> {{ c.chapter }}</p>
                     <p class="mb-0"><strong>Độ khó:</strong> {{ c.difficulty }}</p>
@@ -349,7 +350,6 @@
 
                     <div *ngIf="showAnswers && c.answer" class="card-text mt-1"><strong>Đáp án:</strong> {{ c.answer }}
                     </div>
-
                     <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2">
                       <div class="kv-label">Giải thích:</div>
                       <div class="kv-value math-inline" [appMathjax]="c.answerText || ''"></div>
@@ -367,14 +367,14 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div> <!-- /row clones -->
         </div> <!-- /clones -->
       </div>
     </div>
   </div>
 </div>
 
-<!-- Paginator -->
+<!-- Paginator (server-side) -->
 <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
   (page)="onPageChange($event)" showFirstLastButtons [disabled]="isLoading">
 </mat-paginator>

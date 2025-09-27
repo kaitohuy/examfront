@@ -1,34 +1,31 @@
-<div class="container mt-3" [attr.aria-busy]="isLoading">
-    <!-- Filters -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body d-flex flex-wrap align-items-end gap-2">
-            <div>
-                <label class="form-label mb-1">Từ ngày</label>
-                <mat-form-field appearance="outline" class="dense-field">
-                    <input matInput [matDatepicker]="fromPicker" [formControl]="from">
-                    <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
-                    <mat-datepicker #fromPicker></mat-datepicker>
-                </mat-form-field>
-            </div>
-            <div>
-                <label class="form-label mb-1">Đến ngày</label>
-                <mat-form-field appearance="outline" class="dense-field">
-                    <input matInput [matDatepicker]="toPicker" [formControl]="to">
-                    <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
-                    <mat-datepicker #toPicker></mat-datepicker>
-                </mat-form-field>
-            </div>
-
-            <div class="ms-auto d-flex flex-wrap gap-2">
-                <button class="btn btn-outline-secondary btn-sm" (click)="clearRange()">Reset</button>
-                <button class="btn btn-outline-secondary btn-sm" (click)="thisWeek()">Tuần này</button>
-                <button class="btn btn-outline-secondary btn-sm" (click)="thisMonth()">Tháng này</button>
-                <button class="btn btn-outline-secondary btn-sm" (click)="thisQuarter()">Quý này</button>
-                <button class="btn btn-outline-secondary btn-sm" (click)="thisYear()">Năm nay</button>
-                <button class="btn btn-primary btn-sm" (click)="reload()">
-                    <i class="bi bi-arrow-repeat me-1"></i> Tải lại
-                </button>
-            </div>
+<div class="container-fluid" [attr.aria-busy]="isLoading">
+    <!-- Date filters + quick actions -->
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-12 col-md-3">
+            <label class="form-label mb-1">Từ ngày</label>
+            <mat-form-field appearance="outline" class="w-100 compact-mat" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="fromPicker" [formControl]="from">
+                <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+                <mat-datepicker #fromPicker></mat-datepicker>
+            </mat-form-field>
+        </div>
+        <div class="col-12 col-md-3">
+            <label class="form-label mb-1">Đến ngày</label>
+            <mat-form-field appearance="outline" class="w-100 compact-mat" subscriptSizing="dynamic">
+                <input matInput [matDatepicker]="toPicker" [formControl]="to">
+                <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+                <mat-datepicker #toPicker></mat-datepicker>
+            </mat-form-field>
+        </div>
+        <div class="col-12 col-md-6 d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-secondary" (click)="clearRange()">Reset</button>
+            <button class="btn btn-outline-secondary" (click)="thisWeek()">Tuần này</button>
+            <button class="btn btn-outline-secondary" (click)="thisMonth()">Tháng này</button>
+            <button class="btn btn-outline-secondary" (click)="thisQuarter()">Quý này</button>
+            <button class="btn btn-outline-secondary" (click)="thisYear()">Năm nay</button>
+            <button class="btn btn-primary" (click)="reload()">
+                <i class="bi bi-arrow-repeat me-1"></i> Tải lại
+            </button>
         </div>
     </div>
 
@@ -41,8 +38,9 @@
                     <div class="kpi-title">Người dùng</div>
                     <div class="kpi-value">{{ data?.users?.total || 0 }}</div>
                     <div class="kpi-sub">
-                        ADMIN: {{ v(data?.users?.byRole,'ADMIN') }} · HEAD: {{ v(data?.users?.byRole,'HEAD') }} · GV: {{
-                        v(data?.users?.byRole,'TEACHER') }}
+                        ADMIN: {{ v(data?.users?.byRole,'ADMIN') }} ·
+                        HEAD: {{ v(data?.users?.byRole,'HEAD') }} ·
+                        GV: {{ v(data?.users?.byRole,'TEACHER') }}
                     </div>
                 </div>
             </div>
@@ -54,7 +52,8 @@
                 <div class="card-body">
                     <div class="kpi-title">Khoa/Bộ môn</div>
                     <div class="kpi-value">{{ data?.departments?.count || 0 }}</div>
-                    <div class="kpi-sub text-warning">Chưa có trưởng bộ môn: {{ data?.departments?.withoutHead || 0 }}
+                    <div class="kpi-sub text-warning">
+                        Chưa có trưởng bộ môn: {{ data?.departments?.withoutHead || 0 }}
                     </div>
                 </div>
             </div>
@@ -66,7 +65,9 @@
                 <div class="card-body">
                     <div class="kpi-title">Môn học</div>
                     <div class="kpi-value">{{ data?.subjects?.count || 0 }}</div>
-                    <div class="kpi-sub text-info">Chưa phân công GV: {{ data?.subjects?.withoutTeachers || 0 }}</div>
+                    <div class="kpi-sub text-info">
+                        Chưa phân công GV: {{ data?.subjects?.withoutTeachers || 0 }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -76,8 +77,10 @@
             <div class="card kpi h-100">
                 <div class="card-body">
                     <div class="kpi-title">Kho đề (review)</div>
-                    <div class="kpi-value">{{ (data?.archive?.approved || 0) + (data?.archive?.pending || 0) +
-                        (data?.archive?.rejected || 0) }}</div>
+                    <div class="kpi-value">
+                        {{ (data?.archive?.approved || 0) + (data?.archive?.pending || 0) + (data?.archive?.rejected ||
+                        0) }}
+                    </div>
                     <div class="kpi-sub">
                         <span class="badge text-bg-success me-1">APP {{ data?.archive?.approved || 0 }}</span>
                         <span class="badge text-bg-warning me-1">PEN {{ data?.archive?.pending || 0 }}</span>
@@ -91,35 +94,60 @@
 
     <!-- Questions breakdown -->
     <div class="row g-3 mt-1">
+        <!-- Questions -->
         <div class="col-12 col-lg-5">
-            <div class="card h-100">
+            <div class="card kpi h-100">
                 <div class="card-body">
-                    <h5 class="mb-2">Câu hỏi</h5>
-                    <div class="mb-1"><b>Tổng:</b> {{ data?.questions?.total || 0 }}</div>
-                    <div class="small text-muted mb-2">Theo loại</div>
-                    <ul class="list-unstyled mb-3 small">
-                        <li>Trắc nghiệm: {{ v(data?.questions?.byType,'MULTIPLE_CHOICE') }}</li>
-                        <li>Tự luận: {{ v(data?.questions?.byType,'ESSAY') }}</li>
-                    </ul>
-                    <div class="small text-muted mb-2">Theo nhãn</div>
-                    <ul class="list-unstyled small">
-                        <li>Ôn tập: {{ v(data?.questions?.byLabel,'PRACTICE') }}</li>
-                        <li>Thi cử: {{ v(data?.questions?.byLabel,'EXAM') }}</li>
-                    </ul>
+                    <div class="kpi-title">Câu hỏi</div>
+
+                    <!-- Tổng -->
+                    <div class="kpi-value mb-2">{{ data?.questions?.total || 0 }}</div>
+
+                    <!-- Theo loại -->
+                    <div class="kpi-sub text-muted">Theo loại</div>
+                    <ng-container *ngIf="data as d">
+                        <div *ngFor="let t of typeItems" class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <div class="small fw-semibold">{{ t.label }}</div>
+                                <div class="small text-muted">{{ v(d.questions.byType, t.key) }}</div>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar" role="progressbar"
+                                    [style.width.%]="pct(v(d.questions.byType, t.key), d.questions.total || 0)">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
+
+                    <!-- Theo nhãn -->
+                    <div class="kpi-sub text-muted mt-3">Theo nhãn</div>
+                    <ng-container *ngIf="data as d2">
+                        <div *ngFor="let l of labelItems" class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <div class="small fw-semibold">{{ l.label }}</div>
+                                <div class="small text-muted">{{ v(d2.questions.byLabel, l.key) }}</div>
+                            </div>
+                            <div class="progress progress-thin">
+                                <div class="progress-bar bg-info" role="progressbar"
+                                    [style.width.%]="pct(v(d2.questions.byLabel, l.key), d2.questions.total || 0)">
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
                 </div>
             </div>
         </div>
 
         <!-- Coverage by chapter -->
         <div class="col-12 col-lg-7">
-            <div class="card h-100">
+            <div class="card kpi h-100">
                 <div class="card-body">
-                    <h5 class="mb-3">Phủ chương (0–7)</h5>
+                    <div class="kpi-title">Phủ chương (0–7)</div>
                     <ng-container *ngIf="data as d">
                         <div *ngFor="let k of keys(d.coverage)" class="mb-2">
                             <div class="d-flex justify-content-between">
                                 <div class="small fw-semibold text-uppercase">{{ k }}</div>
-                                <div class="small text-muted">{{ d.coverage[k] }}</div>
+                                <div class="kpi-sub">{{ d.coverage[k] }}</div>
                             </div>
                             <div class="progress" style="height:8px;">
                                 <div class="progress-bar" role="progressbar"

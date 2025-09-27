@@ -6,7 +6,7 @@
 
   <mat-card class="sidebar-card">
     <mat-nav-list>
-      <div mat-subheader *ngIf="!isCollapsed">Menu</div>
+      <div mat-subheader *ngIf="!isCollapsed" class="fs-4 fw-bold">Menu</div>
 
       <a mat-list-item [routerLink]="to('')" routerLinkActive="active" [matTooltip]="isCollapsed ? 'Home' : ''"
         [matTooltipDisabled]="!isCollapsed">

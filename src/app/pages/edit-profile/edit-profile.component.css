@@ -10,10 +10,7 @@
 }
 .ep-header h2 { margin: 0 0 4px; font-weight: 700; }
 .subtitle { color: rgba(0,0,0,.6); font-size: 14px; }
-.avatar {
-  width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
-  box-shadow: 0 1px 4px rgba(0,0,0,.12);
-}
+.avatar { width: 84px; height: 84px; background: linear-gradient(135deg, #80e1f5, #9dcaea);}
 
 mat-divider { opacity: .6; }
 

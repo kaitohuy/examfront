@@ -2,12 +2,6 @@
   width: 100%;
 }
 
-.row {
-  margin: 0;
-  display: flex;
-  width: 100%;
-}
-
 .sidebar-col {
   flex: 0 0 250px;
   max-width: 250px;
@@ -31,12 +25,6 @@
 
 .content-col.expanded {
   margin-left: 0;
-}
-
-/* Ensure child content uses full available width */
-.content-col > * {
-  width: 100%;
-  max-width: 100%;
 }
 
 /* Responsive design */
@@ -142,3 +130,4 @@
   background-color: #303f9f;
   border-color: #303f9f;
 }
+

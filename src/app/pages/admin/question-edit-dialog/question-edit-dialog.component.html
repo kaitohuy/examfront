@@ -3,18 +3,44 @@
 </h2>
 
 <mat-dialog-content class="pt-0" [attr.aria-busy]="isLoading">
-  <app-question-form
-    [value]="data.question"
-    (formReady)="captureForm($event)">
+  <app-question-form [value]="data.question" (formReady)="captureForm($event)">
   </app-question-form>
 
   <div class="mt-2">
-    <div class="muted mb-1">Hình ảnh (nếu có)</div>
-    <input
-      type="file"
-      accept="image/*"
-      (change)="onImagePicked($event)"
-      [disabled]="isLoading">
+    <div class="muted mb-1">Hình ảnh (có thể chọn nhiều)</div>
+
+    <input type="file" accept="image/*" multiple (change)="onImagesPicked($event)" [disabled]="isLoading">
+
+    <!-- Previews -->
+    <div class="d-flex flex-wrap gap-2 mt-2" *ngIf="imagePreviews.length">
+      <div class="thumb" *ngFor="let url of imagePreviews; let i = index">
+        <img [src]="url" alt="img" (click)="openZoom(i, $event)">
+        <button type="button" class="btn btn-sm btn-outline-danger remove" (click)="removeImage(i)"
+          [disabled]="isLoading">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="data.mode === 'edit'" class="muted mt-2">
+      Không chọn ảnh mới ⇒ giữ nguyên gallery hiện tại.
+    </div>
+  </div>
+
+  <!-- LIGHTBOX OVERLAY (phóng to ảnh) -->
+  <div class="lightbox" *ngIf="zoomOpen" (click)="closeZoom($event)" aria-modal="true" role="dialog"
+    aria-label="Xem ảnh lớn">
+    <div class="lightbox-inner" (click)="$event.stopPropagation()">
+      <img [src]="zoomUrl" alt="preview">
+      <button class="close-btn" type="button" (click)="closeZoom($event)" aria-label="Đóng">×</button>
+
+      <button class="lb-nav prev" *ngIf="imagePreviews.length > 1" type="button" (click)="prev($event)"
+        aria-label="Ảnh trước">‹</button>
+
+      <button class="lb-nav next" *ngIf="imagePreviews.length > 1" type="button" (click)="next($event)"
+        aria-label="Ảnh sau">›</button>
+
+    </div>
   </div>
 </mat-dialog-content>
 
@@ -25,5 +51,5 @@
   </button>
 </mat-dialog-actions>
 
-<!-- Overlay loading mới -->
+<!-- Overlay loading -->
 <app-loading-screen *ngIf="isLoading"></app-loading-screen>

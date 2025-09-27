@@ -1,0 +1,55 @@
+.muted{color:#6c757d;font-size:12px;}
+
+.thumb{position:relative;border:1px solid rgba(0,0,0,.12);border-radius:8px;overflow:hidden;width:120px;height:90px}
+.thumb img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.thumb .remove{position:absolute;top:4px;right:4px;line-height:1;padding:2px 6px}
+
+/* Overlay phủ toàn màn hình */
+.lightbox{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000;
+}
+
+/* Làm mốc định vị cho prev/next */
+.lightbox-inner{
+  position: relative;
+  max-width: min(92vw, 1100px);
+  max-height: 88vh;
+}
+
+.lightbox-inner img{
+  display: block;
+  max-width: 100%;
+  max-height: 84vh;
+  border-radius: 8px;
+}
+
+/* Nút đóng */
+.close-btn{
+  position:absolute; top:-46px; right:-46px;
+  width:36px; height:36px; border-radius:50%;
+  background:#fff; border:1px solid rgba(0,0,0,.15);
+  box-shadow:0 2px 8px rgba(0,0,0,.2);
+  font-size:20px; line-height:1; padding:0; cursor:pointer;
+}
+
+/* Điều hướng – KHÔNG dùng .nav để khỏi đụng bootstrap */
+.lb-nav{
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #fff; border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1; padding: 0; cursor: pointer;
+  z-index: 2;  /* đảm bảo nổi trên ảnh */
+}
+.lb-nav.prev{ left: -52px; }
+.lb-nav.next{ right: -52px; }
+
+@media (max-width: 640px){
+  .lb-nav.prev{ left: 8px; }
+  .lb-nav.next{ right: 8px; }
+  .close-btn{ top:8px; right:8px; }
+}

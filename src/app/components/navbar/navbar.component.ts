@@ -32,6 +32,16 @@ export class NavbarComponent implements OnInit {
     });
   }
 
+  get avatarUrl(): string {
+    if (!this.user) {
+      return '../../../assets/images/male.png';
+    }
+    if (this.user.gender === 'FEMALE') {
+      return '../../../assets/images/female.png';
+    }
+    return '../../../assets/images/male.png';
+  }
+
   get profileLink(): string {
     const role = this.login.getUserRole();
     if (role === 'ADMIN') return '/admin-dashboard/profile';

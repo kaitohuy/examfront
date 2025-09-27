@@ -9,16 +9,16 @@
   align-items: center;
   border-bottom: 1px solid rgba(0,0,0,.08);
 }
-.avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; }
+.avatar { width: 84px; height: 84px; background: linear-gradient(135deg, #80e1f5, #9dcaea);}
 .meta .fullname { margin: 0; font-weight: 600; }
 .row-ids { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; align-items: center; }
-.username { color: rgba(0,0,0,.6); }
+.username { color: #000; }
 
 .chip {
   font-size: 12px; padding: 2px 8px; border-radius: 999px;
   background: rgba(0,0,0,.06);
 }
-.chip.id { background: rgba(33,150,243,.12); }
+.chip.id { background: #000; }
 .chip.state { background: rgba(76,175,80,.14); }
 .chip.state.inactive { background: rgba(0,0,0,.08); color: rgba(0,0,0,.55); }
 .chip.status { background: rgba(255,152,0,.18); }
@@ -31,7 +31,7 @@
 .section { margin: 10px 0 20px; }
 .section-title { font-weight: 600; margin-bottom: 8px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.muted { color: rgba(0,0,0,.55); }
+.muted { color: #000 }
 
 .subject-item { cursor: pointer; }
 
@@ -43,11 +43,11 @@
 }
 .info-table td {
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+  border-bottom: 1px solid #000;
 }
 .info-table .label {
   font-weight: 500;
-  color: rgba(0,0,0,0.65);
+  color: #000;
   text-align: right;
   width: 200px;
 }

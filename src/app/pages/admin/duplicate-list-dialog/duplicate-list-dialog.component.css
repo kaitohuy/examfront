@@ -1,0 +1,20 @@
+.body { max-height: 60vh; overflow: auto; }
+.card {
+  border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 12px;
+  background: #fff;
+}
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.id { font-weight: 600; }
+.actions button + button { margin-left: 6px; }
+.loading { color: #888; }
+
+.box { border: 1px dashed #ddd; border-radius: 6px; padding: 8px; margin-top: 6px; background: #fafafa; }
+
+/* compact form-field 40px cho thẳng hàng */
+:host ::ng-deep .mf-compact .mat-mdc-text-field-wrapper,
+:host ::ng-deep .mf-compact .mat-mdc-form-field-flex { height: 40px !important; }
+:host ::ng-deep .mf-compact .mat-mdc-form-field-infix { padding: 0 !important; display:flex; align-items:center; min-height:40px; }
+:host ::ng-deep .mf-compact .mat-mdc-select-trigger { height: 40px; display:flex; align-items:center; }
+:host ::ng-deep .mf-compact .mat-mdc-select-value,
+:host ::ng-deep .mf-compact .mat-mdc-select-value-text { line-height: 40px; }
+:host ::ng-deep .mf-compact .mat-mdc-form-field-subscript-wrapper { display:none; height:0; }

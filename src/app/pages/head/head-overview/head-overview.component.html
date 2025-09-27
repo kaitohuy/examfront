@@ -1,43 +1,42 @@
-<div class="container mt-3" [attr.aria-busy]="isLoading">
-  <!-- Bộ lọc thời gian -->
-  <div class="card shadow-sm mb-3">
-    <div class="card-body d-flex flex-wrap align-items-center gap-2">
-      <mat-form-field appearance="outline">
-        <mat-label>Từ ngày</mat-label>
+<div class="container-fluid" [attr.aria-busy]="isLoading">
+  <!-- Date filters + quick actions -->
+  <div class="row g-2 align-items-end mb-3">
+    <div class="col-12 col-md-3">
+      <label class="form-label mb-1">Từ ngày</label>
+      <mat-form-field appearance="outline" class="w-100 compact-mat" subscriptSizing="dynamic">
         <input matInput [matDatepicker]="fromPicker" [formControl]="from">
         <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
         <mat-datepicker #fromPicker></mat-datepicker>
       </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Đến ngày</mat-label>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label mb-1">Đến ngày</label>
+      <mat-form-field appearance="outline" class="w-100 compact-mat" subscriptSizing="dynamic">
         <input matInput [matDatepicker]="toPicker" [formControl]="to">
         <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
         <mat-datepicker #toPicker></mat-datepicker>
       </mat-form-field>
-
-      <div class="ms-auto d-flex flex-wrap gap-2">
-        <button class="btn btn-outline-secondary" (click)="resetRange()">Reset</button>
-        <button class="btn btn-outline-secondary" (click)="quick('week')">Tuần này</button>
-        <button class="btn btn-outline-secondary" (click)="quick('month')">Tháng này</button>
-        <button class="btn btn-outline-secondary" (click)="quick('quarter')">Quý này</button>
-        <button class="btn btn-outline-secondary" (click)="quick('year')">Năm nay</button>
-        <button class="btn btn-primary" (click)="reload()">
-          <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
-        </button>
-      </div>
+    </div>
+    <div class="col-12 col-md-6 d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-secondary" (click)="resetRange()">Reset</button>
+      <button class="btn btn-outline-secondary" (click)="quick('week')">Tuần này</button>
+      <button class="btn btn-outline-secondary" (click)="quick('month')">Tháng này</button>
+      <button class="btn btn-outline-secondary" (click)="quick('quarter')">Quý này</button>
+      <button class="btn btn-outline-secondary" (click)="quick('year')">Năm nay</button>
+      <button class="btn btn-primary" (click)="reload()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Tải lại
+      </button>
     </div>
   </div>
 
   <!-- Hàng thẻ tổng quan -->
   <div class="row g-3">
-    <!-- Người dùng trong khoa -->
     <div class="col-12 col-lg-3">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="text-muted">GIẢNG VIÊN (TRONG KHOA)</div>
-          <div class="display-6 fw-bold">{{ data?.users?.total || 0 }}</div>
-          <div class="small text-muted mt-2">
+          <div class="kpi-title">Giảng viên (trong khoa)</div>
+          <div class="kpi-value">{{ data?.users?.total || 0 }}</div>
+          <div class="kpi-sub text-muted">
             ADMIN: {{ data?.users?.byRole?.['ADMIN'] || 0 }} ·
             HEAD: {{ data?.users?.byRole?.['HEAD'] || 0 }} ·
             GV: {{ data?.users?.byRole?.['TEACHER'] || 0 }}
@@ -46,48 +45,44 @@
       </div>
     </div>
 
-    <!-- Khoa/Bộ môn -->
     <div class="col-12 col-lg-3">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="text-muted">KHOA/BỘ MÔN</div>
-          <div class="display-6 fw-bold">1</div>
-          <div class="small"
-               [class.text-success]="(data?.departments?.withoutHead||0)===0"
-               [class.text-warning]="(data?.departments?.withoutHead||0)>0">
+          <div class="kpi-title">Khoa/Bộ môn</div>
+          <div class="kpi-value">1</div>
+          <div class="kpi-sub" [class.text-success]="(data?.departments?.withoutHead||0)===0"
+            [class.text-warning]="(data?.departments?.withoutHead||0)>0">
             Chưa có trưởng bộ môn: {{ data?.departments?.withoutHead || 0 }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Môn học -->
     <div class="col-12 col-lg-3">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="text-muted">MÔN HỌC</div>
-          <div class="display-6 fw-bold">{{ data?.subjects?.count || 0 }}</div>
-          <div class="small text-primary">
+          <div class="kpi-title">Môn học</div>
+          <div class="kpi-value">{{ data?.subjects?.count || 0 }}</div>
+          <div class="kpi-sub text-primary">
             Chưa phân công GV: {{ data?.subjects?.withoutTeachers || 0 }}
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Kho đề -->
     <div class="col-12 col-lg-3">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="text-muted">KHO ĐỀ (REVIEW)</div>
-          <div class="display-6 fw-bold">
+          <div class="kpi-title">Kho đề (review)</div>
+          <div class="kpi-value">
             {{ (data?.archive?.approved || 0) + (data?.archive?.pending || 0) + (data?.archive?.rejected || 0) }}
           </div>
-          <div class="d-flex gap-2 mt-1 small">
+          <div class="kpi-sub d-flex gap-2">
             <span class="badge text-bg-success">APP {{ data?.archive?.approved || 0 }}</span>
             <span class="badge text-bg-warning">PEN {{ data?.archive?.pending || 0 }}</span>
             <span class="badge text-bg-danger">REJ {{ data?.archive?.rejected || 0 }}</span>
+            <span class="text-muted ms-auto">T/g duyệt TB: {{ data?.archive?.avgReviewHours || 0 }}h</span>
           </div>
-          <div class="small text-muted mt-1">T/g duyệt TB: {{ data?.archive?.avgReviewHours || 0 }}h</div>
         </div>
       </div>
     </div>
@@ -96,42 +91,57 @@
   <!-- Questions & Coverage -->
   <div class="row g-3 mt-1">
     <div class="col-12 col-lg-6">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="fw-semibold mb-2">Câu hỏi (theo khoa)</div>
-          <div class="mb-2"><b>Tổng:</b> {{ data?.questions?.total || 0 }}</div>
-          <div class="mb-2">
-            <div class="text-muted">Theo loại</div>
-            <div>Trắc nghiệm: {{ data?.questions?.byType?.['MULTIPLE_CHOICE'] || 0 }}</div>
-            <div>Tự luận: {{ data?.questions?.byType?.['ESSAY'] || 0 }}</div>
-          </div>
-          <div>
-            <div class="text-muted">Theo nhãn</div>
-            <div>Ôn tập: {{ data?.questions?.byLabel?.['PRACTICE'] || 0 }}</div>
-            <div>Thi cử: {{ data?.questions?.byLabel?.['EXAM'] || 0 }}</div>
-          </div>
+          <div class="kpi-title">Câu hỏi (theo khoa)</div>
+          <div class="kpi-value mb-2">{{ data?.questions?.total || 0 }}</div>
+
+          <div class="kpi-sub text-muted">Theo loại</div>
+          <ng-container *ngIf="data as d">
+            <div *ngFor="let t of typeItems" class="mb-2">
+              <div class="d-flex justify-content-between">
+                <div class="small fw-semibold">{{ t.label }}</div>
+                <div class="small text-muted">{{ d.questions?.byType?.[t.key] || 0 }}</div>
+              </div>
+              <div class="progress progress-thin">
+                <div class="progress-bar"
+                  [style.width.%]="barPct(d.questions?.byType?.[t.key] || 0, d.questions?.total || 0)">
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="kpi-sub text-muted mt-3">Theo nhãn</div>
+          <ng-container *ngIf="data as d2">
+            <div *ngFor="let l of labelItems" class="mb-2">
+              <div class="d-flex justify-content-between">
+                <div class="small fw-semibold">{{ l.label }}</div>
+                <div class="small text-muted">{{ d2.questions?.byLabel?.[l.key] || 0 }}</div>
+              </div>
+              <div class="progress progress-thin">
+                <div class="progress-bar bg-info"
+                  [style.width.%]="barPct(d2.questions?.byLabel?.[l.key] || 0, d2.questions?.total || 0)">
+                </div>
+              </div>
+            </div>
+          </ng-container>
         </div>
       </div>
     </div>
 
-    <!-- Coverage -->
     <div class="col-12 col-lg-6">
-      <div class="card shadow-sm h-100">
+      <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="fw-semibold mb-2">Phủ chương (0–7)</div>
-
+          <div class="kpi-title">Phủ chương (0–7)</div>
           <div *ngFor="let c of [0,1,2,3,4,5,6,7]">
             <div class="d-flex justify-content-between">
               <div class="small fw-semibold">CHAPTER{{ c }}</div>
-              <div class="small">{{ data?.coverage?.['chapter'+c] || 0 }}</div>
+              <div class="small text-muted">{{ data?.coverage?.['chapter'+c] || 0 }}</div>
             </div>
-            <div class="progress mb-2 progress-thin">
-              <div class="progress-bar"
-                   role="progressbar"
-                   [style.width.%]="coveragePct('chapter'+c)"></div>
+            <div class="progress progress-thin mb-2">
+              <div class="progress-bar" [style.width.%]="coveragePct('chapter'+c)"></div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -151,9 +161,8 @@
               <div class="small text-muted">{{ s.count }}</div>
             </div>
             <div class="progress progress-thin mt-1">
-              <div class="progress-bar"
-                   [style.width.%]="barPct(s.count, maxTopSubject)"
-                   [attr.aria-label]="s.subjectName"></div>
+              <div class="progress-bar" [style.width.%]="barPct(s.count, maxTopSubject)"
+                [attr.aria-label]="s.subjectName"></div>
             </div>
             <div class="x-small text-muted mt-1">
               {{ ofTotalPct(s.count) | number:'1.0-1' }}% tổng câu hỏi khoa
@@ -176,9 +185,8 @@
               <div class="small text-muted">{{ t.count }}</div>
             </div>
             <div class="progress progress-thin mt-1">
-              <div class="progress-bar"
-                   [style.width.%]="barPct(t.count, maxTopTeacher)"
-                   [attr.aria-label]="t.teacherName"></div>
+              <div class="progress-bar" [style.width.%]="barPct(t.count, maxTopTeacher)"
+                [attr.aria-label]="t.teacherName"></div>
             </div>
             <div class="x-small text-muted mt-1">
               {{ ofTotalPct(t.count) | number:'1.0-1' }}% tổng câu hỏi khoa

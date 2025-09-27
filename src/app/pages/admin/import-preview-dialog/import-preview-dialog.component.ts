@@ -4,12 +4,13 @@ import { QuestionService } from '../../../services/question.service';
 import { PreviewBlock } from '../../../models/previewBlock';
 import { DialogData } from '../../../models/dialogData';
 import { sharedImports } from '../../../shared/shared-imports';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { HttpEventType } from '@angular/common/http';
 import { ToolMathComponent } from '../../../shared/tool-math/tool-math.component';
 import Swal from 'sweetalert2';
+import { DuplicateListDialogComponent } from '../duplicate-list-dialog/duplicate-list-dialog.component';
 
 type QuestionLabel = 'PRACTICE' | 'EXAM';
 type TexField = 'content' | 'answerText' | 'optionA' | 'optionB' | 'optionC' | 'optionD';
@@ -29,8 +30,23 @@ type TexField = 'content' | 'answerText' | 'optionA' | 'optionB' | 'optionC' | '
 })
 export class ImportPreviewDialogComponent implements OnDestroy {
   diffs: Array<'A' | 'B' | 'C' | 'D' | 'E'> = ['A', 'B', 'C', 'D', 'E'];
+
+  readonly diffOptions: Array<{ value: 'A' | 'B' | 'C' | 'D' | 'E'; label: string }> = [
+    { value: 'A', label: '5 điểm' },
+    { value: 'B', label: '4 điểm' },
+    { value: 'C', label: '3 điểm' },
+    { value: 'D', label: '2 điểm' },
+    { value: 'E', label: '1 điểm' }
+  ];
   chapters: Array<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7> = [0, 1, 2, 3, 4, 5, 6, 7];
-  readonly labelOptions: QuestionLabel[] = ['PRACTICE', 'EXAM'];
+  readonly labelOptions: Array<{ value: QuestionLabel; label: string }> = [
+    { value: 'PRACTICE', label: 'Ôn tập' },
+    { value: 'EXAM', label: 'Thi cử' }
+  ];
+
+  // === NEW: ngưỡng nghi trùng ===
+  weakThr = 0.60;
+  strongThr = 0.70;
 
   selectAll = true;
   loading = false;
@@ -42,14 +58,15 @@ export class ImportPreviewDialogComponent implements OnDestroy {
   private rampDuration = 3500;
   private rampTarget = 95;
 
-  // ô đang focus
+  // ô đang focus (để tool Math chèn vào)
   focused: { index: number; field: TexField } | null = null;
 
   state: Array<
     PreviewBlock & {
       include: boolean;
       labels?: QuestionLabel[];
-      allImageIndexes?: number[]; // giữ toàn bộ idx ảnh ban đầu để tick lại
+      allImageIndexes?: number[];
+      editing: boolean; // NEW: trạng thái hiển thị editor
     }
   > = [];
 
@@ -57,7 +74,8 @@ export class ImportPreviewDialogComponent implements OnDestroy {
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
     public ref: MatDialogRef<ImportPreviewDialogComponent>,
     private qs: QuestionService,
-    private zone: NgZone
+    private zone: NgZone,
+    public dialog: MatDialog
   ) {
     this.state = (data.preview.blocks || []).map((b) => {
       const imageIndexes = Array.isArray(b.imageIndexes) ? [...b.imageIndexes] : [];
@@ -71,22 +89,38 @@ export class ImportPreviewDialogComponent implements OnDestroy {
         optionD: b.optionD || '',
         answer: b.answer || '',
         answerText: b.answerText || '',
-        imageIndexes,                   // ảnh đang chọn
-        allImageIndexes: [...imageIndexes], // toàn bộ ảnh ban đầu
+        imageIndexes,                        // ảnh đang chọn
+        allImageIndexes: [...imageIndexes],  // toàn bộ ảnh ban đầu
         warnings: b.warnings || [],
-        labels: Array.isArray((b as any).labels) ? ([...(b as any).labels] as QuestionLabel[]) : []
+        labels: Array.isArray((b as any).labels) ? ([...(b as any).labels] as QuestionLabel[]) : [],
+        editing: false
       } as any;
     });
   }
 
   ngOnDestroy(): void {
-    // không có objectURL cần thu hồi nữa
+    // nothing
+  }
+
+  // ---------- Similarity (UI) ----------
+  dupPct(score?: number | null): string {
+    if (score == null) return '';
+    return `${Math.round(score * 100)}% trùng`;
+  }
+  dupTip(s: PreviewBlock): string {
+    const ids = (s.duplicateOfIds && s.duplicateOfIds.length) ? `#${s.duplicateOfIds.join(', #')}` : '—';
+    const pct = this.dupPct(s.duplicateScore);
+    return `Nghi trùng: ${pct}\nCâu đã có: ${ids}`;
+  }
+  cardToneClass(s: PreviewBlock & { include: boolean }) {
+    const sc = s.duplicateScore ?? 0;
+    if (sc >= this.strongThr) return 'dup-strong';
+    if (sc >= this.weakThr) return 'dup-weak';
+    return '';
   }
 
   // ---------- Focus helpers ----------
-  setFocus(index: number, field: TexField) {
-    this.focused = { index, field };
-  }
+  setFocus(index: number, field: TexField) { this.focused = { index, field }; }
 
   private elBy(index: number, field: TexField): HTMLTextAreaElement | HTMLInputElement | null {
     return document.getElementById(`tex-${field}-${index}`) as any;
@@ -108,9 +142,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
 
     let tpl = rawTpl.replaceAll('${sel}', selected || '');
     if (inline) {
-      if (!(tpl.startsWith('\\(') && tpl.endsWith('\\)'))) {
-        tpl = `\\(${tpl}\\)`;
-      }
+      if (!(tpl.startsWith('\\(') && tpl.endsWith('\\)'))) tpl = `\\(${tpl}\\)`;
     }
 
     let caretOffset = tpl.indexOf('${cursor}');
@@ -139,24 +171,19 @@ export class ImportPreviewDialogComponent implements OnDestroy {
   trackByIndex = (_: number, s: any) => s.index;
   trackByImgIdx = (_: number, idx: number) => idx;
 
-  // URL ảnh trực tiếp (BE public, không cần auth)
   imageUrl(idx: number) {
-    // thêm query để tránh cache nhầm theo session
     return `${baseUrl}/subject/${this.data.subjectId}/questions/image/${this.data.preview.sessionId}/${idx}?_=${this.data.preview.sessionId}`;
   }
 
   onImageError(ev: Event) {
     const el = ev.target as HTMLImageElement;
-    // fallback hiển thị khung rỗng thay vì icon gãy
     el.style.opacity = '0.5';
     el.alt = 'Không tải được ảnh';
   }
 
-  toggleSelectAll() {
-    this.state.forEach((s) => (s.include = this.selectAll));
-  }
+  toggleSelectAll() { this.state.forEach((s) => (s.include = this.selectAll)); }
 
-  // ẢNH: chọn/bỏ theo idx, và chọn tất/bỏ tất
+  // ẢNH: chọn/bỏ theo idx
   isImgIncluded(s: any, idx: number): boolean {
     return Array.isArray(s.imageIndexes) && s.imageIndexes.includes(idx);
   }
@@ -166,6 +193,25 @@ export class ImportPreviewDialogComponent implements OnDestroy {
       if (!s.imageIndexes.includes(idx)) s.imageIndexes.push(idx);
     } else {
       s.imageIndexes = s.imageIndexes.filter((x: number) => x !== idx);
+    }
+  }
+
+  // ---------- Toggle edit mode ----------
+  toggleEdit(i: number, s: any, ev: MouseEvent) {
+    ev.stopPropagation();
+    s.editing = !s.editing;
+    if (s.editing) {
+      setTimeout(() => {
+        const el = this.elBy(i, 'content');
+        if (el) {
+          el.focus();
+          const pos = (el as any).value?.length ?? 0;
+          (el as any).setSelectionRange(pos, pos);
+        }
+        this.setFocus(i, 'content');
+      });
+    } else {
+      this.focused = null;
     }
   }
 
@@ -197,12 +243,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
   async commit() {
     const selected = this.state.filter((s) => s.include);
     if (selected.length === 0) {
-      await Swal.fire({
-        icon: 'info',
-        title: 'Chưa chọn câu nào',
-        text: 'Hãy tick những card bạn muốn tải lên hệ thống.',
-        confirmButtonText: 'Đã hiểu'
-      });
+      await Swal.fire({ icon: 'info', title: 'Chưa chọn câu nào', text: 'Hãy tick những card bạn muốn tải lên hệ thống.', confirmButtonText: 'Đã hiểu' });
       return;
     }
 
@@ -266,9 +307,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
             case HttpEventType.Response: {
               this.stopRamp();
               this.commitProgress = 100;
-              requestAnimationFrame(() =>
-                this.ref.close({ committed: true, result: (ev as any).body })
-              );
+              requestAnimationFrame(() => this.ref.close({ committed: true, result: (ev as any).body }));
               break;
             }
           }
@@ -278,11 +317,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
           this.loading = false;
           this.commitProgress = null;
           this.ref.disableClose = false;
-          await Swal.fire({
-            icon: 'error',
-            title: 'Lỗi khi lưu',
-            text: 'Có lỗi xảy ra trong quá trình commit. Hãy thử lại.'
-          });
+          await Swal.fire({ icon: 'error', title: 'Lỗi khi lưu', text: 'Có lỗi xảy ra trong quá trình commit. Hãy thử lại.' });
           this.ref.close({ committed: false });
         }
       });
@@ -290,14 +325,16 @@ export class ImportPreviewDialogComponent implements OnDestroy {
 
   onCardClick(ev: MouseEvent, s: any) {
     const target = ev.target as HTMLElement;
-    if (
-      target.closest(
-        'button, .btn, input, textarea, select, mat-select, .mat-mdc-select, .mat-mdc-form-field, .img-check'
-      )
-    ) {
-      return;
-    }
+    if (target.closest('button, .btn, input, textarea, select, mat-select, .mat-mdc-select, .mat-mdc-form-field, .img-check')) return;
     s.include = !s.include;
     this.selectAll = this.state.every((x) => x.include);
+  }
+
+  openDuplicateList(s: PreviewBlock) {
+    const ids = s.duplicateOfIds || [];
+    this.dialog.open(DuplicateListDialogComponent, {
+      width: '900px',
+      data: { subjectId: this.data.subjectId, ids, score: s.duplicateScore }
+    });
   }
 }

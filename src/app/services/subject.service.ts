@@ -1,4 +1,3 @@
-// src/app/services/subject.service.ts
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
@@ -44,13 +43,6 @@ export class SubjectService {
     return this._http.delete<void>(`${baseUrl}/subject/${subjectId}/teachers/${teacherId}`);
   }
 
-  /**
-   * Cập nhật danh sách GV theo kiểu "diff" so với hiện tại:
-   * - nextIds: danh sách id GV sau khi người dùng chọn
-   * - prevIds: danh sách id GV hiện đang được phân công
-   *
-   * Sẽ gọi POST cho ids cần thêm, DELETE cho ids cần xóa.
-   */
   updateSubjectTeachersDiff(
     subjectId: number,
     nextIds: number[],
@@ -75,8 +67,14 @@ export class SubjectService {
     return this._http.get<Subject>(`${baseUrl}/subject/${id}/meta`);
   }
 
-  getMySubjects() {
+  // Giáo viên: các môn tôi dạy (KHÔNG kèm teachers)
+  getMySubjects(): Observable<Subject[]> {
     return this._http.get<Subject[]>(`${baseUrl}/subject/my`);
+  }
+
+  // Giáo viên: các môn tôi dạy (CÓ kèm teachers)
+  getMySubjectsWithTeachers(): Observable<SubjectWithTeachers[]> {
+    return this._http.get<SubjectWithTeachers[]>(`${baseUrl}/subject/my?include=teachers`);
   }
 
   getSubjectsByDepartment(deptId: number, includeTeachers = false) {

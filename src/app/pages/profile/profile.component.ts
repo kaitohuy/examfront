@@ -31,11 +31,27 @@ export class ProfileComponent implements OnInit {
   /** ảnh đại diện: ưu tiên u.profile nếu là URL hợp lệ, fallback theo giới tính */
   avatarUrl = computed(() => {
     const u = this.user();
+    // ảnh mặc định theo giới tính (dùng đường dẫn tuyệt đối từ /assets)
+    const fallback = u?.gender === 'FEMALE'
+      ? 'assets/images/female.png' // hoặc .png đúng với file bạn có
+      : 'assets/images/male.png';
+
     const candidate = (u?.profile || '').trim();
-    if (candidate) return candidate;
-    if (u?.gender === 'FEMALE') return 'assets/images/female.jpg';
-    return 'assets/images/male.jpg';
+    // Nếu BE trả URL đầy đủ (http/https/data), dùng luôn; nếu rỗng thì dùng fallback
+    if (!candidate) return fallback;
+    if (/^(https?:|data:)/i.test(candidate)) return candidate;
+
+    // Nếu bạn lưu đường dẫn tương đối trong DB, cân nhắc chuẩn hoá ở đây:
+    // return baseUrl + candidate; // nếu cần
+    return candidate; // còn nếu đã là URL hợp lệ
   });
+
+  // fallback khi ảnh lỗi
+  onAvatarError(ev: Event) {
+    const u = this.user();
+    (ev.target as HTMLImageElement).src =
+      u?.gender === 'FEMALE' ? 'assets/images/female.png' : 'assets/images/male.png';
+  }
 
   /** tên khoa đầu tiên lấy từ danh sách môn (nếu có) */
   departmentName = computed(() => {

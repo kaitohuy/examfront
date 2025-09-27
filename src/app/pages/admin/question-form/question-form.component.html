@@ -1,1 +1,103 @@
-<p>question-form works!</p>
+<form [formGroup]="form" class="w-100">
+
+    <!-- Toolbar: Tool Math + meta -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div class="d-flex align-items-center gap-2">
+            <mat-form-field appearance="outline" style="width:160px" class="mf-compact">
+                <mat-label>Loại câu hỏi</mat-label>
+                <mat-select formControlName="questionType">
+                    <mat-option *ngFor="let t of questionTypes" [value]="t.value">{{ t.label }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:140px" class="mf-compact">
+                <mat-label>Số điểm</mat-label>
+                <mat-select formControlName="difficulty">
+                    <mat-option *ngFor="let opt of diffOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:120px" class="mf-compact">
+                <mat-label>Chương</mat-label>
+                <mat-select formControlName="chapter">
+                    <mat-option *ngFor="let c of chapters" [value]="c">{{ c }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width:200px" class="mf-compact">
+                <mat-label>Nhãn</mat-label>
+                <mat-select formControlName="labels" multiple>
+                    <mat-option *ngFor="let opt of labelOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+
+        <!-- Tool Math -->
+        <app-tool-math [dense]="true" [label]="'tool Math'" [roundedIcon]="true"
+            (insert)="insertToFocused($event.tpl, $event.inline)">
+        </app-tool-math>
+    </div>
+
+    <!-- Nội dung (TeX) -->
+    <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Nội dung câu hỏi (TeX)</mat-label>
+        <textarea id="tex-content" matInput rows="3" formControlName="content" (focus)="setFocus('content')"
+            placeholder="Ví dụ: Bài toán $x^2+y^2=1$ hay \(\frac{a}{b}\)"></textarea>
+        <mat-error *ngIf="form.get('content')?.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+    <div class="rounded border p-2 mb-2" style="white-space: pre-wrap" [appMathjax]="form.value.content || ''"></div>
+
+    <!-- MULTIPLE CHOICE -->
+    <div *ngIf="isMultiple" class="ans-grid mt-1">
+        <!-- Cột trái: A, C -->
+        <div class="ans-col">
+            <mat-form-field appearance="outline" class="w-100 mf-compact">
+                <mat-label>Lựa chọn A</mat-label>
+                <input id="tex-optionA" matInput formControlName="optionA" (focus)="setFocus('optionA')">
+            </mat-form-field>
+            <div class="preview" [appMathjax]="form.value.optionA || ''"></div>
+
+            <mat-form-field appearance="outline" class="w-100 mf-compact">
+                <mat-label>Lựa chọn C</mat-label>
+                <input id="tex-optionC" matInput formControlName="optionC" (focus)="setFocus('optionC')">
+            </mat-form-field>
+            <div class="preview" [appMathjax]="form.value.optionC || ''"></div>
+        </div>
+
+        <!-- Cột phải: B, D -->
+        <div class="ans-col">
+            <mat-form-field appearance="outline" class="w-100 mf-compact">
+                <mat-label>Lựa chọn B</mat-label>
+                <input id="tex-optionB" matInput formControlName="optionB" (focus)="setFocus('optionB')">
+            </mat-form-field>
+            <div class="preview" [appMathjax]="form.value.optionB || ''"></div>
+
+            <mat-form-field appearance="outline" class="w-100 mf-compact">
+                <mat-label>Lựa chọn D</mat-label>
+                <input id="tex-optionD" matInput formControlName="optionD" (focus)="setFocus('optionD')">
+            </mat-form-field>
+            <div class="preview" [appMathjax]="form.value.optionD || ''"></div>
+        </div>
+    </div>
+
+    <!-- Đáp án -->
+    <mat-form-field *ngIf="isMultiple" appearance="outline" class="w-100 mf-compact">
+        <mat-label>Đáp án (A/B/C/D hoặc text)</mat-label>
+        <input id="tex-answer" matInput formControlName="answer" maxlength="1" placeholder="A/B/C/D"
+            (focus)="setFocus('answer')">
+        <mat-error *ngIf="form.get('answer')?.hasError('required')">Bắt buộc</mat-error>
+        <mat-error *ngIf="form.get('answer')?.hasError('pattern')">Chỉ A/B/C/D</mat-error>
+    </mat-form-field>
+    <div *ngIf="isMultiple" class="preview" [appMathjax]="form.value.answer || ''"></div>
+
+
+    <!-- ESSAY -->
+    <div *ngIf="!isMultiple" class="mt-1">
+        <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Giải thích / đáp án</mat-label>
+            <textarea id="tex-answerText" matInput rows="2" formControlName="answerText"
+                (focus)="setFocus('answerText')"></textarea>
+        </mat-form-field>
+        <div class="rounded border p-2" [appMathjax]="form.value.answerText || ''"></div>
+    </div>
+</form>

@@ -1,0 +1,64 @@
+<h2 mat-dialog-title class="d-flex align-items-center my-2">
+  <mat-icon>notifications_active</mat-icon>
+  Thông báo duyệt file
+</h2>
+
+<div mat-dialog-content class="pt-1">
+  <!-- Approved -->
+  <div *ngIf="data.approved?.length" class="mb-3">
+    <div class="fw-semibold text-uppercase mb-2">Đã được duyệt</div>
+    <ul class="list-group">
+      <li *ngFor="let a of data.approved" class="list-group-item border-0 ps-0">
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fw-semibold">{{ a.filename }}</span>
+          <span class="text-body-secondary">({{ a.subjectName || '—' }})</span>
+        </div>
+        <div class="small mt-1">
+          Lúc: {{ viDate(a.reviewedAt) }}
+          <ng-container *ngIf="a.reviewedByName"> • bởi {{ a.reviewedByName }}</ng-container>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Deadlines -->
+  <div *ngIf="data.deadlines?.length" class="mb-3">
+    <div class="fw-semibold text-uppercase mb-2">Bị từ chối (có hạn xử lý)</div>
+    <ul class="list-group">
+      <li *ngFor="let d of data.deadlines" class="list-group-item border-0 ps-0">
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fw-semibold">{{ d.filename }}</span>
+          <span class="text-body-secondary">({{ d.subjectName || '—' }})</span>
+        </div>
+        <div class="small mt-1">
+          Hạn: {{ viDate(d.reviewDeadline) }}
+          <ng-container *ngIf="d.reviewedByName"> • bởi {{ d.reviewedByName }}</ng-container>
+        </div>
+        <div class="small mt-1" *ngIf="d.reviewNote">Lý do: {{ d.reviewNote }}</div>
+      </li>
+    </ul>
+  </div>
+
+  <hr class="my-2 mb-3">
+
+  <!-- Snooze -->
+  <div class="row">
+    <div class="col-12 col-md-6">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Tạm ẩn thông báo</mat-label>
+        <mat-select [(value)]="snooze">
+          <mat-option value="none">Không tạm ẩn</mat-option>
+          <mat-option value="1h">1 giờ</mat-option>
+          <mat-option value="3h">3 giờ</mat-option>
+          <mat-option value="24h">24 giờ</mat-option>
+          <mat-option value="forever">Vĩnh viễn</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+</div>
+
+<div class="action" mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Đóng</button>
+  <button mat-flat-button color="primary" (click)="confirm()">Xác nhận</button>
+</div>

@@ -2,16 +2,16 @@
 <mat-card *ngIf="user() as u" class="profile-card">
   <!-- Header -->
   <div class="header">
-    <img [src]="avatarUrl()" alt="avatar" class="avatar" />
+    <img [src]="avatarUrl()" (error)="onAvatarError($event)" alt="avatar"
+      class="avatar rounded-circle border-2 border-white bg-light" />
     <div class="meta">
       <h2 class="fullname">{{ u.firstName }} {{ u.lastName }}</h2>
       <div class="row-ids">
         <span class="username">{{ '@' + (u.username || 'user') }}</span>
-        <span class="chip id">EXAM{{ u.id }}</span>
-        <span class="chip state" [class.inactive]="u.enabled === false">
+        <!-- <span class="chip state" [class.inactive]="u.enabled === false">
           {{ u.enabled === false ? 'NOT_ACTIVE' : 'ACTIVE' }}
         </span>
-        <span *ngIf="u.status" class="chip status">{{ u.status }}</span>
+        <span *ngIf="u.status" class="chip status">{{ u.status }}</span> -->
       </div>
     </div>
 
@@ -25,40 +25,41 @@
     </div>
   </div>
 
-  <!-- Tabs -->
-  <mat-tab-group mat-stretch-tabs>
-    <!-- Tab 1: Thông tin -->
-    <mat-tab label="Thông tin">
-      <div class="pad">
-        <table class="info-table">
-          <tr>
-            <td class="label">Mã giảng viên</td>
-            <td class="value">{{ u.teacherCode || '—' }}</td>
-          </tr>
-          <tr>
-            <td class="label">Email</td>
-            <td class="value">{{ u.email || '—' }}</td>
-          </tr>
-          <tr>
-            <td class="label">Điện thoại</td>
-            <td class="value">{{ u.phone || '—' }}</td>
-          </tr>
-          <tr>
-            <td class="label">Giới tính</td>
-            <td class="value">{{ u.gender || '—' }}</td>
-          </tr>
-          <tr>
-            <td class="label">Ngày sinh</td>
-            <td class="value">{{ u.birthDate | date:'dd/MM/yyyy' }}</td>
-          </tr>
-        </table>
+  <!-- One-tab, two-column layout -->
+  <div class="pad">
+    <div class="row g-3">
+      <!-- Cột trái: Thông tin cá nhân -->
+      <div class="col-12 col-lg-6">
+        <div class="section">
+          <div class="section-title">Thông tin</div>
+          <table class="info-table">
+            <tr>
+              <td class="label">Mã giảng viên</td>
+              <td class="value">{{ u.teacherCode || '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Email</td>
+              <td class="value">{{ u.email || '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Điện thoại</td>
+              <td class="value">{{ u.phone || '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Giới tính</td>
+              <td class="value">{{ u.gender || '—' }}</td>
+            </tr>
+            <tr>
+              <td class="label">Ngày sinh</td>
+              <td class="value">{{ u.birthDate | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          </table>
+        </div>
       </div>
-    </mat-tab>
 
-    <!-- Tab 2: Giảng dạy & Quyền -->
-    <mat-tab label="Giảng dạy & Quyền">
-      <div class="pad">
-        <!-- Quyền -->
+      <!-- Cột phải: Quyền, Khoa, Môn đang dạy -->
+      <div class="col-12 col-lg-6">
+        <!-- Vai trò -->
         <div class="section">
           <div class="section-title">Vai trò</div>
           <div class="chip-row">
@@ -80,17 +81,15 @@
           </div>
         </div>
 
-        <!-- Môn giảng dạy -->
+        <!-- Môn đang giảng dạy -->
         <div class="section">
           <div class="section-title">Môn đang giảng dạy</div>
 
           <ng-container *ngIf="!loadingSubjects(); else loadingTpl">
             <ng-container *ngIf="subjects().length > 0; else emptySubjects">
               <mat-list>
-                <mat-list-item
-                  *ngFor="let s of subjects(); trackBy: trackById"
-                  [routerLink]="['/user-dashboard/subjects', s.id]"
-                  class="subject-item">
+                <mat-list-item *ngFor="let s of subjects(); trackBy: trackById"
+                  [routerLink]="['/user-dashboard/subjects', s.id]" class="subject-item">
                   <div matListItemTitle>{{ s.name }}</div>
                   <div matListItemLine class="muted">
                     Mã: {{ s.code }} • Khoa: {{ s.department?.name || '—' }}
@@ -110,6 +109,7 @@
           </ng-template>
         </div>
       </div>
-    </mat-tab>
-  </mat-tab-group>
+    </div>
+  </div>
+
 </mat-card>

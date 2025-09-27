@@ -1,4 +1,3 @@
-
 .mat-mdc-card.import-card { transition: background-color .2s, box-shadow .2s; }
 .mat-mdc-card.import-card.selected {
   --mdc-elevated-card-container-color: #e6f7ff;  
@@ -6,41 +5,54 @@
   box-shadow: inset 0 0 0 2px #91d5ff;
 }
 
+/* === NEW: màu nghi trùng === */
+.mat-mdc-card.import-card.dup-weak {
+  --mdc-elevated-card-container-color: #fffbe6;
+  background: #fffbe6 !important;
+  box-shadow: inset 0 0 0 2px #ffe58f;
+}
+.mat-mdc-card.import-card.dup-strong {
+  --mdc-elevated-card-container-color: #fff1b8;
+  background: #fff1b8 !important;
+  box-shadow: inset 0 0 0 2px #ffd666;
+}
+
+/* Pill hiển thị % giống */
+.dup-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #ffe58f;
+  background: #fffbe6;
+  font-size: 12px;
+  line-height: 18px;
+}
+.dup-pill mat-icon { font-size: 16px; height: 16px; width: 16px; }
+.dup-pill.strong { border-color: #ffd666; background: #fff1b8; }
+
 .img-check {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(0, 0, 0, .12);
-    border-radius: 6px;
-    padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(0, 0, 0, .12);
+  border-radius: 6px;
+  padding: 6px;
 }
-
 .img-check img {
-    height: 56px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 4px;
+  height: 56px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
-.spin {
-    animation: spin 1s linear infinite;
-}
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 
-@keyframes spin {
-    from {
-        transform: rotate(0);
-    }
+.content-wrap { position: relative; }
 
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.content-wrap {
-    position: relative;
-}
 /* nút tool Math có viền, cân kích thước với checkbox */
-
 .toolmath-inline .toolmath-trigger {
   border: 1px solid #d9d9d9;
   border-radius: 8px;
@@ -52,27 +64,12 @@
   align-items: center;
   gap: 6px;
 }
-.toolmath-inline .toolmath-trigger:hover {
-  background-color: #fafafa;
-  border-color: #bfbfbf;
-}
-.toolmath-inline .circle-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border-color: currentColor;
-}
-.toolmath-inline .circle-icon mat-icon {
-  font-size: 16px;
-}
+.toolmath-inline .toolmath-trigger:hover { background-color: #fafafa; border-color: #bfbfbf; }
+.toolmath-inline .circle-icon { width: 20px; height: 20px; border-radius: 50%; border-color: currentColor; }
+.toolmath-inline .circle-icon mat-icon { font-size: 16px; }
 
 /* vạch ngăn cách nhỏ giữa tool Math và các checkbox */
-.divider-vert {
-  width: 1px;
-  height: 22px;
-  background: rgba(0, 0, 0, .5);
-  margin: 0 4px;
-}
+.divider-vert { width: 1px; height: 22px; background: rgba(0, 0, 0, .5); margin: 0 4px; }
 
 /* tinh chỉnh thẻ alert cho cân hơn */
 .alert.alert-info {
@@ -84,6 +81,36 @@
 }
 
 /* đảm bảo vùng top wrap đẹp khi xuống dòng */
-@media (max-width: 768px) {
-  .divider-vert { display: none; }
+@media (max-width: 768px) { .divider-vert { display: none; } }
+
+/* === Compact form-field 40px & center text === */
+:host ::ng-deep .mf-compact .mat-mdc-text-field-wrapper,
+:host ::ng-deep .mf-compact .mat-mdc-form-field-flex { height: 40px !important; }
+
+:host ::ng-deep .mf-compact .mat-mdc-form-field-infix {
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
 }
+
+:host ::ng-deep .mf-compact .mat-mdc-input-element {
+  height: 40px;
+  line-height: 40px;
+}
+
+/* mat-select (value + icon) */
+:host ::ng-deep .mf-compact .mat-mdc-select-trigger {
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+:host ::ng-deep .mf-compact .mat-mdc-select-value,
+:host ::ng-deep .mf-compact .mat-mdc-select-value-text { line-height: 40px; }
+
+/* label/outline phụ */
+:host ::ng-deep .mf-compact .mat-mdc-floating-label { transform-origin: left top; }
+:host ::ng-deep .mf-compact .mat-mdc-form-field-subscript-wrapper { display: none; height: 0; }
+
+/* Nút Sửa cùng 40px cho thẳng hàng */
+.btn-36 { height: 40px; line-height: 40px; padding: 0 12px; }

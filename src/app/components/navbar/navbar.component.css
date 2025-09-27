@@ -6,3 +6,6 @@ a {
   text-decoration: none;
   color: inherit;
 }
+.avatar-gradient {
+  background: linear-gradient(135deg, #80e1f5, #9dcaea);
+}

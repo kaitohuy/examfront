@@ -1,23 +1,20 @@
-<div class="container mt-4">
+<div class="container mt-4 position-relative">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Môn tôi dạy</h2>
     <div class="input-group" style="max-width: 360px;">
-      <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+      <span class="input-group-text bg-white border-end-0">
+        <i class="bi bi-search"></i>
+      </span>
       <input
         class="form-control border-start-0"
-        placeholder="Tìm kiếm môn học (tên/mã)…"
-        [(ngModel)]="searchText" />
+        placeholder="Tìm kiếm môn học (tên/mã/giảng viên)…"
+        [(ngModel)]="searchText"
+        [disabled]="isLoading" />
     </div>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <!-- Loading -->
-      <div *ngIf="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">Đang tải dữ liệu...</p>
-      </div>
-
       <!-- Empty -->
       <div *ngIf="!isLoading && filtered.length === 0" class="text-center py-5">
         <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
@@ -32,6 +29,7 @@
               <th style="width: 90px;">ID</th>
               <th>Tên môn học</th>
               <th style="width: 220px;">Mã môn học</th>
+              <th>Giảng viên</th>
             </tr>
           </thead>
           <tbody>
@@ -44,10 +42,22 @@
               <td>{{ s.id }}</td>
               <td>{{ s.name }}</td>
               <td>{{ s.code }}</td>
+              <td>
+                <div *ngIf="s.teachers && s.teachers.length > 0; else noTeachers">
+                  <span class="badge bg-info me-1" *ngFor="let t of s.teachers">
+                    {{ t.firstName }} {{ t.lastName }}
+                  </span>
+                </div>
+                <ng-template #noTeachers>
+                  <span class="text-muted">Chưa phân công</span>
+                </ng-template>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <app-loading-screen *ngIf="isLoading" [blurBackground]="false"></app-loading-screen>
     </div>
   </div>
 </div>
