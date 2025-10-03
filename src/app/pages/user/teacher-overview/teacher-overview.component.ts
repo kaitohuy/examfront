@@ -212,8 +212,8 @@ export class TeacherOverviewComponent implements OnInit, AfterViewInit, OnDestro
         type: 'pie',
         height: 220,
         toolbar: { show: false },
-        sparkline: { enabled: true },         
-        parentHeightOffset: 0               
+        sparkline: { enabled: true },
+        parentHeightOffset: 0
       },
       series: [this.n(a.approved), this.n(a.pending), this.n(a.rejected)],
       labels: ['APP', 'PEN', 'REJ'],
@@ -222,7 +222,7 @@ export class TeacherOverviewComponent implements OnInit, AfterViewInit, OnDestro
       stroke: { width: 2, colors: ['#fff'] },
       dataLabels: {
         enabled: true,
-        dropShadow: { enabled: false },      
+        dropShadow: { enabled: false },
         offset: 0,
         formatter: (v: number) => v.toFixed(1) + '%',
         style: { fontWeight: 700 }
@@ -231,12 +231,12 @@ export class TeacherOverviewComponent implements OnInit, AfterViewInit, OnDestro
         pie: {
           offsetX: 0,
           offsetY: 0,
-          expandOnClick: false,             
+          expandOnClick: false,
           dataLabels: {
             offset: 0,
-            minAngleToShowLabel: 5          
+            minAngleToShowLabel: 5
           },
-          customScale: 0.92                  
+          customScale: 0.92
         }
       },
       grid: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
@@ -315,14 +315,15 @@ export class TeacherOverviewComponent implements OnInit, AfterViewInit, OnDestro
       plotOptions: { bar: { horizontal: true, barHeight: '58%', borderRadius: 8 } },
       xaxis: {
         categories: cats,
-        labels: { formatter: (v: any) => `${Math.round(Number(v))}%` } // trục x hiển thị %
+        labels: { formatter: (v: any) => `${Math.round(Number(v))}%` }
       },
       legend: { position: 'bottom' },
       dataLabels: { enabled: false },
-      grid: { strokeDashArray: 3 },
+      grid: { strokeDashArray: 3 },   
       colors: ['#3b82f6', '#e5e7eb'],
       tooltip: {
         shared: true,
+        intersect: false,   // <- BẮT BUỘC khi shared = true
         y: {
           formatter: (_val: any, opts: any) => {
             const i = opts.dataPointIndex;

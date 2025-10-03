@@ -40,7 +40,12 @@ export class AdminOverviewComponent implements OnInit {
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: d => this.data = d,
-        error: err => this.snack.open('Không tải được số liệu.', 'Đóng', { duration: 3000, panelClass: ['error-snackbar'] })
+        error: err => this.snack.open('Không tải được số liệu.', 'Đóng', {
+          duration: 3000,
+          verticalPosition: 'top',
+          horizontalPosition: 'right',
+          panelClass: ['snack', 'snack-error'],
+        })
       });
   }
 

@@ -28,6 +28,7 @@ export class SidebarComponent {
   @Input() showDepartment: boolean = false;
   @Input() showMySubject: boolean = false;
   @Input() showArchive: boolean = false;
+  @Input() showTasks: boolean = false;
   @Input() isCollapsed: boolean = false;
   @Input() showGuideGeneral = false;
   @Input() showGuideDepartment = false;

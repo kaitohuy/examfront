@@ -47,7 +47,10 @@ export class CloneQuickEditDialogComponent {
       if (!f || f.invalid) {
         f?.markAllAsTouched();
         this.snack.open('Vui lòng điền đầy đủ các trường bắt buộc.', 'Đóng', {
-          duration: 3000, panelClass: ['error-snackbar']
+          duration: 3000,
+          verticalPosition: 'top',
+          horizontalPosition: 'right',
+          panelClass: ['snack', 'snack-error'],
         });
         return;
       }
@@ -75,15 +78,15 @@ export class CloneQuickEditDialogComponent {
       next: (arr) => {
         const results = arr.filter(x => x != null);
         if (results.length < payloads.length) {
-          this.snack.open('Một số bản sao lưu không thành công.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
+          this.snack.open('Một số bản sao lưu không thành công.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] });
         } else {
-          this.snack.open('Đã lưu tất cả bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
+          this.snack.open('Đã lưu tất cả bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success'] });
         }
         this.ref.close(results);
       },
       error: (err) => {
         console.error(err);
-        this.snack.open('Có lỗi khi lưu các bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
+        this.snack.open('Có lỗi khi lưu các bản sao.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] });
       }
     });
   }

@@ -29,4 +29,5 @@ export interface Question {
   labels?: ("PRACTICE" | "EXAM")[];
   parentId?: number | null; 
   cloneIndex?: number | null; 
+  flagged?: boolean; 
 }

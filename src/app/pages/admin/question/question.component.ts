@@ -37,6 +37,7 @@ import { ExportQuestionsDialogComponent } from '../export-questions-dialog/expor
 import { QuestionEditDialogComponent } from '../question-edit-dialog/question-edit-dialog.component';
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { MathjaxDirective } from '../../../shared/mathjax.directive';
+import { AutoGenRequest, AutogenService } from '../../../services/autogen.service';
 
 type CloneState = { items: any[]; open: boolean; loading: boolean };
 
@@ -88,6 +89,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
     from: null,
     to: null,
   };
+  filterFlagged: boolean | null = null;
 
   // ========= Pending filters (dropdown) =========
   pendingFilters = {
@@ -97,6 +99,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
     createdBy: '',
     from: null as Date | null,
     to: null as Date | null,
+    flagged: null as boolean | null,
   };
 
   // ========= Server-side paging =========
@@ -133,7 +136,8 @@ export class QuestionComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
     private qevents: QuestionEventsService,
-    private el: ElementRef
+    private el: ElementRef,
+    private autogen: AutogenService
   ) { }
 
   // ========= Lifecycle =========
@@ -186,10 +190,8 @@ export class QuestionComponent implements OnInit, OnDestroy {
   }
 
   // ========= Server-side data load =========
-  /** Xây filter + paging cho danh sách (BE xử lý phân trang) */
   private buildListOpts(): QuestionListOpts {
-    const labels: LabelBE[] | undefined =
-      this.labelFilter !== 'ALL' ? [this.labelFilter] : undefined;
+    const labels = this.labelFilter !== 'ALL' ? [this.labelFilter] : undefined;
     return {
       labels,
       q: (this.searchText || '').trim() || undefined,
@@ -202,6 +204,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       page: this.currentPage,
       size: this.pageSize,
       sort: this.defaultSort,
+      flagged: this.filterFlagged,           // NEW
     };
   }
 
@@ -298,7 +301,71 @@ export class QuestionComponent implements OnInit, OnDestroy {
     }
     const q = (this.searchText || '').trim();
     if (q) parts.push(`Tìm: "${q}"`);
+    if (this.filterFlagged !== null && this.filterFlagged !== undefined) {
+      parts.push(`Báo lỗi: ${this.filterFlagged ? 'Chỉ bị báo lỗi' : 'Không bị báo lỗi'}`);
+    }
     return parts;
+  }
+
+  openFlagPrompt(q: any) {
+    Swal.fire({
+      title: `Báo lỗi câu hỏi #${q.id}`,
+      input: 'textarea',
+      inputLabel: 'Lý do',
+      inputPlaceholder: 'Mô tả ngắn gọn vấn đề…',
+      inputAttributes: { maxlength: '2000' },
+      inputValidator: (val) => {
+        if (!val || val.trim().length < 5) return 'Vui lòng nhập tối thiểu 5 ký tự';
+        return null;
+      },
+      showCancelButton: true,
+      confirmButtonText: 'Gửi báo lỗi',
+      cancelButtonText: 'Hủy'
+    }).then(res => {
+      if (!res.isConfirmed) return;
+      this.isLoading = true;
+      this.setLoadingText('Đang gửi báo lỗi…', 'Vui lòng đợi trong giây lát');
+      this.questionService.flagQuestion(this.subjectId, q.id, res.value.trim())
+        .subscribe({
+          next: () => {
+            q.flagged = true; // cập nhật ngay UI
+            this.showSuccess('Đã báo lỗi. HEAD sẽ xem xét.');
+            this.isLoading = false;
+            this.resetLoadingText();
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.showError(err?.error?.message || 'Báo lỗi thất bại');
+          }
+        });
+    });
+  }
+
+  unflagQuestion(q: any) {
+    Swal.fire({
+      title: `Gỡ báo lỗi câu hỏi #${q.id}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Gỡ lỗi',
+      cancelButtonText: 'Hủy'
+    }).then(res => {
+      if (!res.isConfirmed) return;
+      this.isLoading = true;
+      this.setLoadingText('Đang gỡ báo lỗi…', 'Vui lòng đợi trong giây lát');
+      this.questionService.unflagQuestion(this.subjectId, q.id)
+        .subscribe({
+          next: () => {
+            q.flagged = false;
+            this.showSuccess('Đã gỡ báo lỗi.');
+            this.isLoading = false;
+            this.resetLoadingText();
+          },
+          error: (err) => {
+            this.isLoading = false;
+            this.showError(err?.error?.message || 'Gỡ lỗi thất bại');
+          }
+        });
+    });
   }
 
   // ========= Filters: clear/apply/sync =========
@@ -323,6 +390,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       createdBy: this.filterCreatedBy || '',
       from: this.filterDateRange.from,
       to: this.filterDateRange.to,
+      flagged: this.filterFlagged,
     };
   }
 
@@ -331,12 +399,10 @@ export class QuestionComponent implements OnInit, OnDestroy {
     this.filterChapter = this.pendingFilters.chapter;
     this.filterQuestionType = this.pendingFilters.type || '';
     this.filterCreatedBy = this.pendingFilters.createdBy || '';
-    this.filterDateRange = {
-      from: this.pendingFilters.from,
-      to: this.pendingFilters.to,
-    };
+    this.filterDateRange = { from: this.pendingFilters.from, to: this.pendingFilters.to };
+    this.filterFlagged = this.pendingFilters.flagged ?? null;  // NEW
     this.currentPage = 0;
-    this.clearSelection(); // IMPORTANT
+    this.clearSelection();
     this.loadQuestions();
   }
 
@@ -348,6 +414,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       createdBy: '',
       from: null,
       to: null,
+      flagged: null,
     };
   }
 
@@ -362,7 +429,8 @@ export class QuestionComponent implements OnInit, OnDestroy {
       this.pendingFilters.type !== (this.filterQuestionType || '') ||
       this.pendingFilters.createdBy !== (this.filterCreatedBy || '') ||
       this.pendingFilters.from?.getTime() !== this.filterDateRange.from?.getTime() ||
-      this.pendingFilters.to?.getTime() !== this.filterDateRange.to?.getTime()
+      this.pendingFilters.to?.getTime() !== this.filterDateRange.to?.getTime() ||
+      this.pendingFilters.flagged !== this.filterFlagged
     );
   }
 
@@ -398,6 +466,10 @@ export class QuestionComponent implements OnInit, OnDestroy {
         ? this.pendingFilters.to.toLocaleDateString()
         : '…';
       changes.push(`Thời gian: ${fromVal} → ${toVal}`);
+    }
+    if (this.pendingFilters.flagged !== this.filterFlagged) {
+      const v = this.pendingFilters.flagged;
+      changes.push(`Báo lỗi: ${v === null ? 'Tất cả' : v ? 'Chỉ bị báo lỗi' : 'Không bị báo lỗi'}`);
     }
     return changes.join(', ');
   }
@@ -1135,4 +1207,75 @@ export class QuestionComponent implements OnInit, OnDestroy {
       panelClass: ['snack', 'snack-error'],
     });
   }
+
+  private tryParseZipFileNameFromCD(cd: string | null | undefined, fallback: string): string {
+    if (!cd) return fallback;
+    const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
+    const name = m ? decodeURIComponent(m[1].replace(/"/g, '')) : null;
+    if (!name) return fallback;
+    return name.toLowerCase().endsWith('.zip') ? name : `${name}.zip`;
+  }
+
+  private triggerDownload(blob: Blob, fileName: string) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  openAutoGenDialog() {
+    const ref = this.dialog.open(ExportQuestionsDialogComponent, {
+      width: '720px',
+      maxHeight: '90vh',
+      data: { selectedCount: 0, mode: 'autogen' },
+      autoFocus: false,
+    });
+
+    ref.afterClosed().subscribe((r) => {
+      if (!r || r.mode !== 'autogen') return;
+
+      const {
+        variants, fileName, variant, format,
+        semester, academicYear, classes, duration, program, examForm, mau
+      } = r;
+
+      // body & query cho AutogenService
+      const body = { variants };
+      const query = {
+        commit: true,
+        fileName,
+        program, semester, academicYear, classes, duration, examForm, mau
+      };
+
+      this.startProgress('Đang sinh và đóng gói đề…', 'Đang tạo DOCX & ma trận, vui lòng đợi');
+
+      this.autogen.exportZipProgress(this.subjectId, body, query).subscribe({
+        next: (ev: any) => {
+          if (ev?.type === 1) {
+            if (typeof ev.total === 'number') this.progress = Math.round((ev.loaded / ev.total) * 30);
+            else this.progress = Math.min((this.progress ?? 0) + 1, 29);
+          } else if (ev?.type === 3) {
+            if (typeof ev.total === 'number') this.progress = 30 + Math.round((ev.loaded / ev.total) * 70);
+            else this.progress = Math.min((this.progress ?? 30) + 1, 99);
+          } else if (ev?.type === 4) {
+            const resp = ev;
+            const blob = resp.body as Blob;
+            const cd = resp.headers?.get?.('content-disposition') || '';
+            const suggested = this.tryParseZipFileNameFromCD(cd, `${fileName || 'de_tu_dong'}.zip`);
+            this.triggerDownload(blob, suggested);
+            this.progress = 100;
+            this.showSuccess(`Đã sinh ${variants} đề và tải ZIP về máy.`);
+            this.stopProgress(500);
+          }
+        },
+        error: (err) => {
+          this.stopProgress();
+          this.showError('Sinh đề tự động thất bại: ' + (err?.error?.message || 'Không xác định'));
+        },
+      });
+    });
+  }
+
 }

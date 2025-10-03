@@ -59,6 +59,12 @@
         </div>
       </ng-container>
 
+      <a *ngIf="showTasks" mat-list-item [routerLink]="to('tasks')" routerLinkActive="active"
+        [matTooltip]="isCollapsed ? 'Tasks' : ''" [matTooltipDisabled]="!isCollapsed">
+        <mat-icon matListIcon>assignment</mat-icon>
+        <span matLine *ngIf="!isCollapsed">Nhiệm vụ</span>
+      </a>
+
       <ng-container *ngIf="hasAnyGuide">
         <a mat-list-item (click)="!isCollapsed && (guideOpen = !guideOpen)" [class.clickable]="!isCollapsed"
           [matTooltip]="isCollapsed ? 'Hướng dẫn' : ''" [matTooltipDisabled]="!isCollapsed">

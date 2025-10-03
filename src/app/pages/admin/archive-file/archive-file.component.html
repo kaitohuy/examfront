@@ -77,13 +77,6 @@
 
     </div>
 
-    <!-- Tabs ngoài chỉ khi không bị ép kind và không ở moderation
-  <mat-tab-group *ngIf="showOuterTabs" (selectedIndexChange)="onOuterTabChange($event)">
-    <mat-tab label="All"></mat-tab>
-    <mat-tab label="Imports"></mat-tab>
-    <mat-tab label="Exports"></mat-tab>
-  </mat-tab-group> -->
-
     <!-- Tabs con cho EXPORT: ẨN khi moderation hoặc có reviewStatusFilter (Pending/History) -->
     <div *ngIf="finalKind === 'EXPORT' && !moderationMode && !reviewStatusFilter" class="mt-3">
       <mat-tab-group (selectedIndexChange)="onExportTabChange($event)">

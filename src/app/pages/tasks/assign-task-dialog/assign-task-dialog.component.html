@@ -1,0 +1,64 @@
+  <h2 mat-dialog-title class="mx-3 my-3">Giao nhiệm vụ</h2>
+
+  <div mat-dialog-content>
+    <div class="row mx-2">
+      <div class="col-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Môn học*</mat-label>
+          <input matInput [matAutocomplete]="subjAuto" [formControl]="subjectText" placeholder="Gõ để tìm…"
+            (blur)="syncSubjectOnBlur()" [attr.aria-busy]="isLoading">
+          <mat-autocomplete #subjAuto="matAutocomplete" (optionSelected)="onPickSubject($event.option.value)">
+            <mat-option *ngFor="let s of filteredSubjects" [value]="s">
+              {{ s.name }} — {{ s.code }} (ID: {{ s.id }})
+            </mat-option>
+          </mat-autocomplete>
+          <mat-error *ngIf="form.controls.subjectId.hasError('required')">Bắt buộc chọn môn</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Giáo viên</mat-label>
+          <mat-select [formControl]="form.controls.assignedToId" [disabled]="!teachersForSubject.length">
+            <mat-option *ngFor="let t of teachersForSubject" [value]="t.id">
+              {{ t.name }} — (ID: {{ t.id }})
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls.assignedToId.hasError('required')">Bắt buộc chọn giáo viên</mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="row mx-2">
+      <div class="col-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Tiêu đề</mat-label>
+          <input matInput [formControl]="form.controls.title" placeholder="VD: Đề thi cuối kỳ CS101 - HK1">
+          <mat-error *ngIf="form.controls.title.hasError('required')">Bắt buộc</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Hạn hoàn thành</mat-label>
+          <input matInput [matDatepicker]="duePicker" [formControl]="form.controls.dueAt">
+          <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
+          <mat-datepicker #duePicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="row mx-2">
+      <div class="col-12">
+        <mat-form-field appearance="outline" style="width: 100%;">
+          <mat-label>Hướng dẫn (tuỳ chọn)</mat-label>
+          <textarea matInput rows="4" [formControl]="form.controls.instructions"></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+
+  <div mat-dialog-actions align="end" class="mb-2">
+    <button mat-button (click)="cancel()">Huỷ</button>
+    <button mat-raised-button color="primary" class="mx-2" (click)="submit()">Giao nhiệm vụ</button>
+  </div>

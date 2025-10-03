@@ -11,15 +11,54 @@
   </a>
   <span class="example-spacer"></span>
 
+  <div>
+    <!-- Icon chuông + badge -->
+    <button mat-icon-button [matMenuTriggerFor]="notifMenu" aria-label="Thông báo"
+      [matBadge]="(unread || 0) > 99 ? '99+' : (unread || 0)" [matBadgeHidden]="!(unread || 0)" matBadgeColor="warn"
+      (menuOpened)="onNotifMenuOpened()">
+      <mat-icon>{{ muted ? 'notifications_off' : 'notifications_active' }}</mat-icon>
+    </button>
+
+    <!-- Dropdown -->
+    <mat-menu #notifMenu="matMenu" xPosition="before" yPosition="below">
+      <ng-template matMenuContent>
+        <div class="d-flex align-items-center justify-content-between px-2 py-1">
+          <div class="fw-semibold">Thông báo</div>
+          <button mat-icon-button (click)="toggleMute($event)"
+            matTooltip="{{ muted ? 'Bật thông báo' : 'Tắt thông báo' }}">
+            <mat-icon>{{ muted ? 'notifications_active' : 'notifications_off' }}</mat-icon>
+          </button>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div class="px-1 py-1" style="max-width: 360px; max-height: 360px; overflow: auto;">
+          <div *ngIf="items.length; else noNoti">
+            <div *ngFor="let n of items" class="d-flex gap-2 align-items-start px-1 py-2 border-bottom">
+              <div class="flex-fill">
+                <div class="fw-semibold">{{ n.title }}</div>
+                <div class="small text-body-secondary" style="white-space: pre-wrap;">{{ n.message }}</div>
+                <div class="small text-secondary mt-1">{{ n.createdAt | date:'dd/MM, HH:mm' }}</div>
+              </div>
+              <button mat-icon-button color="warn" (click)="deleteNotif(n, $event)" aria-label="Xóa">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <div class="text-center mt-1" *ngIf="hasMore">
+              <button mat-button (click)="loadMore($event)">Xem thêm</button>
+            </div>
+          </div>
+          <ng-template #noNoti>
+            <div class="px-2 py-3 text-center text-muted small">Không có thông báo.</div>
+          </ng-template>
+        </div>
+      </ng-template>
+    </mat-menu>
+  </div>
   <!-- Avatar user -->
   <button *ngIf="isLoggedIn && user" [routerLink]="profileLink" mat-button class="fs-7 d-flex align-items-center gap-2">
-    <img
-      [src]="avatarUrl"
-      width="42"
-      height="42"
-      class="rounded-circle border-2 border-white avatar-gradient mx-1"
-      alt="avatar"
-    />
+    <img [src]="avatarUrl" width="42" height="42" class="rounded-circle border-2 border-white avatar-gradient mx-1"
+      alt="avatar" />
     {{ user.username }}
   </button>
 

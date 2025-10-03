@@ -47,7 +47,7 @@ export interface QuestionListOpts {
   createdBy?: string;
   from?: Date | string | null; // ISO string hoặc Date
   to?: Date | string | null;   // ISO string hoặc Date
-
+  flagged?: boolean | null;
   // paging/sorting
   page?: number;               // default 0
   size?: number;               // default 20
@@ -81,7 +81,6 @@ export class QuestionService {
   }
 
   // ========= NEW: SERVER-SIDE PAGINATION + FILTER =========
-
   /** Lấy danh sách câu hỏi theo trang + filter (BE xử lý) */
   getQuestionsPage(subjectId: number, opts?: QuestionListOpts): Observable<Page<Question>> {
     let params = new HttpParams();
@@ -93,7 +92,9 @@ export class QuestionService {
     if (opts?.chapter != null) params = params.set('chapter', String(opts.chapter));
     if (opts?.type) params = params.set('type', opts.type);
     if (opts?.createdBy?.trim()) params = params.set('createdBy', opts.createdBy.trim());
-
+    if (opts?.flagged !== undefined && opts?.flagged !== null) {
+      params = params.set('flagged', String(!!opts.flagged));
+    }
     const iso = (v: Date | string | null | undefined): string | null => {
       if (!v) return null;
       if (v instanceof Date) return v.toISOString();
@@ -120,6 +121,20 @@ export class QuestionService {
     return this.http.get<Page<Question>>(
       `${baseUrl}/subject/${subjectId}/questions`,
       { params }
+    );
+  }
+
+  flagQuestion(subjectId: number, questionId: number, reason: string) {
+    return this.http.post<{ questionId: number }>(
+      `${baseUrl}/subject/${subjectId}/questions/${questionId}/flag`,
+      { reason }
+    );
+  }
+
+  unflagQuestion(subjectId: number, questionId: number) {
+    return this.http.post<{ questionId: number }>(
+      `${baseUrl}/subject/${subjectId}/questions/${questionId}/unflag`,
+      {}
     );
   }
 

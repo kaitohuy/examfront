@@ -24,6 +24,16 @@
         <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 360px;">
 
           <div class="row g-2">
+            <div class="mb-3">
+              <label class="form-label mb-1">Báo lỗi</label>
+              <select class="form-select" [(ngModel)]="pendingFilters.flagged" (click)="$event.stopPropagation()"
+                [disabled]="isLoading">
+                <option [ngValue]="null">Tất cả</option>
+                <option [ngValue]="true">Chỉ bị báo lỗi</option>
+                <option [ngValue]="false">Không bị báo lỗi</option>
+              </select>
+            </div>
+
             <div class="mb-3 col-6">
               <label class="form-label mb-1">Độ khó (điểm số)</label>
               <select class="form-select" [(ngModel)]="pendingFilters.difficulty" (click)="$event.stopPropagation()"
@@ -170,6 +180,9 @@
       <div class="d-flex justify-content-end gap-2">
         <button class="btn btn-outline-secondary" (click)="openImportDryRun()" [disabled]="isLoading"><i
             class="bi bi-upload me-1"></i> Tải câu hỏi lên</button>
+        <button class="btn btn-outline-secondary" (click)="openAutoGenDialog()" [disabled]="isLoading">
+          <i class="bi bi-magic me-1"></i> Sinh đề tự động
+        </button>
         <button class="btn btn-primary" (click)="openCreateQuestionDialog()" [disabled]="isLoading"><i
             class="bi bi-plus-circle me-1"></i> Thêm Câu hỏi</button>
       </div>
@@ -201,7 +214,7 @@
 <!-- Danh sách câu hỏi + clones -->
 <div *ngIf="!isLoading && paginatedQuestions.length > 0" class="row row-cols-1 g-4">
   <div class="col" *ngFor="let question of paginatedQuestions; trackBy: trackById">
-    <div class="card h-100 shadow-sm item-card" [class.selected]="isSelected(question.id)"
+    <div class="card h-100 shadow-sm item-card" [class.selected]="isSelected(question.id)" [class.selectedFlag]="question.flagged"
       (click)="onCardClick($event, question.id)">
       <div class="card-body position-relative">
         <div class="d-flex align-items-center gap-2">
@@ -209,6 +222,7 @@
             (change)="onItemSelectChange($event, question.id)" (click)="$event.stopPropagation()"
             [disabled]="isLoading" />
           <h5 class="card-title m-0">Câu hỏi #{{ question.id }}</h5>
+          <span *ngIf="question.flagged" class="badge rounded-pill text-bg-warning ms-2">Đã báo lỗi</span>
           <span *ngIf="question.labels?.includes('PRACTICE')" class="badge rounded-pill text-bg-info ms-2">Ôn tập</span>
           <span *ngIf="question.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi cử</span>
         </div>
@@ -268,6 +282,17 @@
           </div>
 
           <div class="btn-group">
+            <!-- NEW: Báo lỗi / Gỡ lỗi -->
+            <button *ngIf="!question.flagged" class="btn btn-sm btn-outline-warning me-2"
+              (click)="openFlagPrompt(question)" [disabled]="isLoading">
+              <i class="bi bi-flag"></i> Báo lỗi
+            </button>
+            <button *ngIf="question.flagged" class="btn btn-sm btn-warning me-2" (click)="unflagQuestion(question)"
+              [disabled]="isLoading">
+              <i class="bi bi-flag-fill"></i> Gỡ lỗi
+            </button>
+
+            <!-- giữ nguyên các nút còn lại -->
             <button class="btn btn-sm btn-outline-secondary me-2" (click)="openClonePrompt(question)"
               [disabled]="isLoading">
               <i class="bi bi-layers"></i> Nhân bản
@@ -281,106 +306,110 @@
               </span>
             </button>
             <button class="btn btn-sm btn-outline-primary me-2" (click)="openEditQuestionDialog(question)"
-              [disabled]="isLoading"><i class="bi bi-pencil"></i> Sửa</button>
-            <button class="btn btn-sm btn-outline-danger" (click)="deleteQuestion(question.id)"
-              [disabled]="isLoading"><i class="bi bi-trash"></i> Xóa</button>
+              [disabled]="isLoading">
+              <i class="bi bi-pencil"></i> Sửa
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteQuestion(question.id)" [disabled]="isLoading">
+              <i class="bi bi-trash"></i> Xóa
+            </button>
           </div>
-        </div>
 
-        <!-- Clones -->
-        <div *ngIf="stateOf(question.id).open" class="mt-3">
-          <div *ngIf="stateOf(question.id).loading" class="text-muted small">
-            <i class="bi bi-hourglass-split"></i> Đang tải bản sao...
-          </div>
-          <div *ngIf="!stateOf(question.id).loading && stateOf(question.id).items.length === 0"
-            class="text-muted small">
-            <i class="bi bi-inboxes"></i> Chưa có bản sao.
-          </div>
-          <div class="row row-cols-1 g-3"
-            *ngIf="!stateOf(question.id).loading && stateOf(question.id).items.length > 0">
-            <div class="col" *ngFor="let c of stateOf(question.id).items">
-              <div class="card border-0 shadow-sm clone-card position-relative"
-                [class.selected-border]="isCloneSelected(c.id)" (click)="onCloneCardClick($event, c)">
-                <div class="card-body position-relative">
-                  <div class="d-flex align-items-center gap-2">
-                    <input type="checkbox" class="form-check-input mt-0 item-checkbox" [checked]="isCloneSelected(c.id)"
-                      (change)="onCloneSelectChange($event, c)" (click)="$event.stopPropagation()"
-                      [disabled]="isLoading" />
-                    <h6 class="card-title m-0">Bản sao #{{ question.id }}.{{ c.cloneIndex }}</h6>
 
-                    <span *ngIf="c.labels?.includes('PRACTICE')" class="badge rounded-pill text-bg-info ms-2">Ôn
-                      tập</span>
-                    <span *ngIf="c.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi
-                      cử</span>
-                  </div>
+          <!-- Clones -->
+          <div *ngIf="stateOf(question.id).open" class="mt-3">
+            <div *ngIf="stateOf(question.id).loading" class="text-muted small">
+              <i class="bi bi-hourglass-split"></i> Đang tải bản sao...
+            </div>
+            <div *ngIf="!stateOf(question.id).loading && stateOf(question.id).items.length === 0"
+              class="text-muted small">
+              <i class="bi bi-inboxes"></i> Chưa có bản sao.
+            </div>
+            <div class="row row-cols-1 g-3"
+              *ngIf="!stateOf(question.id).loading && stateOf(question.id).items.length > 0">
+              <div class="col" *ngFor="let c of stateOf(question.id).items">
+                <div class="card border-0 shadow-sm clone-card position-relative"
+                  [class.selected-border]="isCloneSelected(c.id)" (click)="onCloneCardClick($event, c)">
+                  <div class="card-body position-relative">
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="checkbox" class="form-check-input mt-0 item-checkbox"
+                        [checked]="isCloneSelected(c.id)" (change)="onCloneSelectChange($event, c)"
+                        (click)="$event.stopPropagation()" [disabled]="isLoading" />
+                      <h6 class="card-title m-0">Bản sao #{{ question.id }}.{{ c.cloneIndex }}</h6>
 
-                  <div class="position-absolute top-0 end-0 mt-2 me-2 text-muted small text-end">
-                    <p class="mb-0"><strong>Chương:</strong> {{ c.chapter }}</p>
-                    <p class="mb-0"><strong>Độ khó:</strong> {{ c.difficulty }}</p>
-                  </div>
-
-                  <div class="mt-2">
-                    <div class="kv-row mt-2">
-                      <div class="kv-label">Nội dung:</div>
-                      <div class="kv-value math-inline" [appMathjax]="c.content || ''"></div>
+                      <span *ngIf="c.labels?.includes('PRACTICE')" class="badge rounded-pill text-bg-info ms-2">Ôn
+                        tập</span>
+                      <span *ngIf="c.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi
+                        cử</span>
                     </div>
 
-                    <div *ngIf="c.questionType === 'MULTIPLE_CHOICE'" class="row g-3 mt-1">
-                      <div class="col-6">
-                        <div class="kv-row">
-                          <div class="kv-label">A:</div>
-                          <div class="kv-value math-inline" [appMathjax]="c.optionA || ''"></div>
+                    <div class="position-absolute top-0 end-0 mt-2 me-2 text-muted small text-end">
+                      <p class="mb-0"><strong>Chương:</strong> {{ c.chapter }}</p>
+                      <p class="mb-0"><strong>Độ khó:</strong> {{ c.difficulty }}</p>
+                    </div>
+
+                    <div class="mt-2">
+                      <div class="kv-row mt-2">
+                        <div class="kv-label">Nội dung:</div>
+                        <div class="kv-value math-inline" [appMathjax]="c.content || ''"></div>
+                      </div>
+
+                      <div *ngIf="c.questionType === 'MULTIPLE_CHOICE'" class="row g-3 mt-1">
+                        <div class="col-6">
+                          <div class="kv-row">
+                            <div class="kv-label">A:</div>
+                            <div class="kv-value math-inline" [appMathjax]="c.optionA || ''"></div>
+                          </div>
+                          <div class="kv-row mt-1">
+                            <div class="kv-label">B:</div>
+                            <div class="kv-value math-inline" [appMathjax]="c.optionB || ''"></div>
+                          </div>
                         </div>
-                        <div class="kv-row mt-1">
-                          <div class="kv-label">B:</div>
-                          <div class="kv-value math-inline" [appMathjax]="c.optionB || ''"></div>
+                        <div class="col-6">
+                          <div class="kv-row">
+                            <div class="kv-label">C:</div>
+                            <div class="kv-value math-inline" [appMathjax]="c.optionC || ''"></div>
+                          </div>
+                          <div class="kv-row mt-1">
+                            <div class="kv-label">D:</div>
+                            <div class="kv-value math-inline" [appMathjax]="c.optionD || ''"></div>
+                          </div>
                         </div>
                       </div>
-                      <div class="col-6">
-                        <div class="kv-row">
-                          <div class="kv-label">C:</div>
-                          <div class="kv-value math-inline" [appMathjax]="c.optionC || ''"></div>
-                        </div>
-                        <div class="kv-row mt-1">
-                          <div class="kv-label">D:</div>
-                          <div class="kv-value math-inline" [appMathjax]="c.optionD || ''"></div>
-                        </div>
+
+                      <div *ngIf="showAnswers && c.answer" class="card-text mt-1"><strong>Đáp án:</strong> {{ c.answer
+                        }}
+                      </div>
+                      <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2">
+                        <div class="kv-label">Giải thích:</div>
+                        <div class="kv-value math-inline" [appMathjax]="c.answerText || ''"></div>
                       </div>
                     </div>
-
-                    <div *ngIf="showAnswers && c.answer" class="card-text mt-1"><strong>Đáp án:</strong> {{ c.answer }}
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                      <button class="btn btn-outline-primary btn-sm" (click)="openEditCloneDialog(c)"
+                        [disabled]="isLoading">
+                        <i class="bi bi-pencil"></i> Sửa
+                      </button>
+                      <button class="btn btn-outline-danger btn-sm" (click)="deleteClone(c)" [disabled]="isLoading">
+                        <i class="bi bi-trash"></i> Xóa
+                      </button>
                     </div>
-                    <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2">
-                      <div class="kv-label">Giải thích:</div>
-                      <div class="kv-value math-inline" [appMathjax]="c.answerText || ''"></div>
-                    </div>
-                  </div>
-                  <div class="d-flex justify-content-end gap-2 mt-2">
-                    <button class="btn btn-outline-primary btn-sm" (click)="openEditCloneDialog(c)"
-                      [disabled]="isLoading">
-                      <i class="bi bi-pencil"></i> Sửa
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm" (click)="deleteClone(c)" [disabled]="isLoading">
-                      <i class="bi bi-trash"></i> Xóa
-                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          </div> <!-- /row clones -->
-        </div> <!-- /clones -->
+            </div> <!-- /row clones -->
+          </div> <!-- /clones -->
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Paginator (server-side) -->
-<mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
-  (page)="onPageChange($event)" showFirstLastButtons [disabled]="isLoading">
-</mat-paginator>
+  <!-- Paginator (server-side) -->
+  <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)" showFirstLastButtons [disabled]="isLoading">
+  </mat-paginator>
 
-<!-- Overlay loading -->
-<app-loading-screen *ngIf="isLoading" [title]="loadingTitle" [subtitle]="loadingSubtitle"
-  [showProgressBar]="showProgressBar" [progress]="progress" [blurBackground]="true" (action)="reloadPage()">
-  <div class="footer small text-muted">Đang xử lý… xin vui lòng đợi.</div>
-</app-loading-screen>
+  <!-- Overlay loading -->
+  <app-loading-screen *ngIf="isLoading" [title]="loadingTitle" [subtitle]="loadingSubtitle"
+    [showProgressBar]="showProgressBar" [progress]="progress" [blurBackground]="true" (action)="reloadPage()">
+    <div class="footer small text-muted">Đang xử lý… xin vui lòng đợi.</div>
+  </app-loading-screen>

@@ -1,0 +1,154 @@
+<div class="container mt-3" [attr.aria-busy]="isLoading">
+  <mat-card class="mb-3 shadow-sm">
+    <div class="d-flex flex-wrap align-items-end gap-2 mx-3 my-3">
+      <div class="me-auto">
+        <div class="h5 mb-1">Nhiệm vụ ra đề</div>
+        <div class="text-muted small">Giao & theo dõi tiến độ ra đề theo môn học</div>
+      </div>
+
+      <ng-container *ngIf="isHead">
+        <button mat-raised-button color="primary" (click)="openAssignDialog()">
+          <mat-icon class="me-1">add_task</mat-icon> Giao nhiệm vụ
+        </button>
+      </ng-container>
+    </div>
+
+    <!-- Filters -->
+    <div class="row g-2 mt-2 mx-3">
+      <div class="col-12 col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Môn học</mat-label>
+          <input matInput [matAutocomplete]="subjAuto" [formControl]="subjectText" (blur)="syncSubjectOnBlur()"
+            [attr.aria-busy]="isLoadingSubjects" placeholder="Gõ tên/mã/ID để tìm…">
+          <button *ngIf="subjectText.value" matSuffix mat-icon-button type="button" aria-label="Clear"
+            (click)="clearSubject()">
+            <mat-icon>close</mat-icon>
+          </button>
+          <mat-autocomplete #subjAuto="matAutocomplete" (optionSelected)="onPickSubject($event.option.value)">
+            <mat-option *ngFor="let s of filteredSubjects" [value]="s">
+              {{ s.name }} — {{ s.code }} (ID: {{ s.id }})
+            </mat-option>
+            <mat-option *ngIf="!filteredSubjects.length" disabled>Không có kết quả</mat-option>
+          </mat-autocomplete>
+          <!-- giữ subjectId trong form, không cần hiển thị -->
+        </mat-form-field>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Trạng thái</mat-label>
+          <mat-select [formControl]="filterForm.controls.status">
+            <mat-option value="">Tất cả</mat-option>
+            <mat-option value="ASSIGNED">Đã giao</mat-option>
+            <mat-option value="IN_PROGRESS">Đang làm</mat-option>
+            <mat-option value="DONE">Hoàn thành</mat-option>
+            <mat-option value="CANCELLED">Đã huỷ</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Từ ngày</mat-label>
+          <input matInput [matDatepicker]="fromPicker" [formControl]="filterForm.controls.from">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Đến ngày</mat-label>
+          <input matInput [matDatepicker]="toPicker" [formControl]="filterForm.controls.to">
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+  </mat-card>
+
+  <!-- Table -->
+  <mat-card class="shadow-sm">
+    <div class="table-responsive">
+      <table mat-table [dataSource]="rows" class="mat-elevation-z0 w-100">
+
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef>Tiêu đề</th>
+          <td mat-cell *matCellDef="let r">
+            <div class="fw-semibold">{{ r.title }}</div>
+            <div class="small text-muted" style="white-space: pre-wrap;" *ngIf="r.instructions">{{ r.instructions }}
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="subject">
+          <th mat-header-cell *matHeaderCellDef>Môn</th>
+          <td mat-cell *matCellDef="let r">{{ r.subjectName || ('#' + r.subjectId) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="assignee">
+          <th mat-header-cell *matHeaderCellDef>Người thực hiện</th>
+          <td mat-cell *matCellDef="let r">{{ r.assignedToName || ('User #' + r.assignedToId) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Trạng thái</th>
+          <td mat-cell *matCellDef="let r">
+            <span [class]="statusChip(r.status)">{{ viStatus(r.status) }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="due">
+          <th mat-header-cell *matHeaderCellDef>Hạn</th>
+          <td mat-cell *matCellDef="let r">{{ r.dueAt ? (r.dueAt | date:'dd/MM/yyyy, HH:mm') : '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="created">
+          <th mat-header-cell *matHeaderCellDef>Tạo lúc</th>
+          <td mat-cell *matCellDef="let r">{{ r.createdAt | date:'dd/MM/yyyy, HH:mm' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="text-end">Thao tác</th>
+          <td mat-cell *matCellDef="let r" class="text-end">
+            <!-- Teacher actions -->
+            <button *ngIf="canStart(r)" mat-stroked-button color="primary" (click)="startTask(r)" class="me-2">
+              Bắt đầu
+            </button>
+            <button *ngIf="canDone(r)" mat-raised-button color="accent" (click)="doneTask(r)" class="me-2">
+              Hoàn thành
+            </button>
+
+            <!-- Head actions -->
+            <!-- EDIT chỉ hiện khi HEAD & chưa huỷ -->
+            <button *ngIf="isHead && r.status !== 'CANCELLED' && r.status !== 'DONE'" mat-stroked-button color="primary" (click)="openEdit(r)"
+              class="me-2">
+              <mat-icon class="me-1" fontIcon="edit"></mat-icon> Sửa
+            </button>
+
+            <!-- HỦY chỉ hiện khi HEAD & chưa huỷ -->
+            <button *ngIf="canCancel(r)" mat-stroked-button color="warn" (click)="cancelTask(r)" class="me-2">
+              <mat-icon class="me-1" fontIcon="delete"></mat-icon> Huỷ
+            </button>
+            <button *ngIf="isHead && (r.status === 'CANCELLED' || r.status === 'DONE')" mat-stroked-button color="warn" (click)="deleteTask(r)">
+              <mat-icon class="me-1" fontIcon="delete_forever"></mat-icon> Xoá
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+        <tr *ngIf="!isLoading && rows.length === 0">
+          <td [attr.colspan]="displayedColumns.length" class="text-center py-4 text-muted">
+            Không có nhiệm vụ.
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator [length]="total" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="[10,20,50]"
+      (page)="onPage($event)" class="mt-2">
+    </mat-paginator>
+  </mat-card>
+</div>

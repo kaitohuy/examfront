@@ -90,3 +90,13 @@ pre.card-text { white-space: pre-wrap; word-wrap: break-word; font-size: .9rem; 
     row-gap:4px;
   }
 }
+
+/* NEW: card bị báo lỗi */
+.item-card.flagged {
+  background: #fff8e1; /* vàng nhạt dễ nhìn */
+  box-shadow: 0 0 0 2px #ffe08a inset; /* viền vàng mảnh */
+}
+.item-card.selectedFlag { 
+  background: #fff8e1; 
+  box-shadow: 0 0 0 2px #fdff91 inset; 
+}

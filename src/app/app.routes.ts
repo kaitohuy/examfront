@@ -33,6 +33,7 @@ import { GuideFileComponent } from './pages/guide/guide-file/guide-file.componen
 import { AdminOverviewComponent } from './pages/admin/admin-overview/admin-overview.component';
 import { HeadOverviewComponent } from './pages/head/head-overview/head-overview.component';
 import { TeacherOverviewComponent } from './pages/user/teacher-overview/teacher-overview.component';
+import { ExamTasksComponent } from './pages/tasks/exam-tasks/exam-tasks.component';
 
 const GUIDE_CHILDREN: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'overview' },
@@ -127,6 +128,9 @@ export const routes: Routes = [
           { path: 'history', component: ArchiveHistoryComponent, data: { kind: 'EXPORT', variant: 'EXAM' } },
         ],
       },
+      {
+        path: 'tasks', component: ExamTasksComponent
+      },
       { path: 'guide', component: GuideLayoutComponent, children: GUIDE_CHILDREN },
     ],
   },
@@ -157,6 +161,9 @@ export const routes: Routes = [
           { path: 'pending', component: ArchiveFileComponent, data: { kind: 'EXPORT', reviewStatus: 'PENDING', moderation: true } },
           { path: 'history', component: ArchiveHistoryComponent, data: { kind: 'EXPORT', variant: 'EXAM' } },
         ],
+      },
+      {
+        path: 'tasks', component: ExamTasksComponent, 
       },
       { path: 'guide', component: GuideLayoutComponent, children: GUIDE_CHILDREN },
     ],

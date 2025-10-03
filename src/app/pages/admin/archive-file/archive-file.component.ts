@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { debounceTime, Subject, takeUntil, combineLatest, finalize } from 'rxjs';
+import { debounceTime, Subject, takeUntil, combineLatest, finalize, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { FileArchive } from '../../../models/fileArchive';
@@ -19,6 +19,7 @@ import { LoadingScreenComponent } from '../../loading-screen/loading-screen.comp
 import { withLoading } from '../../../shared/with-loading';
 import { MatDialog } from '@angular/material/dialog';
 import { RejectDialogComponent, RejectDialogResult } from '../reject-dialog/reject-dialog.component';
+import { NotificationService } from '../../../services/notification.service';
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
 type Kind = 'IMPORT' | 'EXPORT' | null;
@@ -100,7 +101,14 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  constructor(private api: FileArchiveService, private route: ActivatedRoute, private login: LoginService, private rr: ReviewReminderService, private dialog: MatDialog) { }
+  constructor(
+    private api: FileArchiveService, 
+    private route: ActivatedRoute, 
+    private login: LoginService, 
+    private rr: ReviewReminderService, 
+    private dialog: MatDialog,
+    private notif: NotificationService,
+  ) { }
 
   ngOnInit(): void {
     combineLatest([this.route.data, this.route.paramMap, this.route.queryParamMap])
@@ -320,6 +328,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         } else {
           (r as any).reviewStatus = 'APPROVED';
         }
+        this.notif.invalidateUnread();
         Swal.fire({ icon: 'success', title: 'Đã duyệt', timer: 1200, showConfirmButton: false });
       },
       error: err => { Swal.fire('Lỗi', 'Duyệt thất bại.', 'error'); console.error(err); }
@@ -367,7 +376,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       panelClass: 'ep-dialog'
     });
 
-    const result = await ref.afterClosed().toPromise() as RejectDialogResult | undefined;
+    const result = await firstValueFrom(ref.afterClosed()) as RejectDialogResult | undefined;
     if (!result) return;
 
     const { reason, deadline } = result;
@@ -385,7 +394,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           (r as any).reviewNote = reason;
           (r as any).reviewDeadline = deadline as any;
         }
-        // feedback nhẹ nhàng bằng Toast Swal (giữ lại Swal cho toast)
+        this.notif.invalidateUnread(); 
         Swal.fire({ icon: 'success', title: 'Đã từ chối', timer: 1200, showConfirmButton: false });
       },
       error: err => { Swal.fire('Lỗi', 'Từ chối thất bại.', 'error'); console.error(err); }
