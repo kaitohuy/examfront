@@ -16,6 +16,9 @@ import { DepartmentService } from '../../../services/department.service';
 import { forkJoin, of } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import Swal from 'sweetalert2';
+import { UploadQuestionsDialogComponent } from '../../admin/upload-questions-dialog/upload-questions-dialog.component';
+import { LoadingScreenComponent } from "../../loading-screen/loading-screen.component";
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface SubjectWithTeachers {
   id: number;
@@ -31,6 +34,7 @@ interface SubjectWithTeachers {
     ...sharedImports,
     MatPaginatorModule,
     MatAutocompleteModule,
+    LoadingScreenComponent
   ],
   templateUrl: './exam-tasks.component.html',
   styleUrls: ['./exam-tasks.component.css']
@@ -41,6 +45,8 @@ export class ExamTasksComponent implements OnInit, OnDestroy {
   private login = inject(LoginService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   // NEW: services để lấy list môn theo khoa HEAD
   private subjSvc = inject(SubjectService);
@@ -182,16 +188,6 @@ export class ExamTasksComponent implements OnInit, OnDestroy {
     this.filterForm.controls.subjectId.setValue(exact.length === 1 ? exact[0].id : null);
   }
 
-  viStatus(s?: ExamTaskStatus | null) {
-    switch (s) {
-      case 'ASSIGNED': return 'Đã giao';
-      case 'IN_PROGRESS': return 'Đang làm';   // vẫn dịch khi dữ liệu có
-      case 'DONE': return 'Hoàn thành';
-      case 'CANCELLED': return 'Đã huỷ';
-      default: return '—';
-    }
-  }
-
   clearSubject() {
     this.subjectText.setValue('');
     this.filterForm.controls.subjectId.setValue(null); // => BE không lọc theo môn
@@ -289,27 +285,7 @@ export class ExamTasksComponent implements OnInit, OnDestroy {
   }
 
   // ===== Actions per role (giữ nguyên)
-  canStart(t: ExamTask) { return this.isTeacher && t.status === 'ASSIGNED'; }
   canDone(t: ExamTask) { return this.isTeacher && (t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS'); }
-  canCancel(t: ExamTask) { return this.isHead && (t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS'); }
-
-  startTask(t: ExamTask) {
-    this.isLoading = true;
-    this.api.updateStatus(t.id, 'IN_PROGRESS').subscribe({
-      next: (res) => { this.updateRow(res); this.showSuccess('Bắt đầu thực hiện'); },
-      error: err => { console.error(err); this.showError('Không thể cập nhật'); },
-      complete: () => this.isLoading = false
-    });
-  }
-
-  doneTask(t: ExamTask) {
-    this.isLoading = true;
-    this.api.updateStatus(t.id, 'DONE').subscribe({
-      next: (res) => { this.updateRow(res); this.showSuccess('Đã đánh dấu hoàn thành'); },
-      error: err => { console.error(err); this.showError('Không thể cập nhật'); },
-      complete: () => this.isLoading = false
-    });
-  }
 
   async cancelTask(t: ExamTask) {
     const cfm = await Swal.fire({
@@ -347,16 +323,6 @@ export class ExamTasksComponent implements OnInit, OnDestroy {
     });
   }
 
-  private updateRow(u: ExamTask) { this.rows = this.rows.map(r => r.id === u.id ? u : r); }
-  statusChip(s: ExamTaskStatus) {
-    switch (s) {
-      case 'ASSIGNED': return 'badge rounded-pill text-bg-warning';
-      case 'IN_PROGRESS': return 'badge rounded-pill text-bg-info';
-      case 'DONE': return 'badge rounded-pill text-bg-success';
-      case 'CANCELLED': return 'badge rounded-pill text-bg-secondary';
-      default: return 'badge rounded-pill text-bg-secondary';
-    }
-  }
   async deleteTask(t: ExamTask) {
     const cfm = await Swal.fire({
       icon: 'warning',
@@ -401,4 +367,213 @@ export class ExamTasksComponent implements OnInit, OnDestroy {
       panelClass: ['snack', 'snack-error'],
     });
   }
+
+  // ==== Actions (Teacher) ====
+  startTask(t: ExamTask) {
+    this.isLoading = true;
+    // dùng route mới /start; nếu muốn giữ route cũ: this.api.updateStatus(t.id,'IN_PROGRESS')
+    this.api.start(t.id).subscribe({
+      next: (res) => { this.updateRow(res); this.showSuccess('Bắt đầu thực hiện'); },
+      error: err => { console.error(err); this.showError(err?.error?.message ?? 'Không thể bắt đầu'); },
+      complete: () => this.isLoading = false
+    });
+  }
+
+  async submitTask(t: ExamTask) {
+    const ref = this.dialog.open(UploadQuestionsDialogComponent, {
+      width: '560px',
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: t.status === 'SUBMITTED' ? 'Nộp lại tệp' : 'Nộp bài',
+        accept: '.zip,.doc,.docx,.pdf,.rar,.7z',
+        maxSizeMb: 50,
+        hideSaveCopy: true,   // ẨN checkbox
+        showNote: true,       // HIỆN ghi chú
+        primaryText: 'Nộp bài'    // Đổi nút chính
+      }
+    });
+
+    ref.afterClosed().subscribe(result => {
+      if (!result) return;
+      const { file, note } = result;
+
+      this.isLoading = true;
+      this.api.submit(t.id, file, note).subscribe({
+        next: (u) => {
+          this.updateRow(u);
+          Swal.fire({
+            icon: 'success',
+            title: (t.status === 'SUBMITTED' ? 'Đã nộp lại' : 'Đã nộp bài'),
+            timer: 1400,
+            showConfirmButton: false
+          });
+        },
+        error: err => {
+          console.error(err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Nộp thất bại',
+            text: err?.error?.message ?? 'Đã xảy ra lỗi. Vui lòng thử lại.'
+          });
+        },
+        complete: () => this.isLoading = false
+      });
+    });
+  }
+
+  async reportTask(t: ExamTask) {
+    const { value: note } = await Swal.fire({
+      icon: 'info',
+      title: 'Báo lỗi nhiệm vụ',
+      input: 'textarea',
+      inputPlaceholder: 'Mô tả vấn đề (tuỳ chọn)…',
+      showCancelButton: true,
+      confirmButtonText: 'Gửi báo lỗi'
+    });
+    if (note === undefined) return; // đóng without confirm
+
+    this.isLoading = true;
+    this.api.report(t.id, note).subscribe({
+      next: (u) => { this.updateRow(u); this.showSuccess('Đã gửi báo lỗi tới HEAD'); },
+      error: err => { console.error(err); this.showError(err?.error?.message ?? 'Gửi báo lỗi thất bại'); },
+      complete: () => this.isLoading = false
+    });
+  }
+
+  openPendingInArchive(t: ExamTask) {
+    const dest = t.status === 'SUBMITTED' ? 'pending' : 'submissions';
+    this.router.navigate(['../archive', dest], {
+      relativeTo: this.route,
+      queryParams: { linkedTaskId: t.id, subjectId: t.subjectId }
+    });
+  }
+
+
+  // ==== Actions (Head) ====
+  async approveTask(t: ExamTask) {
+    const cfm = await Swal.fire({
+      icon: 'question',
+      title: 'Duyệt hoàn thành?',
+      html: `Duyệt bài nộp của nhiệm vụ:<br><b>${t.title}</b>`,
+      showCancelButton: true,
+      confirmButtonText: 'Duyệt',
+      cancelButtonText: 'Không'
+    });
+    if (!cfm.isConfirmed) return;
+
+    this.isLoading = true;
+    this.api.approve(t.id).subscribe({
+      next: (u) => {
+        this.updateRow(u);
+        this.showSuccess('Đã duyệt hoàn thành');
+      },
+      error: err => {
+        console.error(err);
+        this.showError(err?.error?.message ?? 'Duyệt thất bại');
+      },
+      complete: () => this.isLoading = false
+    });
+  }
+
+  private updateRow(u: ExamTask) {
+    this.rows = this.rows.map(r => r.id === u.id ? u : r);
+  }
+
+  // ===== Helpers kiểm tra quyền / trạng thái =====
+  canStart(t: ExamTask) {
+    // KHÔNG cho start khi REPORTED (chỉ còn Thu hồi báo lỗi)
+    return this.isTeacher && t.status === 'ASSIGNED';
+  }
+
+  canRevokeReport(t: ExamTask) {
+    return this.isTeacher && t.status === 'REPORTED';
+  }
+
+  canSubmit(t: ExamTask) {
+    if (!this.isTeacher) return false;
+    if (['CANCELLED', 'DONE'].includes(t.status)) return false;
+    // Cho nộp từ: ASSIGNED, IN_PROGRESS, REPORTED, SUBMITTED (nộp lại), RETURNED (nộp lại)
+    return ['ASSIGNED', 'IN_PROGRESS', 'REPORTED', 'SUBMITTED', 'RETURNED'].includes(t.status);
+  }
+
+  canCancel(t: ExamTask) {
+    return this.isHead && (t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS' || t.status === 'REPORTED');
+  }
+
+  canHeadApprove(t: ExamTask) {
+    // Nếu muốn “nâng UX”, có thể thêm điều kiện !!t.submissionArchiveId
+    return this.isHead && (t.status === 'SUBMITTED' || t.status === 'RETURNED');
+  }
+
+  canReport(t: ExamTask) {
+    // Ẩn luôn khi đã REPORTED để chỉ còn nút Thu hồi báo lỗi
+    return this.isTeacher && !['SUBMITTED', 'RETURNED', 'DONE', 'CANCELLED', 'REPORTED'].includes(t.status);
+  }
+
+
+  // ==== i18n status ====
+  viStatus(s?: ExamTaskStatus | null) {
+    switch (s) {
+      case 'ASSIGNED': return 'Đã giao';
+      case 'IN_PROGRESS': return 'Đang làm';
+      case 'REPORTED': return 'Báo lỗi';
+      case 'RETURNED': return 'Bị từ chối';
+      case 'SUBMITTED': return 'Đã nộp';
+      case 'DONE': return 'Hoàn thành';
+      case 'CANCELLED': return 'Đã huỷ';
+      default: return '—';
+    }
+  }
+
+  statusChip(s: ExamTaskStatus) {
+    switch (s) {
+      case 'ASSIGNED': return 'badge rounded-pill text-bg-warning';
+      case 'IN_PROGRESS': return 'badge rounded-pill text-bg-info';
+      case 'REPORTED': return 'badge rounded-pill text-bg-danger';
+      case 'RETURNED': return 'badge rounded-pill text-bg-warning'; // hoặc danger-subtle tuỳ theme
+      case 'SUBMITTED': return 'badge rounded-pill text-bg-primary';
+      case 'DONE': return 'badge rounded-pill text-bg-success';
+      case 'CANCELLED': return 'badge rounded-pill text-bg-secondary';
+      default: return 'badge rounded-pill text-bg-secondary';
+    }
+  }
+
+  revokeReport(t: ExamTask) {
+    // Dùng start() để đưa về IN_PROGRESS theo BE
+    this.isLoading = true;
+    this.api.start(t.id).subscribe({
+      next: (u) => { this.updateRow(u); this.showSuccess('Đã thu hồi báo lỗi'); },
+      error: err => { console.error(err); this.showError(err?.error?.message ?? 'Không thể thu hồi'); },
+      complete: () => this.isLoading = false
+    });
+  }
+
+  async rejectTask(t: ExamTask) {
+    const { value: reason } = await Swal.fire({
+      icon: 'warning',
+      title: 'Từ chối bài nộp?',
+      input: 'textarea',
+      inputPlaceholder: 'Lý do (không bắt buộc)…',
+      showCancelButton: true,
+      confirmButtonText: 'Từ chối',
+      cancelButtonText: 'Huỷ',
+      confirmButtonColor: '#d33'
+    });
+    if (reason === undefined) return;
+
+    this.isLoading = true;
+    this.api.returnForRevision(t.id, reason || '').subscribe({
+      next: (u) => {
+        this.updateRow(u);
+        this.showSuccess('Đã từ chối và yêu cầu nộp lại');
+      },
+      error: err => {
+        console.error(err);
+        this.showError(err?.error?.message ?? 'Từ chối thất bại');
+      },
+      complete: () => this.isLoading = false
+    });
+  }
+
 }

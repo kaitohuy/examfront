@@ -1,7 +1,7 @@
 import { ArchiveVariant, ReviewStatus } from "./fileArchive";
 
 export interface ArchiveQuery {
-  kind?: 'IMPORT' | 'EXPORT';
+  kind?: 'IMPORT' | 'EXPORT' | 'SUBMISSION';
   q?: string;
   subject?: string;
   uploader?: string;

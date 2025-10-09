@@ -2,7 +2,7 @@
   {{ data.mode === 'create' ? 'Thêm câu hỏi' : 'Chỉnh sửa câu hỏi' }}
 </h2>
 
-<mat-dialog-content class="pt-0" [attr.aria-busy]="isLoading">
+<mat-dialog-content class="pt-3" [attr.aria-busy]="isLoading">
   <app-question-form [value]="data.question" (formReady)="captureForm($event)">
   </app-question-form>
 

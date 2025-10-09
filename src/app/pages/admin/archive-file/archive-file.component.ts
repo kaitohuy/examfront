@@ -20,9 +20,10 @@ import { withLoading } from '../../../shared/with-loading';
 import { MatDialog } from '@angular/material/dialog';
 import { RejectDialogComponent, RejectDialogResult } from '../reject-dialog/reject-dialog.component';
 import { NotificationService } from '../../../services/notification.service';
+import { ExamTaskService } from '../../../services/exam-task.service';
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
-type Kind = 'IMPORT' | 'EXPORT' | null;
+type Kind = 'IMPORT' | 'EXPORT' | 'SUBMISSION' | null;
 type Variant = 'EXAM' | 'PRACTICE' | null;
 type ExVariantTab = 'PRACTICE' | 'EXAM';
 
@@ -42,7 +43,7 @@ type ExVariantTab = 'PRACTICE' | 'EXAM';
 })
 export class ArchiveFileComponent implements OnInit, OnDestroy {
   subjectId: number | null = null;
-
+  linkedTaskIdFilter: number | null = null;
   // constraints từ route
   forceKind: Kind = null;
   forceVariant: Variant = null;
@@ -102,12 +103,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
-    private api: FileArchiveService, 
-    private route: ActivatedRoute, 
-    private login: LoginService, 
-    private rr: ReviewReminderService, 
+    private api: FileArchiveService,
+    private route: ActivatedRoute,
+    private login: LoginService,
+    private rr: ReviewReminderService,
     private dialog: MatDialog,
     private notif: NotificationService,
+    private examTaskApi: ExamTaskService
   ) { }
 
   ngOnInit(): void {
@@ -122,7 +124,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         this.showOuterTabs = (this.forceKind == null) && !this.moderationMode;
         this.exportTab = (this.forceVariant ?? 'PRACTICE') as ExVariantTab;
 
-        // ❗ Nếu route là Pending -> set dropdown trạng thái mặc định = 'PENDING'
         if (this.reviewStatusFilter) {
           this.statusSel.setValue(this.reviewStatusFilter);
         } else {
@@ -133,6 +134,9 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         const queryId = qm.get('subjectId');
         const n = Number(paramId ?? queryId);
         this.subjectId = Number.isFinite(n) && n > 0 ? n : null;
+
+        const linked = Number(qm.get('linkedTaskId') ?? '');
+        this.linkedTaskIdFilter = Number.isFinite(linked) && linked > 0 ? linked : null;
 
         this.pageIndex = 0;
         this.buildColumns();
@@ -162,17 +166,8 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   clearClientFilters() {
     this.filterSubjectText.setValue('');
     this.filterUploaderText.setValue('');
-
-    // datepicker dùng Date | null
     this.filterFrom.setValue(null);
     this.filterTo.setValue(null);
-
-    // nếu có statusSel và không bị khoá bởi route (reviewStatusFilter),
-    // reset về 'ALL' (hoặc giá trị bạn muốn)
-    // if ((this as any).statusSel && !this.reviewStatusFilter) {
-    //   (this as any).statusSel.setValue('ALL');
-    // }
-
     this.pageIndex = 0;
     this.load();
   }
@@ -184,14 +179,14 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     if (!isUserPending) cols.push('uploader');
     cols.push('size');
 
+    // Ẩn cột Kind nếu đã biết chắc (khi đã chọn kind nào đó)
     if (!this.finalKind) cols.push('kind');
 
+    // Chỉ hiện cột Variant khi là EXPORT & không khóa theo tab variant
     const showVariantCol = (this.finalKind !== 'IMPORT') && (this.currentVariant == null);
     if (showVariantCol) cols.push('variant');
 
-    // Hiển thị cột trạng thái khi:
-    // - đang moderation, hoặc
-    // - có filter trạng thái (Pending/History)
+    // Cột Status khi ở moderation / có filter trạng thái / hoặc route ép
     if (this.moderationMode || this.reviewStatusFilter || (this.statusSel.value || '').length) {
       cols.push('status');
     }
@@ -308,31 +303,53 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
 
+  // archive-file.component.ts
   async approveFile(r: FileArchive) {
     const ok = (await Swal.fire({
       icon: 'question',
       title: 'Duyệt file?',
       text: `Duyệt và chuyển file "${r.filename}" sang kho chính.`,
-      showCancelButton: true, confirmButtonText: 'Approve'
+      showCancelButton: true,
+      confirmButtonText: 'Duyệt'
     })).isConfirmed;
     if (!ok) return;
 
-    this.api.approve(r.id).pipe(
-      withLoading(v => this.isLoading = v)
-    ).subscribe({
-      next: () => {
-        this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
-        if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
-          this.rows = this.rows.filter(x => x.id !== r.id);
-          this.total = Math.max(0, this.total - 1);
-        } else {
-          (r as any).reviewStatus = 'APPROVED';
+    // ✅ TỰ ĐỘNG duyệt nhiệm vụ luôn khi:
+    // - Có linkedTaskId
+    // - (tuỳ) đang vào từ context linkedTaskId (đảm bảo đúng task)
+    // - Trạng thái nhiệm vụ phù hợp để duyệt (SUBMITTED/RETURNED)
+    const shouldApproveTask =
+      !!r.linkedTaskId &&
+      (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
+      ['SUBMITTED', 'RETURNED'].includes((r.linkedTaskStatus || '').toUpperCase());
+
+    this.api.approve(r.id, { approveTask: shouldApproveTask })
+      .pipe(withLoading(v => this.isLoading = v))
+      .subscribe({
+        next: (res) => {
+          this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
+          if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
+            this.rows = this.rows.filter(x => x.id !== r.id);
+            this.total = Math.max(0, this.total - 1);
+          } else {
+            (r as any).reviewStatus = 'APPROVED';
+          }
+          this.notif.invalidateUnread();
+
+          // Thông báo gọn, KHÔNG hỏi thêm Swal lần 2
+          if (shouldApproveTask && res.taskApproved) {
+            Swal.fire({ icon: 'success', title: 'Đã duyệt file & nhiệm vụ', timer: 1300, showConfirmButton: false });
+          } else if (shouldApproveTask && !res.taskApproved) {
+            Swal.fire({ icon: 'info', title: 'Đã duyệt file (nhiệm vụ không ở trạng thái phù hợp)', timer: 1600, showConfirmButton: false });
+          } else {
+            Swal.fire({ icon: 'success', title: 'Đã duyệt file', timer: 1200, showConfirmButton: false });
+          }
+        },
+        error: (err) => {
+          Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
+          console.error(err);
         }
-        this.notif.invalidateUnread();
-        Swal.fire({ icon: 'success', title: 'Đã duyệt', timer: 1200, showConfirmButton: false });
-      },
-      error: err => { Swal.fire('Lỗi', 'Duyệt thất bại.', 'error'); console.error(err); }
-    });
+      });
   }
 
   // === Helper: tính deadline từ preset/giá trị custom ===
@@ -360,8 +377,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  // === Dialog từ chối: SweetAlert2, 2 trường Reason + Duration ===
-  // ... trong ArchiveFileComponent
   async rejectFile(r: FileArchive) {
     const ref = this.dialog.open(RejectDialogComponent, {
       width: '560px',
@@ -381,7 +396,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
     const { reason, deadline } = result;
 
-    this.api.reject(r.id, reason, deadline).pipe(
+    // ✅ TỰ ĐỘNG “trả nhiệm vụ” khi có linkedTaskId và nhiệm vụ đang SUBMITTED
+    const rejectTask =
+      !!r.linkedTaskId &&
+      (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
+      (r.linkedTaskStatus || '').toUpperCase() === 'SUBMITTED';
+
+    this.api.reject(r.id, reason, deadline, undefined, { rejectTask }).pipe(
       withLoading(v => this.isLoading = v)
     ).subscribe({
       next: () => {
@@ -394,8 +415,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           (r as any).reviewNote = reason;
           (r as any).reviewDeadline = deadline as any;
         }
-        this.notif.invalidateUnread(); 
-        Swal.fire({ icon: 'success', title: 'Đã từ chối', timer: 1200, showConfirmButton: false });
+        this.notif.invalidateUnread();
+        Swal.fire({
+          icon: 'success',
+          title: rejectTask ? 'Đã từ chối & yêu cầu nộp lại nhiệm vụ' : 'Đã từ chối',
+          timer: 1300,
+          showConfirmButton: false
+        });
       },
       error: err => { Swal.fire('Lỗi', 'Từ chối thất bại.', 'error'); console.error(err); }
     });
@@ -413,6 +439,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     switch (kind) {
       case 'EXPORT': return 'badge text-bg-warning';
       case 'IMPORT': return 'badge text-bg-success';
+      case 'SUBMISSION': return 'badge text-bg-primary';
       default: return 'badge text-bg-secondary';
     }
   }
@@ -461,19 +488,35 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   // ===== Query & cache =====
   private buildListArgs(): {
     subjectId?: number; page: number; size: number;
-    opts: ArchiveQuery & { reviewStatus?: string }
+    opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number }
   } {
-    const opts: ArchiveQuery & { reviewStatus?: string } = {};
-    if (this.finalKind) opts.kind = this.finalKind;
-    if (this.currentVariant) opts.variant = this.currentVariant;
+    const opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number } = {};
 
     const sel = (this.statusSel.value || '').toUpperCase();
-    if (sel === 'PENDING' || sel === 'APPROVED' || sel === 'REJECTED') {
-      opts.reviewStatus = sel;
-    } else if (this.reviewStatusFilter) {
-      opts.reviewStatus = this.reviewStatusFilter;
-    } else if (!this.moderationMode) {
-      opts.reviewStatus = 'APPROVED';
+    const routeFilter = (this.reviewStatusFilter || '').toUpperCase();
+    const isPendingView = sel === 'PENDING' || routeFilter === 'PENDING';
+
+    if (this.linkedTaskIdFilter) {
+      opts.kind = 'SUBMISSION' as any;
+      opts.linkedTaskId = this.linkedTaskIdFilter;
+    } else {
+      if (!isPendingView) {
+        if (this.finalKind) opts.kind = this.finalKind;
+      }
+      if (isPendingView) {
+        opts.reviewStatus = 'PENDING';
+      } else if (sel === 'APPROVED' || sel === 'REJECTED') {
+        opts.reviewStatus = sel;
+      } else if (this.reviewStatusFilter) {
+        opts.reviewStatus = routeFilter as any;
+      } else if (!this.moderationMode) {
+        opts.reviewStatus = 'APPROVED';
+      }
+
+      const variant = (opts.kind === 'EXPORT' || (!opts.kind && this.finalKind === 'EXPORT'))
+        && !this.moderationMode && !this.reviewStatusFilter
+        ? (this.forceVariant ?? this.exportTab) : null;
+      if (variant) opts.variant = variant as any;
     }
 
     const q = this.search.value?.trim(); if (q) opts.q = q;
@@ -482,12 +525,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     const from = this.ymd(this.filterFrom.value); if (from) opts.from = from;
     const to = this.ymd(this.filterTo.value); if (to) opts.to = to;
 
-    return {
-      subjectId: this.subjectId ?? undefined,
-      page: this.pageIndex,
-      size: this.pageSize,
-      opts
-    };
+    return { subjectId: this.subjectId ?? undefined, page: this.pageIndex, size: this.pageSize, opts };
   }
 
   private load() {
@@ -516,6 +554,14 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           console.error(err);
         }
       });
+  }
+
+  get emptyMessage(): string {
+    // Khi đang lọc theo linkedTaskId (mở từ Exam Task) mà không có file
+    if (this.linkedTaskIdFilter && !this.isLoading) {
+      return 'File đã bị xoá hoặc không còn tồn tại (HEAD đã xoá).';
+    }
+    return 'Không có file nào.';
   }
 
   // ===== Ghi nhớ state per-tab =====

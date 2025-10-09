@@ -12,10 +12,8 @@
             <span class="input-group-text bg-white border-end-0">
               <i class="bi bi-search"></i>
             </span>
-            <input class="form-control border-start-0"
-                   placeholder="Tìm theo tên file…"
-                   [formControl]="q"
-                   [disabled]="isLoading">
+            <input class="form-control border-start-0" placeholder="Tìm theo tên file…" [formControl]="q"
+              [disabled]="isLoading">
           </div>
         </div>
       </div>
@@ -33,10 +31,8 @@
 
           <div class="col-12 col-md-4">
             <label class="form-label mb-1">Môn học (tên / mã)</label>
-            <input class="form-control form-control-sm"
-                   [formControl]="subjectText"
-                   placeholder="VD: CS101 hoặc Data Structures"
-                   [disabled]="isLoading">
+            <input class="form-control form-control-sm" [formControl]="subjectText"
+              placeholder="VD: CS101 hoặc Data Structures" [disabled]="isLoading">
           </div>
 
           <!-- Từ ngày -->
@@ -115,15 +111,17 @@
               <mat-icon>open_in_new</mat-icon> Xem
             </button>
             <button mat-button color="accent" (click)="download(r, $event)"
-                    [disabled]="isLoading || downloading.has(r.id)">
+              [disabled]="isLoading || downloading.has(r.id)">
               <mat-icon>download</mat-icon> Tải về
+            </button>
+            <button mat-button color="warn" (click)="confirmDelete(r, $event)" [disabled]="isLoading">
+              <mat-icon>delete</mat-icon> Xóa
             </button>
           </td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"
-            (click)="openInfo(row)" style="cursor:pointer"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="openInfo(row)" style="cursor:pointer"></tr>
 
         <tr *ngIf="!isLoading && rows.length === 0">
           <td [attr.colspan]="displayedColumns.length" class="text-center py-4 text-muted">
@@ -133,13 +131,8 @@
       </table>
     </div>
 
-    <mat-paginator
-      [length]="total"
-      [pageIndex]="pageIndex"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[10,20,50]"
-      (page)="onPage($event)"
-      class="mt-2">
+    <mat-paginator [length]="total" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="[10,20,50]"
+      (page)="onPage($event)" class="mt-2">
     </mat-paginator>
   </div>
 </div>

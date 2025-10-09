@@ -39,10 +39,10 @@ export interface AssignTaskDialogData {
     MatButtonModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatAutocompleteModule, MatDatepickerModule,
     MatDatepickerModule, MatDatepicker,
-    MatIconModule, 
+    MatIconModule,
     ...sharedImports,
   ],
-   providers: [
+  providers: [
     provideNativeDateAdapter(),
     { provide: MAT_DATE_LOCALE, useValue: 'vi-VN' },
     { provide: MAT_DATE_FORMATS, useValue: VN_DATE_FORMATS },
@@ -59,7 +59,7 @@ export class AssignTaskDialogComponent implements OnInit {
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AssignTaskDialogData,
     private dialogRef: MatDialogRef<AssignTaskDialogComponent>,
-  ) {}
+  ) { }
 
   isLoading = false;
 
@@ -79,76 +79,79 @@ export class AssignTaskDialogComponent implements OnInit {
   });
 
   ngOnInit(): void {
-  const me = this.login.getUser();
+    const me = this.login.getUser();
 
-  this.isLoading = true;
+    this.isLoading = true;
 
-  // 1) Lấy các khoa HEAD phụ trách → 2) forkJoin lấy list môn (kèm teachers) theo từng khoa
-  this.deptSvc.getDepartmentsByHead(me?.id ?? 0).pipe(
-    switchMap((depts: any[]) => {
-      if (!Array.isArray(depts) || depts.length === 0) {
-        return of([] as any[][]);
-      }
-      const calls = depts.map(d => this.subjSvc.getSubjectsByDepartment(d.id, true));
-      return forkJoin(calls); // Observable<any[][]>
-    })
-  ).subscribe({
-    next: (listOfLists: any[][]) => {
-      // gộp & làm phẳng
-      const flat = (listOfLists || []).flat() as SubjectWithTeachers[];
-      const map = new Map<number, SubjectWithTeachers>();
-      for (const s of flat) map.set(s.id, s);
-      this.subjects = Array.from(map.values());
-      this.filteredSubjects = this.subjects;
-
-      // preset subject nếu có
-      if (this.data?.subjectId) {
-        const found = this.subjects.find(s => s.id === this.data!.subjectId);
-        if (found) {
-          this.form.controls.subjectId.setValue(found.id);
-          this.subjectText.setValue(`${found.name} — ${found.code}`);
-          this.updateTeachersFor(found);
+    // 1) Lấy các khoa HEAD phụ trách → 2) forkJoin lấy list môn (kèm teachers) theo từng khoa
+    this.deptSvc.getDepartmentsByHead(me?.id ?? 0).pipe(
+      switchMap((depts: any[]) => {
+        if (!Array.isArray(depts) || depts.length === 0) {
+          return of([] as any[][]);
         }
+        const calls = depts.map(d => this.subjSvc.getSubjectsByDepartment(d.id, true));
+        return forkJoin(calls); // Observable<any[][]>
+      })
+    ).subscribe({
+      next: (listOfLists: any[][]) => {
+        // gộp & làm phẳng
+        const flat = (listOfLists || []).flat() as SubjectWithTeachers[];
+        const map = new Map<number, SubjectWithTeachers>();
+        for (const s of flat) map.set(s.id, s);
+        this.subjects = Array.from(map.values());
+        this.filteredSubjects = this.subjects;
+
+        // preset subject nếu có
+        if (this.data?.subjectId) {
+          const found = this.subjects.find(s => s.id === this.data!.subjectId);
+          if (found) {
+            this.form.controls.subjectId.setValue(found.id);
+            this.subjectText.setValue(`${found.name} — ${found.code}`);
+            this.updateTeachersFor(found);
+          }
+        }
+      },
+      error: _ => { },
+      complete: () => this.isLoading = false
+    });
+
+    // filter môn theo text
+    this.subjectText.valueChanges.pipe(
+      startWith(this.subjectText.value),
+      debounceTime(100),
+    ).subscribe(q => {
+      const s = (q || '').toLowerCase().trim();
+      this.filteredSubjects = !s ? this.subjects : this.subjects.filter(x =>
+        x.name.toLowerCase().includes(s) ||
+        x.code.toLowerCase().includes(s) ||
+        String(x.id).includes(s)
+      );
+    });
+
+    // khi subjectId đổi → load teachers
+    this.form.controls.subjectId.valueChanges.subscribe(id => {
+      const c = this.form.controls.assignedToId;
+
+      if (!id) {
+        this.teachersForSubject = [];
+        c.reset();
+        c.disable({ emitEvent: false });   // <-- dùng API
+        return;
       }
-    },
-    error: _ => {},
-    complete: () => this.isLoading = false
-  });
 
-  // filter môn theo text
-  this.subjectText.valueChanges.pipe(
-    startWith(this.subjectText.value),
-    debounceTime(100),
-  ).subscribe(q => {
-    const s = (q || '').toLowerCase().trim();
-    this.filteredSubjects = !s ? this.subjects : this.subjects.filter(x =>
-      x.name.toLowerCase().includes(s) ||
-      x.code.toLowerCase().includes(s) ||
-      String(x.id).includes(s)
-    );
-  });
-
-  // khi subjectId đổi → load teachers
-  this.form.controls.subjectId.valueChanges.subscribe(id => {
-    if (!id) {
-      this.teachersForSubject = [];
-      this.form.controls.assignedToId.setValue(null);
-      return;
-    }
-    const found = this.subjects.find(s => s.id === id);
-    if (found) {
-      this.updateTeachersFor(found);
-    } else {
-      this.isLoading = true;
-      this.subjSvc.getSubjectById(Number(id)).subscribe({
-        next: (s) => this.updateTeachersFor(s as any),
-        error: _ => {},
-        complete: () => this.isLoading = false
-      });
-    }
-  });
-}
-
+      const found = this.subjects.find(s => s.id === id);
+      if (found) {
+        this.updateTeachersFor(found);
+      } else {
+        this.isLoading = true;
+        this.subjSvc.getSubjectById(Number(id)).subscribe({
+          next: (s) => this.updateTeachersFor(s as any),
+          error: _ => { },
+          complete: () => this.isLoading = false
+        });
+      }
+    });
+  }
 
   displaySubject(s?: SubjectWithTeachers | null) { return s ? `${s.name} — ${s.code}` : ''; }
 
@@ -174,9 +177,16 @@ export class AssignTaskDialogComponent implements OnInit {
       name: t.fullName || [t.lastName, t.firstName].filter(Boolean).join(' ') || `User #${t.id}`
     }));
     this.teachersForSubject = list;
-    // nếu GV đã chọn không còn trong danh sách → reset
-    const cur = this.form.controls.assignedToId.value;
-    if (cur && !list.some(x => x.id === cur)) this.form.controls.assignedToId.setValue(null);
+
+    const c = this.form.controls.assignedToId;
+    if (!list.length) {
+      c.reset();
+      c.disable({ emitEvent: false });     // <-- disable khi không có GV
+    } else {
+      // nếu GV hiện tại không còn hợp lệ thì reset
+      if (c.value && !list.some(x => x.id === c.value)) c.reset();
+      c.enable({ emitEvent: false });      // <-- enable khi có GV
+    }
   }
 
   cancel() { this.dialogRef.close(); }

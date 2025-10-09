@@ -130,10 +130,19 @@
           <ng-container matColumnDef="variant">
             <th mat-header-cell *matHeaderCellDef>Loại đề</th>
             <td mat-cell *matCellDef="let r">
-              <span *ngIf="r.kind === 'EXPORT'; else dash" [class]="variantBadge(r)">
-                {{ (r.variant || '—') | titlecase }}
-              </span>
-              <ng-template #dash>—</ng-template>
+              <ng-container [ngSwitch]="(r.kind || '').toUpperCase()">
+                <!-- EXPORT: hiển thị PRACTICE/EXAM như cũ -->
+                <span *ngSwitchCase="'EXPORT'" [class]="variantBadge(r)">
+                  {{ (r.variant || '—') | titlecase }}
+                </span>
+
+                <span *ngSwitchCase="'SUBMISSION'" [class]="variantBadge(r)">
+                  {{ (r.variant || '—') | titlecase }}
+                </span>
+
+                <!-- Mặc định (IMPORT/khác): dấu gạch -->
+                <span *ngSwitchDefault>—</span>
+              </ng-container>
             </td>
           </ng-container>
 
@@ -202,9 +211,9 @@
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
 
-          <tr *ngIf="!isLoading && viewRows.length === 0">
-            <td [attr.colspan]="displayedColumns.length" class="text-center py-4 text-muted">
-              Không có file nào.
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-4 text-muted" [attr.colspan]="displayedColumns.length">
+              {{ emptyMessage }}
             </td>
           </tr>
         </table>

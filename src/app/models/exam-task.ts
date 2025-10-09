@@ -1,4 +1,12 @@
-export type ExamTaskStatus = 'ASSIGNED' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+// models/exam-task.ts
+export type ExamTaskStatus =
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'REPORTED'
+  | 'SUBMITTED'
+  | 'DONE'
+  | 'CANCELLED'
+  | 'RETURNED';
 
 export interface ExamTask {
   id: number;
@@ -8,12 +16,18 @@ export interface ExamTask {
   createdByHeadId: number;
   title: string;
   instructions?: string | null;
-  structureJson: string;        // JSON string hoặc plain text
+  structureJson: string;
   status: ExamTaskStatus;
-  dueAt?: string | null;        // ISO
-  completedAt?: string | null;  // ISO
+  dueAt?: string | null;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+
+  // NEW (tuỳ dùng để hiển thị)
+  submittedAt?: string | null;
+  reportedAt?: string | null;
+  submissionNote?: string | null;
+  submissionArchiveId?: number | null;
 
   // server đã map sẵn tên hiển thị
   subjectName?: string;
@@ -26,10 +40,10 @@ export interface ExamTaskCreateDTO {
   assignedToId: number;
   title: string;
   instructions?: string | null;
-  structureJson: string;   // cho phép text/JSON
-  dueAt?: string | null;   // ISO
+  structureJson: string;
+  dueAt?: string | null;
 }
 
 export interface ExamTaskUpdateStatusDTO {
-  status: ExamTaskStatus;
+  status: 'ASSIGNED' | 'IN_PROGRESS'; // chỉ còn dùng cho start (nếu muốn)
 }

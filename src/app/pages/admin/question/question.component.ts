@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { HttpEventType } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
 import { Subscription } from 'rxjs';
@@ -46,7 +46,7 @@ type CloneState = { items: any[]; open: boolean; loading: boolean };
   standalone: true,
   imports: [
     ...sharedImports,
-    MatPaginator,
+    MatPaginatorModule,
     MatDialogModule,
     LoadingScreenComponent,
     MathjaxDirective,
@@ -128,7 +128,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
   // ========= Internals =========
   private eventsSub?: Subscription;
   private searchTimeoutId?: number;
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatPaginator, { static: false }) paginator?: MatPaginator;
 
   constructor(
     private questionService: QuestionService,
@@ -309,7 +309,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   openFlagPrompt(q: any) {
     Swal.fire({
-      title: `Báo lỗi câu hỏi #${q.id}`,
+      title: `Gỡ báo lỗi câu hỏi ${this.getCode(q)}?`,
       input: 'textarea',
       inputLabel: 'Lý do',
       inputPlaceholder: 'Mô tả ngắn gọn vấn đề…',
@@ -380,6 +380,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
     this.currentPage = 0;
     this.clearSelection(); // IMPORTANT
     this.loadQuestions();
+    queueMicrotask(() => this.paginator?.firstPage());
   }
 
   syncPendingFromActive(): void {
@@ -400,10 +401,11 @@ export class QuestionComponent implements OnInit, OnDestroy {
     this.filterQuestionType = this.pendingFilters.type || '';
     this.filterCreatedBy = this.pendingFilters.createdBy || '';
     this.filterDateRange = { from: this.pendingFilters.from, to: this.pendingFilters.to };
-    this.filterFlagged = this.pendingFilters.flagged ?? null;  // NEW
+    this.filterFlagged = this.pendingFilters.flagged ?? null;
     this.currentPage = 0;
     this.clearSelection();
     this.loadQuestions();
+    queueMicrotask(() => this.paginator?.firstPage());
   }
 
   resetPendingFilters(): void {
@@ -575,9 +577,11 @@ export class QuestionComponent implements OnInit, OnDestroy {
   }
 
   deleteQuestion(questionId: number): void {
+    const q = this.questions.find(x => x.id === questionId);
+    const codeText = q ? this.getCode(q) : `#${questionId}`;
     Swal.fire({
       title: 'Xác nhận xóa',
-      text: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+      text: `Bạn có chắc chắn muốn xóa ${codeText}?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -1042,7 +1046,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   openClonePrompt(q: any) {
     Swal.fire({
-      title: `Nhân bản câu hỏi #${q.id}`,
+      title: `Nhân bản câu hỏi ${this.getCode(q)}`,
       html: `
         <div class="text-start">
           <label class="form-label">Số lượng bản sao</label>
@@ -1159,7 +1163,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   deleteClone(clone: any) {
     Swal.fire({
-      title: `Xóa bản sao #${clone.parentId}.${clone.cloneIndex}?`,
+      title: `Xóa bản sao ${this.getCloneCode({ id: clone.parentId, questionCode: clone.parentCode }, clone)}?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Xóa',
@@ -1186,7 +1190,11 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   // ========= Helpers =========
   private normalize(q: any) {
-    return { ...q, chapter: q?.chapter != null ? Number(q.chapter) : null };
+    return {
+      ...q,
+      chapter: q?.chapter != null ? Number(q.chapter) : null,
+      questionCode: q?.questionCode ?? q?.code ?? null
+    };
   }
 
   // ========= UI toasts =========
@@ -1242,7 +1250,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       } = r;
 
       // body & query cho AutogenService
-      const body = { variants };
+      const body = { variants: r.variants, labels: r.labels };
       const query = {
         commit: true,
         fileName,
@@ -1276,6 +1284,21 @@ export class QuestionComponent implements OnInit, OnDestroy {
         },
       });
     });
+  }
+
+  getCode(q: any): string {
+    // Không thêm dấu # nếu đã có questionCode
+    return (q?.questionCode && String(q.questionCode).trim().length > 0)
+      ? String(q.questionCode).trim()
+      : `#${q?.id}`;
+  }
+
+  getCloneCode(parent: any, c: any): string {
+    if (c?.questionCode && String(c.questionCode).trim().length > 0) {
+      return String(c.questionCode).trim();
+    }
+    const base = this.getCode(parent); // ưu tiên parent.questionCode nếu có
+    return `${base}.${c?.cloneIndex}`;
   }
 
 }

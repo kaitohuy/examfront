@@ -28,9 +28,9 @@ export class ExportQuestionsDialogComponent implements OnInit {
   submitted = false;
 
   // ===== export mode state (giữ nguyên) =====
-  variant: 'practice' | 'exam' = 'practice';
+  variant: 'practice' | 'exam' = 'exam';
   fileName = '';
-  format: 'pdf' | 'docx' = 'pdf';
+  format: 'pdf' | 'docx' = 'docx';
   includeAnswers = false;
   saveCopy = false;
 
@@ -44,7 +44,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
   paperNo: number | null = 1;
   examForm: 'viết' | 'trắc nghiệm' = 'viết';
   program = '';
-  mau = '';
+  mau = '3a';
 
   // ===== autogen mode =====
   variants: number = 5;   // số lượng đề
@@ -53,12 +53,9 @@ export class ExportQuestionsDialogComponent implements OnInit {
     this.applySmartDefaults();
 
     if (this.mode === 'autogen') {
-      // auto chọn giá trị theo yêu cầu
       this.variant = 'exam';
       this.format = 'docx';
       this.fileName = this.fileName?.trim() || 'de_tu_dong';
-      // “bao gồm đáp án” không dùng; “lưu kho” do BE autogen đã thực hiện.
-      // preset kỳ-năm học “thông minh”
       this.applySemesterDefault();
     }
   }
@@ -79,11 +76,11 @@ export class ExportQuestionsDialogComponent implements OnInit {
     const month = now.getMonth() + 1;
     const year = now.getFullYear();
     if (month >= 1 && month <= 6) {
-      this.semester = 'I';
-      this.academicYear = `${year}-${year + 1}`;
-    } else {
       this.semester = 'II';
       this.academicYear = `${year - 1}-${year}`;
+    } else {
+      this.semester = 'I';
+      this.academicYear = `${year}-${year + 1}`;
     }
   }
 
@@ -100,15 +97,9 @@ export class ExportQuestionsDialogComponent implements OnInit {
 
   onCancel() { this.ref.close(); }
 
+  // ✅ BỎ bắt buộc classes & program
   get canSubmit(): boolean {
-    if (this.mode === 'export' && this.variant === 'exam') {
-      // giữ validation cũ (bắt buộc lớp & bộ môn)
-      const okClass = !!this.classes?.trim();
-      const okFaculty = !!this.program?.trim();
-      return okClass && okFaculty;
-    }
     if (this.mode === 'autogen') {
-      // chỉ cần số lượng hợp lệ
       return !!this.variants && this.variants >= 1;
     }
     return true;
@@ -116,23 +107,22 @@ export class ExportQuestionsDialogComponent implements OnInit {
 
   submit() {
     this.submitted = true;
-
-    // ===== AUTOGEN MODE: trả payload cho caller =====
     if (this.mode === 'autogen') {
       if (!this.canSubmit) return;
 
-      // convert thời lượng phút -> chuỗi "X phút" cho BE autogen (/export)
       const duration = this.durationMinutes != null ? `${this.durationMinutes} phút` : undefined;
 
       this.ref.close({
         mode: 'autogen',
         variants: this.variants,
         fileName: this.fileName?.trim() || 'de_tu_dong',
-        // vẫn trả lại type & format đang hiển thị (đã preset exam/docx)
         variant: this.variant,
         format: this.format,
 
-        // header (không bắt buộc)
+        // >>> THÊM DÒNG NÀY
+        labels: this.variant === 'exam' ? ['EXAM'] : ['PRACTICE'],
+
+        // header (optional)
         semester: this.semester?.trim() || undefined,
         academicYear: this.academicYear?.trim() || undefined,
         classes: this.classes?.trim() || undefined,
@@ -142,21 +132,6 @@ export class ExportQuestionsDialogComponent implements OnInit {
         mau: this.mau?.trim() ? ('Mẫu ' + this.mau.trim()) : undefined
       });
       return;
-    }
-
-    // ===== EXPORT MODE: giữ logic cũ =====
-    if (this.variant === 'exam') {
-      const needClass = !this.classes?.trim();
-      const needFaculty = !this.program?.trim();
-      if (needClass || needFaculty) {
-        setTimeout(() => {
-          const firstInvalid = document.querySelector<HTMLInputElement>(
-            needClass ? 'input[name="classes"]' : 'input[name="faculty"]'
-          );
-          firstInvalid?.focus();
-        }, 0);
-        return;
-      }
     }
 
     const opts: ExportOptions = {
@@ -171,14 +146,22 @@ export class ExportQuestionsDialogComponent implements OnInit {
       opts.form = this.form;
       opts.level = this.level;
     } else {
-      opts.semester = this.semester?.trim() || undefined;
-      opts.academicYear = this.academicYear?.trim() || undefined;
-      opts.classes = this.classes?.trim() || undefined;
+      // chỉ gán nếu có giá trị (tránh chuỗi rỗng)
+      const sem = this.semester?.trim();
+      const ay = this.academicYear?.trim();
+      const cls = this.classes?.trim();
+      const prog = this.program?.trim();
+      const mau = this.mau?.trim();
+
+      if (sem) opts.semester = sem;
+      if (ay) opts.academicYear = ay;
+      if (cls) opts.classes = cls;
       if (this.durationMinutes != null) opts.durationMinutes = this.durationMinutes;
       if (this.paperNo != null) opts.paperNo = this.paperNo;
-      opts.examForm = 'hình thức thi ' + this.examForm;
-      opts.program = this.program?.trim() || undefined;
-      opts.mau = 'Mẫu ' + (this.mau?.trim() || '');
+      // examForm/mẫu cũng để optional
+      if (this.examForm) opts.examForm = 'hình thức thi ' + this.examForm;
+      if (prog) opts.program = prog;
+      if (mau) opts.mau = 'Mẫu ' + mau;
     }
 
     this.ref.close(opts);

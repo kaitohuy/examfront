@@ -1,3 +1,4 @@
+// services/exam-task.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import baseUrl from './helper';
@@ -14,8 +15,8 @@ export class ExamTaskService {
   list(opts: {
     subjectId?: number;
     status?: ExamTaskStatus;
-    from?: string;  // yyyy-MM-dd
-    to?: string;    // yyyy-MM-dd
+    from?: string;
+    to?: string;
     page?: number;
     size?: number;
   }): Observable<PageResult<ExamTask>> {
@@ -33,9 +34,33 @@ export class ExamTaskService {
     return this.http.post<ExamTask>(this.base, body);
   }
 
-  updateStatus(id: number, status: ExamTaskStatus): Observable<ExamTask> {
+  // (Giữ lại nếu bạn vẫn muốn dùng route cũ /{id}/status cho IN_PROGRESS)
+  updateStatus(id: number, status: 'IN_PROGRESS'): Observable<ExamTask> {
     const payload: ExamTaskUpdateStatusDTO = { status };
     return this.http.post<ExamTask>(`${this.base}/${id}/status`, payload);
+  }
+
+  // NEW: start theo route mới /{id}/start
+  start(id: number): Observable<ExamTask> {
+    return this.http.post<ExamTask>(`${this.base}/${id}/start`, {});
+  }
+
+  // NEW: submit multipart
+  submit(id: number, file: File, note?: string): Observable<ExamTask> {
+    const fd = new FormData();
+    fd.append('file', file);
+    if (note) fd.append('note', note);
+    return this.http.post<ExamTask>(`${this.base}/${id}/submit`, fd);
+  }
+
+  // NEW: report lỗi
+  report(id: number, note?: string): Observable<ExamTask> {
+    return this.http.post<ExamTask>(`${this.base}/${id}/report`, { note: note ?? '' });
+  }
+
+  // NEW: head approve
+  approve(id: number): Observable<ExamTask> {
+    return this.http.post<ExamTask>(`${this.base}/${id}/approve`, {});
   }
 
   cancel(id: number): Observable<ExamTask> {
@@ -45,7 +70,13 @@ export class ExamTaskService {
   update(id: number, body: Partial<ExamTaskCreateDTO>): Observable<ExamTask> {
     return this.http.put<ExamTask>(`${this.base}/${id}`, body);
   }
+
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
+
+  returnForRevision(taskId: number, reason: string) {
+  // Đổi từ /api/tasks/... -> /api/exam-tasks/...
+  return this.http.post<ExamTask>(`${this.base}/${taskId}/return`, { reason });
+}
 }

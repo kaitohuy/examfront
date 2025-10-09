@@ -17,6 +17,7 @@ import { VN_DATE_FORMATS } from '../../../models/dateFormats';
 // 🔹 Loading overlay helpers
 import { withLoading } from '../../../shared/with-loading';
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
+import { LoginService } from '../../../services/login.service';
 
 type ARStatus = 'ALL' | Extract<ReviewStatus, 'APPROVED' | 'REJECTED'>;
 
@@ -37,7 +38,6 @@ type ARStatus = 'ALL' | Extract<ReviewStatus, 'APPROVED' | 'REJECTED'>;
 })
 export class ArchiveHistoryComponent implements OnInit, OnDestroy {
   private api = inject(FileArchiveService);
-
   // ===== loading (overlay) =====
   isLoading = false;
 
@@ -72,6 +72,10 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  constructor(
+    private login: LoginService,
+  ) { }
+
   ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
 
   // ===== paging =====
@@ -96,21 +100,20 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
     return `${y}-${m}-${dd}`;
   }
 
+  // sau đây:
   private buildArgs(): {
     subjectId?: number;
     page: number;
     size: number;
-    opts: ArchiveQuery & { kind: 'EXPORT'; variant: 'EXAM'; reviewStatus: string }
+    opts: ArchiveQuery & { reviewStatus: string }
   } {
-    const opts: any = { kind: 'EXPORT', variant: 'EXAM' };
+    const opts: any = {};
 
     const q = this.q.value?.trim(); if (q) opts.q = q;
     const subj = this.subjectText.value?.trim(); if (subj) opts.subject = subj;
-
     const f = this.ymd(this.from.value); if (f) opts.from = f;
     const t = this.ymd(this.to.value); if (t) opts.to = t;
 
-    // ALL => gửi “APPROVED,REJECTED”
     const s = this.statusSel.value;
     opts.reviewStatus = (s === 'ALL') ? 'APPROVED,REJECTED' : s;
 
@@ -161,6 +164,71 @@ export class ArchiveHistoryComponent implements OnInit, OnDestroy {
         error: err => { Swal.fire('Lỗi', 'Không lấy được link tải.', 'error'); console.error(err); }
       })
       .add(() => this.downloading.delete(r.id));
+  }
+
+  private meId(): number | null {
+    const u = this.login.getUser();
+    return (u && typeof u.id === 'number') ? u.id : null;
+  }
+  private isAdmin(): boolean { return this.login.getUserRole() === 'ADMIN' || this.login.getUserRole() === 'HEAD'; }
+  private isTeacher(): boolean { return this.login.getUserRole() === 'TEACHER'; }
+
+  /** Rule:
+   *  - ADMIN: xoá mọi file
+   *  - TEACHER: chỉ xoá file mình tạo
+   *      + EXPORT: không được xoá khi đã APPROVED (cho PENDING/REJECTED)
+   *      + IMPORT: được xoá file của mình
+   */
+  private canDelete(r: FileArchive): boolean {
+    if (this.isAdmin()) return true;
+    if (!this.isTeacher()) return false;
+
+    const mine = r.userId != null && r.userId === this.meId();
+    if (!mine) return false;
+
+    if (r.kind === 'EXPORT') {
+      const st = String(r.reviewStatus || '').toUpperCase();
+      return st !== 'APPROVED';
+    }
+    return true;
+  }
+
+  async confirmDelete(r: FileArchive, ev?: MouseEvent) {
+    ev?.stopPropagation();
+    // kiểm tra quyền trước
+    if (!this.canDelete(r)) {
+      const isExportApproved = r.kind === 'EXPORT' && String(r.reviewStatus || '').toUpperCase() === 'APPROVED';
+      const msg = this.isAdmin() ? 'Bạn là ADMIN (lỗi bất ngờ).' :
+        this.isTeacher()
+          ? (r.userId !== this.meId()
+            ? 'Bạn chỉ có thể xoá các file do chính bạn tạo.'
+            : (isExportApproved
+              ? 'Không thể xoá đề đã APPROVED. Chỉ có thể xoá PENDING/REJECTED.'
+              : 'Bạn không có quyền xoá mục này.'))
+          : 'Bạn không có quyền xoá.';
+      await Swal.fire('Không thể xoá', msg, 'info');
+      return;
+    }
+
+    const res = await Swal.fire({
+      icon: 'warning',
+      title: 'Xoá file?',
+      text: `Bạn chắc muốn xoá "${r.filename}"?`,
+      showCancelButton: true,
+      confirmButtonText: 'Xoá',
+      cancelButtonText: 'Huỷ'
+    });
+    if (!res.isConfirmed) return;
+    this.api.delete(r.id).pipe(withLoading(v => this.isLoading = v)).subscribe({
+      next: () => {
+        this.api.invalidate(() => true);
+        this.rows = this.rows.filter(x => x.id !== r.id);
+        this.total = Math.max(0, this.total - 1);
+        Swal.fire({ icon: 'success', title: 'Đã xoá', timer: 1200, showConfirmButton: false });
+      },
+      error: err => { Swal.fire('Lỗi', 'Không xoá được file.', 'error'); console.error(err); }
+    });
+
   }
 
   openInfo(r: FileArchive) {

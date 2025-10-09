@@ -8,7 +8,10 @@ import { FileArchive } from '../models/fileArchive';
 import { ArchiveQuery } from '../models/ArchiveQuery';
 import { NavEpochService } from './nav-epoch.service';
 
-type ReviewableQuery = ArchiveQuery & { reviewStatus?: string };
+type ReviewableQuery = ArchiveQuery & {
+  reviewStatus?: string;
+  linkedTaskId?: number;        // <-- NEW
+};
 type ListArgs = { subjectId?: number, page: number, size: number, opts?: ReviewableQuery };
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +36,9 @@ export class FileArchiveService {
     if (opts?.to) params = params.set('to', opts.to);
     if (opts?.variant) params = params.set('variant', opts.variant);
     if (opts?.reviewStatus) params = params.set('reviewStatus', opts.reviewStatus);
+
+    // <-- NEW: truyền linkedTaskId xuống BE
+    if (opts?.linkedTaskId != null) params = params.set('linkedTaskId', String(opts.linkedTaskId));
 
     return this.http.get<PageResult<FileArchive>>(`${baseUrl}/api/files`, { params });
   }
@@ -92,17 +98,16 @@ export class FileArchiveService {
   }
 
   // ---- Moderation / URL helpers ----
-  approve(id: number, reviewerId?: number) {
+  approve(id: number, opts?: { approveTask?: boolean }) {
     let params = new HttpParams();
-    if (reviewerId != null) params = params.set('reviewerId', String(reviewerId));
-    return this.http.post<void>(`${baseUrl}/api/files/${id}/approve`, null, { params });
-  }
+    if (opts?.approveTask) params = params.set('approveTask', 'true');
 
-  reject(id: number, reason: string, deadline?: string, reviewerId?: number) {
-    let params = new HttpParams();
-    if (reviewerId != null) params = params.set('reviewerId', String(reviewerId));
-    const body = { reason, deadline };
-    return this.http.post<void>(`${baseUrl}/api/files/${id}/reject`, body, { params });
+    // CHỈNH: trả về JSON đúng kiểu
+    return this.http.post<{
+      approved: boolean;
+      taskApproved: boolean;
+      taskId?: number | null;
+    }>(`${baseUrl}/api/files/${id}/approve`, null, { params });
   }
 
   getViewUrl(id: number, minutes = 5) {
@@ -117,4 +122,12 @@ export class FileArchiveService {
   delete(id: number) { return this.http.delete<void>(`${baseUrl}/api/files/${id}`); }
   openView(id: number, minutes = 5) { window.open(`${baseUrl}/api/files/${id}/view?minutes=${minutes}`, '_blank'); }
   download(id: number, minutes = 5) { window.location.href = `${baseUrl}/api/files/${id}/download?minutes=${minutes}`; }
+
+  reject(id: number, reason: string, deadline?: string, reviewerId?: number, opts?: { rejectTask?: boolean }) {
+    let params = new HttpParams();
+    if (reviewerId != null) params = params.set('reviewerId', String(reviewerId));
+    if (opts?.rejectTask) params = params.set('rejectTask', 'true');
+    const body = { reason, deadline };
+    return this.http.post<void>(`${baseUrl}/api/files/${id}/reject`, body, { params });
+  }
 }

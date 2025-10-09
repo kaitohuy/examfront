@@ -224,13 +224,6 @@
       </mat-card-content>
     </mat-card>
   </mat-dialog-content>
-
-  <app-loading-screen *ngIf="loading" [embedded]="true" [blurBackground]="false"
-    [title]="'Đang xác nhận các mục đã chọn…'" [subtitle]="'Hệ thống đang lưu câu hỏi vào ngân hàng dữ liệu'"
-    [showProgressBar]="true" [progress]="commitProgress" [hintPrefix]="'Nếu thấy bất thường, bạn có thể'"
-    [actionText]="'Đóng và thử lại'" (action)="ref.close({ committed: false })">
-    <div class="footer small text-muted">Đừng rời hộp thoại cho đến khi hoàn tất.</div>
-  </app-loading-screen>
 </div>
 
 <mat-dialog-actions [align]="'end'">
@@ -240,3 +233,10 @@
     <span class="ms-1">Xác nhận các mục đã chọn</span>
   </button>
 </mat-dialog-actions>
+
+<app-loading-screen *ngIf="loading" [embedded]="true" [blurBackground]="false"
+  [title]="'Đang xác nhận các mục đã chọn…'" [subtitle]="'Hệ thống đang lưu câu hỏi vào ngân hàng dữ liệu'"
+  [showProgressBar]="true" [progress]="commitProgress" [hintPrefix]="'Nếu thấy bất thường, bạn có thể'"
+  [actionText]="'Đóng và thử lại'" (action)="ref.close({ committed: false })">
+  <div class="footer small text-muted">Đừng rời hộp thoại cho đến khi hoàn tất.</div>
+</app-loading-screen>

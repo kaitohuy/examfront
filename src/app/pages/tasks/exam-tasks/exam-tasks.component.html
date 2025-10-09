@@ -41,8 +41,11 @@
             <mat-option value="">Tất cả</mat-option>
             <mat-option value="ASSIGNED">Đã giao</mat-option>
             <mat-option value="IN_PROGRESS">Đang làm</mat-option>
+            <mat-option value="SUBMITTED">Đã nộp</mat-option>
             <mat-option value="DONE">Hoàn thành</mat-option>
+            <mat-option value="REPORTED">Báo lỗi</mat-option>
             <mat-option value="CANCELLED">Đã huỷ</mat-option>
+            <mat-option value="RETURNED">Yêu cầu nộp lại</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -111,26 +114,50 @@
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef class="text-end">Thao tác</th>
           <td mat-cell *matCellDef="let r" class="text-end">
-            <!-- Teacher actions -->
-            <button *ngIf="canStart(r)" mat-stroked-button color="primary" (click)="startTask(r)" class="me-2">
+
+            <!-- Teacher -->
+            <button *ngIf="canStart(r)" mat-stroked-button color="primary" (click)="startTask(r)" class="me-2"
+              [disabled]="isLoading">
               Bắt đầu
             </button>
-            <button *ngIf="canDone(r)" mat-raised-button color="accent" (click)="doneTask(r)" class="me-2">
-              Hoàn thành
+
+            <button *ngIf="canSubmit(r)" mat-raised-button color="accent" (click)="submitTask(r)" class="me-2"
+              [disabled]="isLoading">
+              {{ ['SUBMITTED','RETURNED'].includes(r.status) ? 'Nộp lại' : 'Nộp bài' }}
             </button>
 
-            <!-- Head actions -->
-            <!-- EDIT chỉ hiện khi HEAD & chưa huỷ -->
-            <button *ngIf="isHead && r.status !== 'CANCELLED' && r.status !== 'DONE'" mat-stroked-button color="primary" (click)="openEdit(r)"
-              class="me-2">
+            <!-- Thu hồi báo lỗi chỉ khi REPORTED -->
+            <button *ngIf="canRevokeReport(r)" mat-stroked-button color="primary" (click)="revokeReport(r)" class="me-2"
+              [disabled]="isLoading">
+              <mat-icon class="me-1" fontIcon="undo"></mat-icon> Thu hồi báo lỗi
+            </button>
+
+            <!-- Báo lỗi: ẩn cả khi REPORTED -->
+            <button *ngIf="canReport(r)" mat-stroked-button color="warn" (click)="reportTask(r)" class="me-2"
+              [disabled]="isLoading">
+              <mat-icon class="me-1" fontIcon="report_problem"></mat-icon> Báo lỗi
+            </button>
+
+            <!-- Head -->
+            <button *ngIf="isHead && (r.status === 'SUBMITTED' || r.status === 'RETURNED')" mat-raised-button
+              color="primary" (click)="openPendingInArchive(r)" class="me-2">
+              <mat-icon class="me-1" fontIcon="visibility"></mat-icon> Xem bài nộp
+            </button>
+
+            <!-- Sửa: ẩn khi đang có nút Duyệt hoặc khi SUBMITTED/DONE/CANCELLED -->
+            <button *ngIf="!canHeadApprove(r) && isHead && !['SUBMITTED','DONE','CANCELLED'].includes(r.status)"
+              mat-stroked-button color="primary" (click)="openEdit(r)" class="me-2">
               <mat-icon class="me-1" fontIcon="edit"></mat-icon> Sửa
             </button>
 
-            <!-- HỦY chỉ hiện khi HEAD & chưa huỷ -->
-            <button *ngIf="canCancel(r)" mat-stroked-button color="warn" (click)="cancelTask(r)" class="me-2">
+            <!-- Huỷ -->
+            <button *ngIf="canCancel(r)" mat-stroked-button color="warn" (click)="cancelTask(r)" class="me-2"
+              [disabled]="isLoading" style="border-color:#dc3545">
               <mat-icon class="me-1" fontIcon="delete"></mat-icon> Huỷ
             </button>
-            <button *ngIf="isHead && (r.status === 'CANCELLED' || r.status === 'DONE')" mat-stroked-button color="warn" (click)="deleteTask(r)">
+
+            <!-- Xoá: chỉ khi đã HUỶ -->
+            <button *ngIf="isHead" mat-stroked-button color="warn" (click)="deleteTask(r)" [disabled]="isLoading">
               <mat-icon class="me-1" fontIcon="delete_forever"></mat-icon> Xoá
             </button>
           </td>
@@ -150,5 +177,7 @@
     <mat-paginator [length]="total" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="[10,20,50]"
       (page)="onPage($event)" class="mt-2">
     </mat-paginator>
+    <app-loading-screen *ngIf="isLoading" [blurBackground]="true">
+    </app-loading-screen>
   </mat-card>
 </div>
