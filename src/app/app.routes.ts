@@ -34,6 +34,7 @@ import { AdminOverviewComponent } from './pages/admin/admin-overview/admin-overv
 import { HeadOverviewComponent } from './pages/head/head-overview/head-overview.component';
 import { TeacherOverviewComponent } from './pages/user/teacher-overview/teacher-overview.component';
 import { ExamTasksComponent } from './pages/tasks/exam-tasks/exam-tasks.component';
+import { TrashQuestionComponent } from './pages/admin/trash-question/trash-question.component';
 
 const GUIDE_CHILDREN: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'overview' },
@@ -104,6 +105,7 @@ export const routes: Routes = [
       { path: 'subjects', component: UserSubjectListComponent },
       { path: 'subjects/:subjectId', component: UserSubjectDetailComponent },
       { path: 'subjects/:subjectId/:tab', component: UserSubjectDetailComponent },
+      { path: 'subjects/:subjectId/questions/trash', component: TrashQuestionComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'profile/edit', component: EditProfileComponent },
       {
@@ -113,6 +115,7 @@ export const routes: Routes = [
           { path: 'all', component: ArchiveFileComponent, data: { kind: null } },
           { path: 'imports', component: ArchiveFileComponent, data: { kind: 'IMPORT' } },
           { path: 'exports', component: ArchiveFileComponent, data: { kind: 'EXPORT' } },
+          { path: 'answers', component: ArchiveFileComponent, data: { kind: 'EXPORT', variant: 'ANSWER' } },
           { path: 'submissions', component: ArchiveFileComponent, data: { kind: 'SUBMISSION' } },
           { path: 'pending', component: ArchiveFileComponent, data: { kind: 'EXPORT', reviewStatus: 'PENDING' } },
           { path: 'history', component: ArchiveHistoryComponent, data: { kind: 'EXPORT', variant: 'EXAM' } },
@@ -136,6 +139,7 @@ export const routes: Routes = [
       { path: 'overview', component: HeadOverviewComponent },
       { path: 'department', component: HeadSubjectListComponent },
       { path: 'department/:departmentId/subjects/:subjectId', component: SubjectDetailComponent },
+      { path: 'department/:departmentId/subjects/:subjectId/questions/trash', component: TrashQuestionComponent },
       { path: 'user-management', component: HeadUserManagementComponent },
       { path: 'user-management/:id/edit', component: EditProfileComponent },
       { path: 'add-user', component: AddUserComponent },
@@ -148,6 +152,7 @@ export const routes: Routes = [
           { path: 'all', component: ArchiveFileComponent, data: { kind: null } },
           { path: 'imports', component: ArchiveFileComponent, data: { kind: 'IMPORT' } },
           { path: 'exports', component: ArchiveFileComponent, data: { kind: 'EXPORT' } },
+          { path: 'answers', component: ArchiveFileComponent, data: { kind: 'EXPORT', variant: 'ANSWER' } },
           { path: 'submissions', component: ArchiveFileComponent, data: { kind: 'SUBMISSION' } },
           { path: 'pending', component: ArchiveFileComponent, data: { kind: 'EXPORT', reviewStatus: 'PENDING', moderation: true } },
           { path: 'history', component: ArchiveHistoryComponent, data: { kind: 'EXPORT', variant: 'EXAM' } },

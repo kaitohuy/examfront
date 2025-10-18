@@ -43,7 +43,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
   durationMinutes: number | null = 90;
   paperNo: number | null = 1;
   examForm: 'viết' | 'trắc nghiệm' = 'viết';
-  program = '';
+  program = 'Công nghệ thông tin';
   mau = '3a';
 
   // ===== autogen mode =====
@@ -97,7 +97,6 @@ export class ExportQuestionsDialogComponent implements OnInit {
 
   onCancel() { this.ref.close(); }
 
-  // ✅ BỎ bắt buộc classes & program
   get canSubmit(): boolean {
     if (this.mode === 'autogen') {
       return !!this.variants && this.variants >= 1;

@@ -38,6 +38,7 @@ import { QuestionEditDialogComponent } from '../question-edit-dialog/question-ed
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { MathjaxDirective } from '../../../shared/mathjax.directive';
 import { AutoGenRequest, AutogenService } from '../../../services/autogen.service';
+import { Router } from '@angular/router';
 
 type CloneState = { items: any[]; open: boolean; loading: boolean };
 
@@ -57,9 +58,10 @@ type CloneState = { items: any[]; open: boolean; loading: boolean };
 export class QuestionComponent implements OnInit, OnDestroy {
   // ========= Inputs =========
   @Input() subjectId!: number;
-  @Input() departmentId!: number;
+  @Input() departmentId?: number;
   @Input() labelFilter: 'ALL' | 'PRACTICE' | 'EXAM' = 'ALL';
   @Input() requireHeadForAnswers = false;
+  @Input() trashMode = false;
 
   // ========= Loading / Overlay =========
   isLoading = false;
@@ -137,7 +139,9 @@ export class QuestionComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private qevents: QuestionEventsService,
     private el: ElementRef,
-    private autogen: AutogenService
+    private autogen: AutogenService,
+    private router: Router,
+    private login: LoginService
   ) { }
 
   // ========= Lifecycle =========
@@ -227,36 +231,63 @@ export class QuestionComponent implements OnInit, OnDestroy {
     return { mode: 'IDS', ids: Array.from(this.selectedIds) };
   }
 
-  loadQuestions(): void {
-    const opts = this.buildListOpts();
-    this.questionService
-      .getQuestionsPage(this.subjectId, opts)
-      .pipe(withLoading((v) => (this.isLoading = v)))
-      .subscribe({
-        next: (page: SpringPage<any>) => {
-          const data = (page?.content || []).map((q: any) => ({
-            ...q,
-            chapter: q.chapter != null ? Number(q.chapter) : null,
-            labels: Array.isArray(q.labels) ? q.labels : [],
-          }));
-          this.questions = data;
-          this.paginatedQuestions = data;
-          this.totalItems = page?.totalElements ?? data.length;
+  // loadQuestions(): void {
+  //   const opts = this.buildListOpts();
+  //   this.questionService
+  //     .getQuestionsPage(this.subjectId, opts)
+  //     .pipe(withLoading((v) => (this.isLoading = v)))
+  //     .subscribe({
+  //       next: (page: SpringPage<any>) => {
+  //         const data = (page?.content || []).map((q: any) => ({
+  //           ...q,
+  //           chapter: q.chapter != null ? Number(q.chapter) : null,
+  //           labels: Array.isArray(q.labels) ? q.labels : [],
+  //         }));
+  //         this.questions = data;
+  //         this.paginatedQuestions = data;
+  //         this.totalItems = page?.totalElements ?? data.length;
 
-          // Nếu filter mới khiến trang hiện tại rỗng → nhảy về trang 0
-          if (this.totalItems > 0 && this.questions.length === 0 && this.currentPage > 0) {
-            this.currentPage = 0;
-            this.loadQuestions();
-            return;
-          }
-          this.checkAuthorization();
-        },
-        error: (err) =>
-          this.showError(
-            'Lỗi khi tải danh sách câu hỏi: ' +
-            (err.error?.message || 'Không xác định')
-          ),
-      });
+  //         // Nếu filter mới khiến trang hiện tại rỗng → nhảy về trang 0
+  //         if (this.totalItems > 0 && this.questions.length === 0 && this.currentPage > 0) {
+  //           this.currentPage = 0;
+  //           this.loadQuestions();
+  //           return;
+  //         }
+  //         this.checkAuthorization();
+  //       },
+  //       error: (err) =>
+  //         this.showError(
+  //           'Lỗi khi tải danh sách câu hỏi: ' +
+  //           (err.error?.message || 'Không xác định')
+  //         ),
+  //     });
+  // }
+
+  private loadQuestions(): void {
+    const opts = this.buildListOpts();
+    const src$ = this.trashMode
+      ? this.questionService.getDeletedQuestionsPage(this.subjectId, opts)
+      : this.questionService.getQuestionsPage(this.subjectId, opts);
+
+    src$.pipe(withLoading((v) => (this.isLoading = v))).subscribe({
+      next: (page) => {
+        const data = (page?.content || []).map((q: any) => ({
+          ...q,
+          chapter: q.chapter != null ? Number(q.chapter) : null,
+          labels: Array.isArray(q.labels) ? q.labels : [],
+        }));
+        this.questions = data;
+        this.paginatedQuestions = data;
+        this.totalItems = page?.totalElements ?? data.length;
+
+        if (this.totalItems > 0 && this.questions.length === 0 && this.currentPage > 0) {
+          this.currentPage = 0;
+          this.loadQuestions(); return;
+        }
+        this.checkAuthorization();
+      },
+      error: (err) => this.showError('Lỗi khi tải danh sách câu hỏi: ' + (err.error?.message || 'Không xác định')),
+    });
   }
 
   // ========= Event bus =========
@@ -1301,4 +1332,80 @@ export class QuestionComponent implements OnInit, OnDestroy {
     return `${base}.${c?.cloneIndex}`;
   }
 
+  openTrash() {
+    const role = this.login.getUserRole();
+    if (role === 'HEAD') {
+      this.router.navigate([
+        '/head-dashboard',
+        'department', this.departmentId,
+        'subjects', this.subjectId,
+        'questions', 'trash',
+      ]);
+    } else if (role === 'TEACHER') {
+      this.router.navigate([
+        '/user-dashboard',
+        'subjects', this.subjectId,
+        'questions', 'trash',
+      ]);
+    }
+  }
+
+  restore(q: any) {
+    this.isLoading = true;
+    this.setLoadingText('Đang khôi phục…');
+    this.questionService.restoreQuestion(this.subjectId, q.id)
+      .subscribe({
+        next: () => { this.showSuccess('Đã khôi phục'); this.loadQuestions(); this.isLoading = false; this.resetLoadingText(); },
+        error: (e) => { this.isLoading = false; this.showError(e?.error?.message || 'Khôi phục thất bại'); }
+      });
+  }
+  purge(id: number) {
+    Swal.fire({ title: 'Xoá vĩnh viễn?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Xoá', cancelButtonText: 'Hủy' })
+      .then(res => {
+        if (!res.isConfirmed) return;
+        this.isLoading = true;
+        this.setLoadingText('Đang xoá vĩnh viễn…');
+        this.questionService.purgeQuestion(this.subjectId, id)
+          .subscribe({
+            next: () => { this.showSuccess('Đã xoá vĩnh viễn'); this.loadQuestions(); this.isLoading = false; this.resetLoadingText(); },
+            error: (e) => { this.isLoading = false; this.showError(e?.error?.message || 'Xoá thất bại'); }
+          });
+      });
+  }
+  bulkRestore() {
+    const sel = this.buildSelectionRequest();
+    this.isLoading = true;
+    this.setLoadingText('Đang khôi phục danh sách…');
+    this.questionService.bulkRestore(this.subjectId, sel)
+      .subscribe({
+        next: (r) => { this.showSuccess(`Khôi phục ${r.restored}/${r.requested}`); this.clearSelection(); this.loadQuestions(); this.isLoading = false; this.resetLoadingText(); },
+        error: () => { this.isLoading = false; this.showError('Khôi phục hàng loạt thất bại'); }
+      });
+  }
+  bulkPurge() {
+    const sel = this.buildSelectionRequest();
+    Swal.fire({ title: 'Xoá vĩnh viễn các câu hỏi đã chọn?', icon: 'warning', showCancelButton: true })
+      .then(res => {
+        if (!res.isConfirmed) return;
+        this.isLoading = true;
+        this.setLoadingText('Đang xoá vĩnh viễn…');
+        this.questionService.bulkPurge(this.subjectId, sel)
+          .subscribe({
+            next: (r) => { this.showSuccess(`Đã xoá ${r.purged}/${r.requested}`); this.clearSelection(); this.loadQuestions(); this.isLoading = false; this.resetLoadingText(); },
+            error: () => { this.isLoading = false; this.showError('Xoá hàng loạt thất bại'); }
+          });
+      });
+  }
+
+  closeTrash() {
+    const role = this.login.getUserRole();
+    if (role === 'HEAD') {
+      this.router.navigate(['/head-dashboard', 'department', this.departmentId, 'subjects', this.subjectId]);
+    } else if (role === 'TEACHER') {
+      this.router.navigate(['/user-dashboard', 'subjects', this.subjectId]);
+    } else {
+      // fallback nếu có ADMIN dùng màn này
+      this.router.navigate(['/admin-dashboard', 'department', this.departmentId, 'subjects', this.subjectId]);
+    }
+  }
 }

@@ -21,18 +21,23 @@ import { MatDialog } from '@angular/material/dialog';
 import { RejectDialogComponent, RejectDialogResult } from '../reject-dialog/reject-dialog.component';
 import { NotificationService } from '../../../services/notification.service';
 import { ExamTaskService } from '../../../services/exam-task.service';
+import { ReleaseAtDialogComponent, ReleaseAtDialogResult } from '../release-at-dialog/release-at-dialog.component';
+import { MatMenu, MatMenuModule, MatMenuTrigger } from "@angular/material/menu";
+import { UploadAnswerDialogComponent, UploadAnswerDialogResult } from '../upload-answer-dialog/upload-answer-dialog.component';
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
 type Kind = 'IMPORT' | 'EXPORT' | 'SUBMISSION' | null;
-type Variant = 'EXAM' | 'PRACTICE' | null;
-type ExVariantTab = 'PRACTICE' | 'EXAM';
+type Variant = 'EXAM' | 'PRACTICE' | 'ANSWER' | null;
+type ExVariantTab = 'PRACTICE' | 'EXAM' | 'ANSWER';
 
 @Component({
   selector: 'app-archive-file',
   standalone: true,
   imports: [
     ...sharedImports,
-    LoadingScreenComponent
+    LoadingScreenComponent,
+    MatMenuModule,
+    MatMenuTrigger
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'vi-VN' },
@@ -56,7 +61,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   exportTab: ExVariantTab = 'PRACTICE';
 
   private get currentVariant(): Variant {
-    // Chỉ dùng tab con khi KHÔNG ở moderation & KHÔNG ép reviewStatus (Pending/History)
+    // vẫn theo logic cũ, nhưng giờ exportTab có thể là 'ANSWER'
     return (this.finalKind === 'EXPORT' && !this.moderationMode && !this.reviewStatusFilter)
       ? (this.forceVariant ?? this.exportTab)
       : null;
@@ -208,6 +213,19 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   // ===== Actions =====
+  // view(r: FileArchive) {
+  //   const win = window.open('about:blank', '_blank');
+  //   this.api.getViewUrl(r.id).subscribe({
+  //     next: ({ url }) => {
+  //       if (!url) { win?.close(); return; }
+  //       const finalUrl = this.needsOfficeViewer(r) ? this.wrapOfficeViewer(url) : url;
+  //       try { win?.location.replace(finalUrl); }
+  //       catch { win?.close(); window.open(finalUrl, '_blank'); }
+  //     },
+  //     error: err => { win?.close(); Swal.fire('Lỗi', 'Không lấy được link xem file.', 'error'); console.error(err); }
+  //   });
+  // }
+
   view(r: FileArchive) {
     const win = window.open('about:blank', '_blank');
     this.api.getViewUrl(r.id).subscribe({
@@ -217,9 +235,31 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         try { win?.location.replace(finalUrl); }
         catch { win?.close(); window.open(finalUrl, '_blank'); }
       },
-      error: err => { win?.close(); Swal.fire('Lỗi', 'Không lấy được link xem file.', 'error'); console.error(err); }
+      error: err => {
+        win?.close();
+        const msg = (err?.status === 403 && err?.error?.message)
+          ? err.error.message
+          : 'Không lấy được link xem file.';
+        Swal.fire('Lỗi', msg, 'error');
+        console.error(err);
+      }
     });
   }
+
+  // download(r: FileArchive) {
+  //   if (this.downloading.has(r.id)) return;
+  //   this.downloading.add(r.id);
+  //   this.api.getDownloadUrl(r.id)
+  //     .pipe(finalize(() => this.downloading.delete(r.id)), withLoading(v => this.isLoading = v))
+  //     .subscribe({
+  //       next: ({ url }) => {
+  //         const a = document.createElement('a');
+  //         a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  //         document.body.appendChild(a); a.click(); a.remove();
+  //       },
+  //       error: err => { Swal.fire('Lỗi', 'Không lấy được link tải file.', 'error'); console.error(err); }
+  //     });
+  // }
 
   download(r: FileArchive) {
     if (this.downloading.has(r.id)) return;
@@ -232,7 +272,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           a.href = url; a.target = '_blank'; a.rel = 'noopener';
           document.body.appendChild(a); a.click(); a.remove();
         },
-        error: err => { Swal.fire('Lỗi', 'Không lấy được link tải file.', 'error'); console.error(err); }
+        error: err => {
+          const msg = (err?.status === 403 && err?.error?.message)
+            ? err.error.message
+            : 'Không lấy được link tải file.';
+          Swal.fire('Lỗi', msg, 'error');
+          console.error(err);
+        }
       });
   }
 
@@ -323,6 +369,33 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
       ['SUBMITTED', 'RETURNED'].includes((r.linkedTaskStatus || '').toUpperCase());
 
+    // this.api.approve(r.id, { approveTask: shouldApproveTask })
+    //   .pipe(withLoading(v => this.isLoading = v))
+    //   .subscribe({
+    //     next: (res) => {
+    //       this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
+    //       if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
+    //         this.rows = this.rows.filter(x => x.id !== r.id);
+    //         this.total = Math.max(0, this.total - 1);
+    //       } else {
+    //         (r as any).reviewStatus = 'APPROVED';
+    //       }
+    //       this.notif.invalidateUnread();
+
+    //       // Thông báo gọn, KHÔNG hỏi thêm Swal lần 2
+    //       if (shouldApproveTask && res.taskApproved) {
+    //         Swal.fire({ icon: 'success', title: 'Đã duyệt file & nhiệm vụ', timer: 1300, showConfirmButton: false });
+    //       } else if (shouldApproveTask && !res.taskApproved) {
+    //         Swal.fire({ icon: 'info', title: 'Đã duyệt file (nhiệm vụ không ở trạng thái phù hợp)', timer: 1600, showConfirmButton: false });
+    //       } else {
+    //         Swal.fire({ icon: 'success', title: 'Đã duyệt file', timer: 1200, showConfirmButton: false });
+    //       }
+    //     },
+    //     error: (err) => {
+    //       Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
+    //       console.error(err);
+    //     }
+    //   });
     this.api.approve(r.id, { approveTask: shouldApproveTask })
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
@@ -336,14 +409,12 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           }
           this.notif.invalidateUnread();
 
-          // Thông báo gọn, KHÔNG hỏi thêm Swal lần 2
-          if (shouldApproveTask && res.taskApproved) {
-            Swal.fire({ icon: 'success', title: 'Đã duyệt file & nhiệm vụ', timer: 1300, showConfirmButton: false });
-          } else if (shouldApproveTask && !res.taskApproved) {
-            Swal.fire({ icon: 'info', title: 'Đã duyệt file (nhiệm vụ không ở trạng thái phù hợp)', timer: 1600, showConfirmButton: false });
-          } else {
-            Swal.fire({ icon: 'success', title: 'Đã duyệt file', timer: 1200, showConfirmButton: false });
-          }
+          let title = 'Đã duyệt file';
+          if (shouldApproveTask && res.taskApproved) title = 'Đã duyệt file & nhiệm vụ';
+          if (res.answerBuilt) title += ' (đã sinh file đáp án)';
+          if (res.answerError) title += ' (lỗi sinh đáp án)';
+
+          Swal.fire({ icon: res.answerError ? 'info' : 'success', title, timer: 1500, showConfirmButton: false });
         },
         error: (err) => {
           Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
@@ -387,7 +458,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         uploaderName: r.uploaderName
       },
       autoFocus: false,
-      disableClose: true,
       panelClass: 'ep-dialog'
     });
 
@@ -448,7 +518,8 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     const v = (r.variant || '').toUpperCase();
     return v === 'EXAM' ? 'badge text-bg-primary'
       : v === 'PRACTICE' ? 'badge text-bg-info'
-        : 'badge text-bg-secondary';
+        : v === 'ANSWER' ? 'badge text-bg-warning'
+          : 'badge text-bg-secondary';
   }
 
   statusBadge(s?: string) {
@@ -468,6 +539,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   iconClass(r: FileArchive): string {
     const name = (r.filename || '').toLowerCase();
     const mime = (r.mimeType || '').toLowerCase();
+    if (name.endsWith('.zip') || mime.includes('zip')) return 'bi bi-file-zip fs-3 file-icon';
     if (mime.includes('pdf') || name.endsWith('.pdf')) return 'bi bi-filetype-pdf fs-3 file-icon';
     if (name.endsWith('.doc') || name.endsWith('.docx') || mime.includes('word')) return 'bi bi-filetype-docx fs-3 file-icon';
     return 'bi bi-file-earmark fs-3 file-icon';
@@ -602,5 +674,186 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
   get isPendingTab() {
     return (this.reviewStatusFilter || '').toUpperCase() === 'PENDING';
+  }
+
+  async openReleaseAt(r: FileArchive) {
+    const ref = this.dialog.open(ReleaseAtDialogComponent, {
+      width: '520px',
+      data: { id: r.id, filename: r.filename },
+      autoFocus: false,
+      panelClass: 'ep-dialog'
+    });
+
+    const result = await firstValueFrom(ref.afterClosed()) as ReleaseAtDialogResult | undefined;
+    if (!result) return;
+
+    const { releaseAtIso } = result; // string | null
+    this.api.setReleaseAt(r.id, releaseAtIso)
+      .pipe(withLoading(v => this.isLoading = v))
+      .subscribe({
+        next: () => {
+          this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
+          Swal.fire({ icon: 'success', title: 'Đã cập nhật lịch mở', timer: 1200, showConfirmButton: false });
+          this.load();
+        },
+        error: err => { Swal.fire('Lỗi', 'Cập nhật lịch mở thất bại.', 'error'); console.error(err); }
+      });
+  }
+
+  canScheduleAnswer(r: FileArchive) {
+    return this.isAdmin() && (r.kind === 'EXPORT') && ((r.variant || '').toUpperCase() === 'ANSWER');
+  }
+
+  isAnswer(r: FileArchive) {
+    return r.kind === 'EXPORT' && (r.variant || '').toUpperCase() === 'ANSWER';
+  }
+
+  locked(r: FileArchive) {
+    if (!this.isAnswer(r)) return false;     // chỉ khóa với ANSWER
+    if (this.isAdmin()) return false;        // ADMIN/HEAD luôn bypass
+    const iso = (r as any).releaseAt as string | null | undefined;
+    if (!iso) return true;                   // chưa đặt lịch -> coi như khóa
+    return Date.now() < new Date(iso).getTime();
+  }
+  get isAnswerTab(): boolean {
+    return this.finalKind === 'EXPORT' &&
+      this.currentVariant === 'ANSWER' &&
+      !this.moderationMode &&
+      !this.reviewStatusFilter;
+  }
+
+  // ========== NEW: Check if row is submission ========== 
+  isSubmissionRow(r: FileArchive): boolean {
+    return r.kind === 'SUBMISSION';
+  }
+
+  // ========== NEW: Can upload answer (TEACHER/HEAD/ADMIN) ========== 
+  canUploadAnswer(): boolean {
+    return this.isAdmin() || this.isTeacher();
+  }
+
+  // ========== NEW: Can regenerate answer (HEAD/ADMIN + APPROVED EXAM submission) ========== 
+  canRegenerateAnswer(r: FileArchive): boolean {
+    // if (!this.isAdmin()) return false;  // only HEAD/ADMIN
+
+    return r.kind === 'SUBMISSION' &&
+      (r.variant || '').toUpperCase() === 'EXAM' &&
+      (r.reviewStatus || '').toUpperCase() === 'APPROVED';
+  }
+
+  // ========== NEW: Open upload answer dialog ========== 
+  async openUploadAnswerDialog() {
+    const ref = this.dialog.open(UploadAnswerDialogComponent, {
+      width: '600px',
+      data: {},
+      panelClass: 'ep-dialog'
+    });
+
+    const result = await firstValueFrom(ref.afterClosed()) as UploadAnswerDialogResult | undefined;
+    if (!result?.file || !result?.subjectId) return;
+
+    // Upload với subjectId từ dialog
+    this.api.uploadAnswer(result.file, result.subjectId)
+      .pipe(withLoading(v => this.isLoading = v))
+      .subscribe({
+        next: (fileArchive) => {
+          this.api.invalidate(); // Invalidate toàn bộ cache
+          Swal.fire({
+            icon: 'success',
+            title: 'Upload thành công',
+            text: 'File đáp án đã được lưu. Bạn có thể đặt lịch mở sau.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          this.load();
+        },
+        error: err => {
+          const msg = err?.error?.message || 'Upload thất bại. Vui lòng thử lại.';
+          Swal.fire('Lỗi', msg, 'error');
+          console.error(err);
+        }
+      });
+  }
+
+  // ========== NEW: Regenerate answer from submission ========== 
+  async regenerateAnswerFromSubmission(r: FileArchive) {
+    const { isConfirmed } = await Swal.fire({
+      icon: 'question',
+      title: 'Sinh đáp án tự động?',
+      html: `
+        <div style="text-align:left">
+          <div class="mb-2">Sinh đáp án từ submission: <strong>${r.filename}</strong></div>
+          <div class="text-muted small">
+            • Hệ thống sẽ đọc blueprint.json từ file ZIP<br/>
+            • Tạo file ZIP chứa DOCX đáp án cho từng đề<br/>
+            • File đáp án sẽ được lưu với trạng thái APPROVED<br/>
+            • Thời gian mở sẽ đặt sau
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Sinh đáp án',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!isConfirmed) return;
+
+    this.api.regenerateAnswer(r.id)
+      .pipe(withLoading(v => this.isLoading = v))
+      .subscribe({
+        next: (resp) => {
+          if (resp.success) {
+            this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId}`));
+            Swal.fire({
+              icon: 'success',
+              title: 'Sinh đáp án thành công',
+              html: `
+                <div class="text-start">
+                  <div>File: <strong>${resp.filename || 'N/A'}</strong></div>
+                  <div class="text-muted small mt-2">
+                    Bạn có thể đặt lịch mở đáp án ở tab "File đáp án"
+                  </div>
+                </div>
+              `,
+              confirmButtonText: 'OK'
+            });
+            this.load();
+          } else {
+            Swal.fire('Lỗi', resp.error || 'Sinh đáp án thất bại', 'error');
+          }
+        },
+        error: err => {
+          const msg = err?.error?.error || err?.error?.message || 'Sinh đáp án thất bại';
+          Swal.fire('Lỗi', msg, 'error');
+          console.error(err);
+        }
+      });
+  }
+
+  // ========== Helper: Get subject name ========== 
+  private async getSubjectName(subjectId: number): Promise<string> {
+    try {
+      // Nếu đã có trong cache/rows hiện tại
+      const existing = this.rows.find(r => r.subjectId === subjectId);
+      if (existing?.subjectName) return existing.subjectName;
+
+      // Fallback: có thể gọi API hoặc trả về mặc định
+      return `Môn học #${subjectId}`;
+    } catch {
+      return `Môn học #${subjectId}`;
+    }
+  }
+
+  isAnswerRow(r: FileArchive): boolean {
+    return r.kind === 'EXPORT' && (r.variant || '').toUpperCase() === 'ANSWER';
+  }
+
+  hasReleaseAt(r: FileArchive): boolean {
+    try {
+      const iso = (r as any).releaseAt as string | null | undefined;
+      return !!iso;
+    } catch {
+      return false;
+    }
   }
 }

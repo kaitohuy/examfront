@@ -1,0 +1,4 @@
+.border-primary {
+    border-color: var(--mat-primary) !important;
+    background-color: rgba(var(--mat-primary-rgb), 0.05);
+}

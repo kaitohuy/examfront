@@ -80,8 +80,6 @@ export class QuestionService {
     return req.clone({ headers });
   }
 
-  // ========= NEW: SERVER-SIDE PAGINATION + FILTER =========
-  /** Lấy danh sách câu hỏi theo trang + filter (BE xử lý) */
   getQuestionsPage(subjectId: number, opts?: QuestionListOpts): Observable<Page<Question>> {
     let params = new HttpParams();
 
@@ -350,5 +348,56 @@ export class QuestionService {
     return this.http
       .get<Page<Question>>(`${baseUrl}/subject/${subjectId}/questions/${parentId}/clones`, { params })
       .pipe(map(p => p.content || []));
+  }
+
+  lookupQuestions(subjectId: number, ids: number[]) {
+    let params = new HttpParams();
+    for (const id of ids ?? []) params = params.append('ids', String(id));
+    return this.http.get<Question[]>(
+      `${baseUrl}/subject/${subjectId}/questions/lookup`, { params }
+    );
+  }
+
+  // bundles (nếu có DTO/endpoint)
+  lookupBundles(subjectId: number, ids: number[]) {
+    let params = new HttpParams();
+    for (const id of ids ?? []) params = params.append('ids', String(id));
+    return this.http.get<any[]>(
+      `${baseUrl}/subject/${subjectId}/bundles/lookup`, { params }
+    );
+  }
+
+  // question.service.ts
+  getDeletedQuestionsPage(subjectId: number, opts?: QuestionListOpts) {
+    let params = new HttpParams();
+    // tái dùng build param như getQuestionsPage(...)
+    if (opts?.labels?.length) params = params.set('labels', opts.labels.join(','));
+    if (opts?.q?.trim()) params = params.set('q', opts.q.trim());
+    if (opts?.difficulty) params = params.set('difficulty', opts.difficulty);
+    if (opts?.chapter != null) params = params.set('chapter', String(opts.chapter));
+    if (opts?.type) params = params.set('type', opts.type);
+    if (opts?.createdBy?.trim()) params = params.set('createdBy', opts.createdBy.trim());
+    const iso = (v: Date | string | null | undefined) => v instanceof Date ? v.toISOString() : (v ? new Date(v).toISOString() : null);
+    const fromIso = iso(opts?.from), toIso = iso(opts?.to);
+    if (fromIso) params = params.set('from', fromIso);
+    if (toIso) params = params.set('to', toIso);
+    params = params.set('page', String(opts?.page ?? 0));
+    params = params.set('size', String(opts?.size ?? 20));
+    for (const s of (opts?.sort || 'deletedAt,desc;id,desc').split(';')) params = params.append('sort', s);
+
+    return this.http.get<Page<Question>>(`${baseUrl}/subject/${subjectId}/questions/trash`, { params });
+  }
+
+  restoreQuestion(subjectId: number, id: number) {
+    return this.http.post<void>(`${baseUrl}/subject/${subjectId}/questions/${id}/restore`, {});
+  }
+  purgeQuestion(subjectId: number, id: number) {
+    return this.http.delete<void>(`${baseUrl}/subject/${subjectId}/questions/${id}/purge`);
+  }
+  bulkRestore(subjectId: number, selection: BulkSelectionRequest) {
+    return this.http.post<{ restored: number; requested: number }>(`${baseUrl}/subject/${subjectId}/questions/bulk-restore`, selection);
+  }
+  bulkPurge(subjectId: number, selection: BulkSelectionRequest) {
+    return this.http.post<{ purged: number; requested: number }>(`${baseUrl}/subject/${subjectId}/questions/bulk-purge`, selection);
   }
 }

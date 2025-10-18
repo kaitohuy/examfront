@@ -1,19 +1,25 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <button class="btn btn-outline-secondary me-3" [routerLink]="['/admin-dashboard/department', departmentId, 'subjects']">
+    <div class="d-flex justify-content-between align-items-center">
+      <button class="btn btn-outline-secondary me-3"
+        [routerLink]="['/admin-dashboard/department', departmentId, 'subjects']">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
-      <h2 class="d-inline-block mb-0">Quản lý Môn học</h2>
+      <div>
+        <h2 class="d-inline-block mb-0" style="font-weight: 250;">Quản lý Ngân hàng đề thi/ Câu hỏi ôn tập</h2>
+        <h2 class="d-inline-block mb-0" style="margin-left: 5em; font-weight: 250;">
+          Học phần: {{ subjectName }}
+        </h2>
+      </div>
     </div>
   </div>
 
   <mat-tab-group>
-    <mat-tab label="Câu hỏi Ôn tập">
+    <mat-tab label="Câu hỏi ôn tập">
       <app-practice-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-practice-question-tab>
     </mat-tab>
 
-    <mat-tab label="Câu hỏi Thi cử">
+    <mat-tab label="Ngân hàng đề thi">
       <app-exam-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-exam-question-tab>
     </mat-tab>
   </mat-tab-group>

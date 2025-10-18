@@ -1,5 +1,5 @@
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-export type ArchiveVariant = 'EXAM' | 'PRACTICE';
+export type ArchiveVariant = 'EXAM' | 'PRACTICE' | 'ANSWER' | null;
 export type ArchiveKind = 'IMPORT' | 'EXPORT' | 'SUBMISSION';
 
 export interface FileArchive {
@@ -20,6 +20,7 @@ export interface FileArchive {
   reviewStatus?: ReviewStatus | null;
   reviewNote?: string | null;
   reviewDeadline?: string | null; // ISO (BE trả Instant)
+  releaseAt?: string | null;
 
   reviewedAt?: string;          // ISO
   reviewedById?: number;

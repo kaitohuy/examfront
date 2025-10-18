@@ -15,19 +15,34 @@ type Item = {
   saving?: boolean;
   deleting?: boolean;
   error?: string;
+
+  /** Nếu là “câu” thì data chứa Question để xem/sửa nhanh */
   data?: Question;
 
-  // edit inline
+  /** Nếu là “bundle” thì bundle chứa DTO (đủ để hiển thị) */
+  bundle?: {
+    id: number;
+    title?: string;
+    instructions?: string | null;
+    items?: Array<{
+      questionId: number;
+      orderIndex: number;
+      pointsOverride?: number | null;
+      note?: string | null;
+    }>;
+  };
+
+  // edit inline (chỉ dùng cho "question mode")
   editing?: boolean;
   form?: {
     questionType: 'MULTIPLE_CHOICE' | 'ESSAY';
-    difficulty: 'A'|'B'|'C'|'D'|'E';
+    difficulty: 'A' | 'B' | 'C' | 'D' | 'E';
     chapter: number;
     content: string;
     optionA?: string; optionB?: string; optionC?: string; optionD?: string;
     answer?: string;
     answerText?: string;
-    labels?: ('PRACTICE'|'EXAM')[];
+    labels?: ('PRACTICE' | 'EXAM')[];
   };
 };
 
@@ -41,6 +56,8 @@ type Item = {
 export class DuplicateListDialogComponent {
   items: Item[] = [];
   subjectId!: number;
+  questionMap = new Map<number, Question>(); // questionId -> Question
+  isBundleMode = false;
 
   diffOptions = [
     { value: 'A' as const, label: '5 điểm' },
@@ -49,7 +66,7 @@ export class DuplicateListDialogComponent {
     { value: 'D' as const, label: '2 điểm' },
     { value: 'E' as const, label: '1 điểm' },
   ];
-  chapters: Array<0|1|2|3|4|5|6|7> = [0,1,2,3,4,5,6,7];
+  chapters: Array<0 | 1 | 2 | 3 | 4 | 5 | 6 | 7> = [0, 1, 2, 3, 4, 5, 6, 7];
   labelOptions = [
     { value: 'PRACTICE' as const, label: 'Ôn tập' },
     { value: 'EXAM' as const, label: 'Thi cử' },
@@ -59,15 +76,19 @@ export class DuplicateListDialogComponent {
   focused: { id: number; field: TexField } | null = null;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { subjectId: number; ids: number[]; score?: number },
+    @Inject(MAT_DIALOG_DATA) public data: { subjectId: number; ids: number[]; score?: number; mode?: 'question' | 'bundle' },
     private ref: MatDialogRef<DuplicateListDialogComponent>,
     private qs: QuestionService
   ) {
     this.subjectId = data.subjectId;
     const ids = Array.isArray(data.ids) ? data.ids : [];
     this.items = ids.map((id) => ({ id, loading: true }));
+    this.isBundleMode = (data.mode === 'bundle');
 
-    if (ids.length) {
+    if (!ids.length) return;
+
+    if (!this.isBundleMode) {
+      // ===== CHẾ ĐỘ CÂU HỎI =====
       forkJoin(
         ids.map((id) =>
           this.qs.getQuestion(this.subjectId, id).pipe(
@@ -80,20 +101,55 @@ export class DuplicateListDialogComponent {
           const it = this.items.find((x) => x.id === r.id);
           if (!it) return;
           it.loading = false;
-          if (r.ok) {
-            it.data = r.data;
-          } else {
-            it.error = 'Không tải được dữ liệu';
-          }
+          if (r.ok) it.data = r.data; else it.error = 'Không tải được dữ liệu';
         });
+      });
+    } else {
+      // ===== CHẾ ĐỘ BUNDLE =====
+      this.qs.lookupBundles(this.subjectId, ids).subscribe({
+        next: (bundles: any[]) => {
+          // gắn bundle theo đúng thứ tự id
+          const map: Record<number, any> = {};
+          for (const b of bundles || []) map[b.id] = b;
+
+          // gom tất cả questionId bên trong bundle
+          const qIds: number[] = [];
+          this.items.forEach((it) => {
+            const b = map[it.id];
+            it.loading = false;
+            if (!b) { it.error = 'Không tải được dữ liệu'; return; }
+            it.bundle = b;
+            (b.items || []).forEach((bi: any) => qIds.push(bi.questionId));
+          });
+
+          // tải nội dung các câu trong bundle
+          const uniq = Array.from(new Set(qIds));
+          if (!uniq.length) return;
+
+          this.qs.lookupQuestions(this.subjectId, uniq).subscribe({
+            next: (qs: Question[]) => {
+              for (const q of qs) this.questionMap.set(q.id!, q);
+              // đặt “data” = câu đầu tiên để dùng preview nhanh
+              for (const it of this.items) {
+                const firstId = it.bundle?.items?.[0]?.questionId;
+                if (firstId) it.data = this.questionMap.get(firstId) || undefined;
+              }
+            },
+            error: () => { /* không chặn UI; HTML sẽ hiện '(Không lấy được nội dung câu)' */ }
+          });
+        },
+        error: () => {
+          for (const it of this.items) { it.loading = false; it.error = 'Không tải được dữ liệu'; }
+        }
       });
     }
   }
 
   close() { this.ref.close(); }
 
-  // ===== Inline edit =====
+  // ===== Inline edit (only question mode) =====
   toggleEdit(it: Item) {
+    if (this.isBundleMode) return; // chặn trong bundle mode
     if (!it.data) return;
     it.editing = !it.editing;
     if (it.editing) {
@@ -167,6 +223,7 @@ export class DuplicateListDialogComponent {
   }
 
   save(it: Item) {
+    if (this.isBundleMode) return; // chặn trong bundle mode
     if (!it.form) return;
     it.saving = true;
 
@@ -182,7 +239,7 @@ export class DuplicateListDialogComponent {
       payload.optionB = it.form.optionB;
       payload.optionC = it.form.optionC;
       payload.optionD = it.form.optionD;
-      payload.answer  = it.form.answer;
+      payload.answer = it.form.answer;
     } else {
       payload.answerText = it.form.answerText ?? '';
     }
@@ -203,6 +260,7 @@ export class DuplicateListDialogComponent {
   }
 
   async onDelete(it: Item) {
+    if (this.isBundleMode) return; // chặn trong bundle mode
     if (!it?.id) return;
     const { isConfirmed } = await Swal.fire({
       icon: 'warning', title: `Xoá câu #${it.id}?`,

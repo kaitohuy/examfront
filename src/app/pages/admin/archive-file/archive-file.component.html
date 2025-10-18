@@ -78,7 +78,7 @@
     </div>
 
     <!-- Tabs con cho EXPORT: ẨN khi moderation hoặc có reviewStatusFilter (Pending/History) -->
-    <div *ngIf="finalKind === 'EXPORT' && !moderationMode && !reviewStatusFilter" class="mt-3">
+    <div *ngIf="finalKind === 'EXPORT' && !moderationMode && !reviewStatusFilter && !forceVariant" class="mt-3">
       <mat-tab-group (selectedIndexChange)="onExportTabChange($event)">
         <mat-tab label="Practice"></mat-tab>
         <mat-tab label="Exam"></mat-tab>
@@ -86,6 +86,12 @@
     </div>
 
     <div class="position-relative mt-3">
+      <div *ngIf="isAnswerTab && canUploadAnswer()" class="mb-2 text-end">
+        <button mat-flat-button color="primary" (click)="openUploadAnswerDialog()" [disabled]="isLoading">
+          <mat-icon>upload</mat-icon>
+          <span class="ms-1">Upload file đáp án</span>
+        </button>
+      </div>
       <div class="table-responsive border rounded">
         <table mat-table [dataSource]="viewRows" class="mat-elevation-z0 mb-0">
 
@@ -164,33 +170,116 @@
 
           <!-- Actions -->
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-end col-actions">Thao tác</th>
-            <td mat-cell *matCellDef="let r" class="text-end col-actions">
-              <span class="me-2" *ngIf="headStatus.get(r.id) !== undefined">
+            <th mat-header-cell *matHeaderCellDef class="text-center col-actions">Thao tác</th>
+            <td mat-cell *matCellDef="let r" class="col-actions justify-content-between align-items-center">
+              <span *ngIf="headStatus.get(r.id) !== undefined">
                 <mat-icon [matTooltip]="headStatus.get(r.id) ? 'Có trên GCS' : 'Thiếu trên GCS'"
                   [ngClass]="headStatus.get(r.id) ? 'text-success' : 'text-danger'">
                   {{ headStatus.get(r.id) ? 'cloud_done' : 'cloud_off' }}
                 </mat-icon>
               </span>
 
-              <!-- Moderation: View / Approve / Reject -->
-              <ng-container *ngIf="moderationMode; else normalActions">
+              <!-- ========== MODERATION MODE ========== -->
+              <ng-container *ngIf="moderationMode">
                 <button mat-button color="primary" (click)="view(r)" matTooltip="Xem nhanh">
                   <mat-icon>open_in_new</mat-icon> Xem
                 </button>
                 <button mat-button color="accent" (click)="approveFile(r)"
-                  [disabled]="isLoading || ( (r.reviewStatus || '').toUpperCase() !== 'PENDING')">
+                  [disabled]="isLoading || ((r.reviewStatus || '').toUpperCase() !== 'PENDING')">
                   <mat-icon>check_circle</mat-icon> Duyệt
                 </button>
                 <button mat-button color="warn" (click)="rejectFile(r)"
-                  [disabled]="isLoading || ( (r.reviewStatus || '').toUpperCase() !== 'PENDING')">
+                  [disabled]="isLoading || ((r.reviewStatus || '').toUpperCase() !== 'PENDING')">
                   <mat-icon>cancel</mat-icon> Hủy
                 </button>
               </ng-container>
 
-              <!-- Normal: View / Download / Delete (không có nút "Info" nữa) -->
-              <ng-template #normalActions>
-                <span class="actions-wrap">
+              <!-- ========== NORMAL MODE ========== -->
+              <ng-container *ngIf="!moderationMode">
+
+                <!-- FILE SUBMISSION: Dropdown menu với icon settings -->
+                <ng-container *ngIf="isSubmissionRow(r)">
+                  <button mat-icon-button [matMenuTriggerFor]="submissionMenu" [disabled]="isLoading"
+                    matTooltip="Thao tác">
+                    <mat-icon>settings</mat-icon>
+                  </button>
+
+                  <mat-menu #submissionMenu="matMenu">
+                    <button mat-menu-item (click)="view(r)">
+                      <mat-icon>open_in_new</mat-icon>
+                      <span>Xem</span>
+                    </button>
+
+                    <button mat-menu-item (click)="download(r)"
+                      *ngIf="(r.reviewStatus || '').toUpperCase() === 'APPROVED'" [disabled]="isLoading">
+                      <mat-icon>download</mat-icon>
+                      <span>Tải về</span>
+                    </button>
+
+                    <mat-divider *ngIf="canRegenerateAnswer(r)"></mat-divider>
+
+                    <button mat-menu-item (click)="regenerateAnswerFromSubmission(r)" *ngIf="canRegenerateAnswer(r)"
+                      [disabled]="isLoading">
+                      <mat-icon color="accent">auto_awesome</mat-icon>
+                      <span>Sinh đáp án</span>
+                    </button>
+
+                    <mat-divider></mat-divider>
+
+                    <button mat-menu-item (click)="confirmDelete(r)" [disabled]="isLoading" class="text-danger">
+                      <mat-icon>delete</mat-icon>
+                      <span>Xóa</span>
+                    </button>
+                  </mat-menu>
+                </ng-container>
+
+                <!-- FILE ĐÁP ÁN (ANSWER): Dropdown menu với icon settings + lock status -->
+                <ng-container *ngIf="isAnswerRow(r)">
+
+                  <button mat-icon-button [matMenuTriggerFor]="answerMenu" [disabled]="isLoading" matTooltip="Thao tác">
+                    <mat-icon>settings</mat-icon>
+                  </button>
+
+                  <!-- Icon lock/unlock status -->
+                  <mat-icon *ngIf="locked(r)" class="text-warning me-2" matTooltip="Chưa đến giờ mở đáp án">
+                    lock
+                  </mat-icon>
+                  <mat-icon *ngIf="!locked(r) && hasReleaseAt(r)" class="text-success me-2"
+                    matTooltip="Đã đến giờ mở đáp án">
+                    lock_open
+                  </mat-icon>
+                  
+                  <mat-menu #answerMenu="matMenu">
+                    <button mat-menu-item (click)="view(r)" [disabled]="isLoading || locked(r)">
+                      <mat-icon>open_in_new</mat-icon>
+                      <span>Xem</span>
+                    </button>
+
+                    <button mat-menu-item (click)="download(r)"
+                      *ngIf="(r.reviewStatus || '').toUpperCase() === 'APPROVED'" [disabled]="isLoading || locked(r)">
+                      <mat-icon>download</mat-icon>
+                      <span>Tải về</span>
+                    </button>
+
+                    <mat-divider *ngIf="canScheduleAnswer(r)"></mat-divider>
+
+                    <button mat-menu-item (click)="openReleaseAt(r)" *ngIf="canScheduleAnswer(r)"
+                      [disabled]="isLoading">
+                      <mat-icon color="accent">schedule</mat-icon>
+                      <span>Lịch mở</span>
+                    </button>
+
+                    <mat-divider></mat-divider>
+
+                    <button mat-menu-item (click)="confirmDelete(r)" [disabled]="isLoading" class="text-danger">
+                      <mat-icon>delete</mat-icon>
+                      <span>Xóa</span>
+                    </button>
+                  </mat-menu>
+                </ng-container>
+
+                <!-- CÁC FILE KHÁC (PRACTICE, EXAM, IMPORT): Giữ nguyên buttons -->
+                <span class="actions-wrap" *ngIf="!isSubmissionRow(r) && !isAnswerRow(r)">
                   <button mat-button color="primary" (click)="view(r)" [disabled]="isLoading">
                     <mat-icon>open_in_new</mat-icon> Xem
                   </button>
@@ -204,7 +293,7 @@
                     <mat-icon>delete</mat-icon> Xóa
                   </button>
                 </span>
-              </ng-template>
+              </ng-container>
             </td>
           </ng-container>
 

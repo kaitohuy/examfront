@@ -17,19 +17,19 @@
       <a *ngIf="showUserManagement" mat-list-item [routerLink]="to('user-management')" routerLinkActive="active"
         [matTooltip]="isCollapsed ? 'User Management' : ''" [matTooltipDisabled]="!isCollapsed">
         <img matListIcon src="assets/images/management.png" width="24" height="24" />
-        <span matLine class="mx-2" *ngIf="!isCollapsed">Quản lý nhân sự</span>
+        <span matLine class="mx-2" *ngIf="!isCollapsed">Danh sách giảng viên</span>
       </a>
 
       <a *ngIf="showDepartment" mat-list-item [routerLink]="to('department')" routerLinkActive="active"
         [matTooltip]="isCollapsed ? 'Department Management' : ''" [matTooltipDisabled]="!isCollapsed">
         <img matListIcon src="assets/images/university.png" width="24" height="24" />
-        <span matLine class="mx-2" *ngIf="!isCollapsed">Quản lý khoa</span>
+        <span matLine class="mx-2" *ngIf="!isCollapsed">{{ manageDepartment }}</span>
       </a>
 
       <a *ngIf="showMySubject" mat-list-item [routerLink]="to('subjects')" routerLinkActive="active"
         [matTooltip]="isCollapsed ? 'My Subject' : ''" [matTooltipDisabled]="!isCollapsed">
         <img matListIcon src="assets/images/book.png" width="24" height="24" />
-        <span matLine class="mx-2" *ngIf="!isCollapsed">Các môn đang dạy</span>
+        <span matLine class="mx-2" *ngIf="!isCollapsed">Quản lý học phần</span>
       </a>
 
       <ng-container *ngIf="showArchive">
@@ -49,6 +49,9 @@
           </a>
           <a mat-list-item [routerLink]="to('archive','exports')" routerLinkActive="active" class="submenu-item">
             <span matLine>File tải về</span>
+          </a>
+          <a mat-list-item [routerLink]="to('archive','answers')" routerLinkActive="active" class="submenu-item">
+            <span matLine>File đáp án</span>
           </a>
           <a mat-list-item [routerLink]="to('archive','submissions')" routerLinkActive="active" class="submenu-item">
             <span matLine>File đã nộp</span>
@@ -84,12 +87,12 @@
 
           <a mat-list-item *ngIf="showUserManagement" [routerLink]="to('guide','user-management')"
             routerLinkActive="active" class="submenu-item">
-            <span matLine>Quản lý nhân sự</span>
+            <span matLine>Danh Sách Giảng viên</span>
           </a>
 
           <a mat-list-item *ngIf="showGuideDepartment" [routerLink]="to('guide','department')" routerLinkActive="active"
             class="submenu-item">
-            <span matLine>Quản lý khoa</span>
+            <span matLine>Quản lý Học Phần</span>
           </a>
 
           <a mat-list-item *ngIf="showGuideSubject" [routerLink]="to('guide','subject')" routerLinkActive="active"
@@ -98,7 +101,7 @@
           </a>
           <a mat-list-item *ngIf="showGuideQuestion" [routerLink]="to('guide','question')" routerLinkActive="active"
             class="submenu-item">
-            <span matLine>Quản lý câu hỏi</span>
+            <span matLine>Quản lý ngân hàng</span>
           </a>
           <a mat-list-item *ngIf="showGuideFile" [routerLink]="to('guide','file')" routerLinkActive="active"
             class="submenu-item">

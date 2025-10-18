@@ -12,8 +12,11 @@ export interface PreviewBlock {
   answerText?: string; // for Essay
   imageIndexes?: number[];
   warnings?: string[];
-  labels?: ('PRACTICE'|'EXAM')[];
+  labels?: ('PRACTICE' | 'EXAM')[];
 
   duplicateScore?: number;
   duplicateOfIds?: number[];
+
+  duplicateBundleScore?: number;
+  duplicateBundleIds?: number[];
 }

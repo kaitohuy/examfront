@@ -6,10 +6,10 @@
       <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']" [disabled]="isLoading">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
-      <h2 class="d-inline-block mb-0">DANH SÁCH MÔN HỌC</h2>
+      <h2 class="d-inline-block mb-0">DANH SÁCH HỌC PHẦN</h2>
     </div>
     <div *ngIf="department">
-      <h2 class="mb-0">Khoa: {{ department.name }}</h2>
+      <h2 class="mb-0">BỘ MÔN: {{ department.name }}</h2>
     </div>
     <button class="btn btn-primary" (click)="openCreateDialog()" [disabled]="isLoading">
       <i class="bi bi-plus-circle me-1"></i> Thêm Môn học

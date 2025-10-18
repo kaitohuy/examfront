@@ -6,7 +6,7 @@
 .mat-mdc-header-cell, .mat-mdc-cell { vertical-align: middle; }
 
 /* chiều rộng ổn định cho các cột chính */
-.col-actions { width: 280px; white-space: nowrap; }
+.col-actions { white-space: nowrap; }
 .col-filename { width: 32%; }
 .col-subject  { width: 22%; }
 .col-uploader { width: 16%; }
@@ -91,8 +91,6 @@ table.mat-mdc-table { --row-py: 10px; }
 .mat-mdc-header-cell, .mat-mdc-cell { padding: var(--row-py) 14px; }
 tr.mat-mdc-row:hover .mat-mdc-cell { background: #fafbff; }
 
-/* Cột hành động */
-.col-actions { width: 320px; white-space: nowrap; }
 .actions-wrap .mat-mdc-button { min-width: 0; margin-left: 6px; }
 
 /* Badge dễ đọc hơn */

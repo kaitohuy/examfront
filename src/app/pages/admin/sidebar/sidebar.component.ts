@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -6,6 +6,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { LoginService } from '../../../services/login.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -22,7 +23,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css']
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   @Input() base: string = '';
   @Input() showUserManagement: boolean = false;
   @Input() showDepartment: boolean = false;
@@ -39,6 +40,17 @@ export class SidebarComponent {
 
   archiveOpen = false;
   guideOpen = false;
+  manageDepartment = "";
+  constructor(
+    private login: LoginService
+  ) {}
+  ngOnInit(): void {
+    if (this.login.getUserRole() === 'ADMIN') {
+      this.manageDepartment = "Quản lý bộ môn";
+    }else {
+      this.manageDepartment = "Quản lý học phần";
+    }
+  }
 
   to(...paths: string[]): string {
     return `/${this.base}/${paths.join('/')}`;

@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="mx-3 my-3">Quản lý Khoa (Bộ môn)</h1>
+  <h1 class="mx-3 my-3">Quản lý Bộ môn</h1>
   <button class="btn btn-primary" (click)="openCreateDialog()" [disabled]="isLoading">
-    <i class="bi bi-plus-circle me-1"></i> Thêm Khoa (Bộ môn)
+    <i class="bi bi-plus-circle me-1"></i> Thêm Bộ môn
   </button>
 </div>
 
@@ -14,7 +14,7 @@
       <input
         type="text"
         class="form-control border-start-0"
-        placeholder="Tìm kiếm Khoa (Bộ môn)..."
+        placeholder="Tìm kiếm Bộ môn..."
         [(ngModel)]="searchText"
         [disabled]="isLoading">
     </div>
@@ -27,8 +27,8 @@
     <!-- (Giữ logic empty/list như cũ, overlay toàn màn hình sẽ chặn thao tác) -->
     <div *ngIf="!isLoading && filteredDepartments.length === 0" class="text-center py-5">
       <i class="bi bi-building text-muted" style="font-size: 3rem;"></i>
-      <h4 class="mt-3">Không tìm thấy Khoa (Bộ môn) nào</h4>
-      <p class="text-muted">Hãy thử thay đổi từ khóa tìm kiếm hoặc thêm Khoa (Bộ môn) mới</p>
+      <h4 class="mt-3">Không tìm thấy Bộ môn nào</h4>
+      <p class="text-muted">Hãy thử thay đổi từ khóa tìm kiếm hoặc thêm Bộ môn mới</p>
     </div>
 
     <div *ngIf="!isLoading && filteredDepartments.length > 0" class="table-responsive">
@@ -40,7 +40,7 @@
               <i class="{{ sortIcons['id'] }} ms-1"></i>
             </th>
             <th (click)="sort('name')" style="cursor: pointer;">
-              Tên Khoa (Bộ môn)
+              Tên Bộ môn
               <i class="{{ sortIcons['name'] }} ms-1"></i>
             </th>
             <th (click)="sort('description')" style="cursor: pointer;">
@@ -48,7 +48,7 @@
               <i class="{{ sortIcons['description'] }} ms-1"></i>
             </th>
             <th (click)="sort('headUser')" style="cursor: pointer;">
-              Trưởng Khoa (Bộ môn)
+              Trưởng Bộ môn
               <i class="{{ sortIcons['headUser'] }} ms-1"></i>
             </th>
             <th class="text-end">Hành động</th>

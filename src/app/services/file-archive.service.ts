@@ -7,13 +7,29 @@ import { PageResult } from '../models/pageResult';
 import { FileArchive } from '../models/fileArchive';
 import { ArchiveQuery } from '../models/ArchiveQuery';
 import { NavEpochService } from './nav-epoch.service';
+import { ReleaseAtDTO } from '../models/ReleaseAtDTO';
 
 type ReviewableQuery = ArchiveQuery & {
   reviewStatus?: string;
   linkedTaskId?: number;        // <-- NEW
 };
 type ListArgs = { subjectId?: number, page: number, size: number, opts?: ReviewableQuery };
-
+export type ApproveResp = {
+  approved: boolean;
+  taskApproved: boolean;
+  taskId?: number | null;
+  answerBuilt?: boolean;
+  answerArchiveId?: number | null;
+  answerError?: string | null;
+};
+export type RegenerateAnswerResp = {
+  success: boolean;
+  message?: string;
+  answerArchiveId?: number;
+  filename?: string;
+  releaseAt?: string | null;
+  error?: string;
+};
 @Injectable({ providedIn: 'root' })
 export class FileArchiveService {
   constructor(private http: HttpClient, private nav: NavEpochService) {
@@ -21,7 +37,6 @@ export class FileArchiveService {
     this.nav.epoch$.subscribe(() => this.cache.clear());
   }
 
-  // === HTTP gốc ===
   list(subjectId?: number, page = 0, size = 20, opts?: ReviewableQuery) {
     let params = new HttpParams()
       .set('page', String(page))
@@ -54,7 +69,6 @@ export class FileArchiveService {
       return c;
     };
     return JSON.stringify({
-      // ⬇️ gắn epoch vào key để khi đổi trang cha -> cache miss -> gọi API tươi
       epoch: this.nav.epoch,
       subjectId: a.subjectId ?? null,
       page: a.page,
@@ -97,17 +111,10 @@ export class FileArchiveService {
     }
   }
 
-  // ---- Moderation / URL helpers ----
   approve(id: number, opts?: { approveTask?: boolean }) {
     let params = new HttpParams();
     if (opts?.approveTask) params = params.set('approveTask', 'true');
-
-    // CHỈNH: trả về JSON đúng kiểu
-    return this.http.post<{
-      approved: boolean;
-      taskApproved: boolean;
-      taskId?: number | null;
-    }>(`${baseUrl}/api/files/${id}/approve`, null, { params });
+    return this.http.post<ApproveResp>(`${baseUrl}/api/files/${id}/approve`, null, { params });
   }
 
   getViewUrl(id: number, minutes = 5) {
@@ -130,4 +137,28 @@ export class FileArchiveService {
     const body = { reason, deadline };
     return this.http.post<void>(`${baseUrl}/api/files/${id}/reject`, body, { params });
   }
+
+  getReleaseAt(id: number) {
+    return this.http.get<ReleaseAtDTO>(`${baseUrl}/api/files/${id}/release-at`);
+  }
+  setReleaseAt(id: number, releaseAt: string | null) {
+    return this.http.patch<ReleaseAtDTO>(`${baseUrl}/api/files/${id}/release-at`, { releaseAt });
+  }
+
+  uploadAnswer(file: File, subjectId: number) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('subjectId', String(subjectId));
+
+    return this.http.post<FileArchive>(`${baseUrl}/api/files/upload-answer`, formData);
+  }
+
+  regenerateAnswer(submissionArchiveId: number, releaseAt?: string | null) {
+    const body = releaseAt ? { releaseAt } : {};
+    return this.http.post<RegenerateAnswerResp>(
+      `${baseUrl}/api/files/${submissionArchiveId}/regenerate-answer`,
+      body
+    );
+  }
+
 }

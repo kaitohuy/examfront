@@ -6,18 +6,19 @@
   <div class="card" *ngFor="let it of items">
     <div class="head">
       <div class="id">#{{ it.id }}</div>
+
       <div class="actions">
-        <button mat-stroked-button color="primary"
-                (click)="toggleEdit(it)"
-                [disabled]="!!it.loading || !!it.deleting">
-          <mat-icon class="me-1">{{ it.editing ? 'visibility' : 'edit' }}</mat-icon>
-          {{ it.editing ? 'Đóng' : 'Sửa' }}
-        </button>
-        <button mat-stroked-button color="warn"
-                (click)="onDelete(it)"
-                [disabled]="!!it.loading || !!it.deleting">
-          <mat-icon class="me-1">delete</mat-icon> Xoá
-        </button>
+        <!-- Ẩn Sửa/Xoá khi ở bundle mode -->
+        <ng-container *ngIf="!isBundleMode">
+          <button mat-stroked-button color="primary" (click)="toggleEdit(it)"
+            [disabled]="!!it.loading || !!it.deleting">
+            <mat-icon class="me-1">{{ it.editing ? 'visibility' : 'edit' }}</mat-icon>
+            {{ it.editing ? 'Đóng' : 'Sửa' }}
+          </button>
+          <button mat-stroked-button color="warn" (click)="onDelete(it)" [disabled]="!!it.loading || !!it.deleting">
+            <mat-icon class="me-1">delete</mat-icon> Xoá
+          </button>
+        </ng-container>
       </div>
     </div>
 
@@ -26,7 +27,17 @@
 
     <!-- ===== XEM NHANH ===== -->
     <ng-container *ngIf="!it.editing && it.data">
+      <!-- Nếu là bundle: hiện tiêu đề + instructions (stem) -->
+      <div *ngIf="isBundleMode && it.bundle" class="box mb-2">
+        <div class="small text-muted">
+          {{ it.bundle.title || 'Không tiêu đề' }}
+        </div>
+        <div *ngIf="it.bundle?.instructions" [appMathjax]="it.bundle.instructions"></div>
+      </div>
+
+      <!-- Preview nhanh dựa trên câu đầu tiên (gán ở .ts) -->
       <div class="content box" [appMathjax]="it.data.content || ''"></div>
+
       <div *ngIf="it.data.questionType === 'MULTIPLE_CHOICE'" class="opts">
         <div class="box">A: <span [appMathjax]="it.data.optionA || ''"></span></div>
         <div class="box">B: <span [appMathjax]="it.data.optionB || ''"></span></div>
@@ -36,14 +47,27 @@
           <b>Đáp án:</b> <span [appMathjax]="it.data.answer || ''"></span>
         </div>
       </div>
+
       <div *ngIf="it.data.questionType === 'ESSAY' && it.data.answerText" class="essay box">
         <b>Giải thích:</b>
         <div [appMathjax]="it.data.answerText || ''"></div>
       </div>
+
+      <div *ngIf="isBundleMode && (it.bundle?.items?.length || 0) > 0" class="mt-2">
+        <div class="small text-muted mb-1">Các ý nhỏ trong {{it.bundle?.title || 'câu'}} :</div>
+        <div *ngFor="let bi of (it.bundle?.items || [])" class="box mb-2">
+          <div class="small text-muted">
+            #{{ bi.orderIndex }}
+          </div>
+          <div style="white-space: pre-wrap"
+            [appMathjax]="questionMap.get(bi.questionId)?.content || '(Không lấy được nội dung câu)'">
+          </div>
+        </div>
+      </div>
     </ng-container>
 
-    <!-- ===== SỬA NHANH ===== -->
-    <ng-container *ngIf="it.editing && it.form">
+    <!-- ===== SỬA NHANH (chỉ dùng cho question mode) ===== -->
+    <ng-container *ngIf="!isBundleMode && it.editing && it.form">
       <div class="row g-2 mb-2">
         <div class="col-auto">
           <mat-form-field appearance="outline" class="mf-compact" style="width:160px">
@@ -82,9 +106,8 @@
 
       <mat-form-field appearance="outline" class="w-100">
         <mat-label>Nội dung (TeX)</mat-label>
-        <textarea [id]="inputId(it.id,'content')" matInput rows="3"
-                  [(ngModel)]="it.form.content" [disabled]="!!it.saving"
-                  (focus)="setFocus(it.id,'content')"></textarea>
+        <textarea [id]="inputId(it.id,'content')" matInput rows="3" [(ngModel)]="it.form.content"
+          [disabled]="!!it.saving" (focus)="setFocus(it.id,'content')"></textarea>
       </mat-form-field>
       <div class="box" [appMathjax]="it.form.content || ''"></div>
 
@@ -92,32 +115,32 @@
         <div class="col-6">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Đáp án A</mat-label>
-            <input [id]="inputId(it.id,'optionA')" matInput [(ngModel)]="it.form.optionA"
-                   [disabled]="!!it.saving" (focus)="setFocus(it.id,'optionA')" />
+            <input [id]="inputId(it.id,'optionA')" matInput [(ngModel)]="it.form.optionA" [disabled]="!!it.saving"
+              (focus)="setFocus(it.id,'optionA')" />
           </mat-form-field>
           <div class="box" [appMathjax]="it.form.optionA || ''"></div>
         </div>
         <div class="col-6">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Đáp án B</mat-label>
-            <input [id]="inputId(it.id,'optionB')" matInput [(ngModel)]="it.form.optionB"
-                   [disabled]="!!it.saving" (focus)="setFocus(it.id,'optionB')" />
+            <input [id]="inputId(it.id,'optionB')" matInput [(ngModel)]="it.form.optionB" [disabled]="!!it.saving"
+              (focus)="setFocus(it.id,'optionB')" />
           </mat-form-field>
           <div class="box" [appMathjax]="it.form.optionB || ''"></div>
         </div>
         <div class="col-6">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Đáp án C</mat-label>
-            <input [id]="inputId(it.id,'optionC')" matInput [(ngModel)]="it.form.optionC"
-                   [disabled]="!!it.saving" (focus)="setFocus(it.id,'optionC')" />
+            <input [id]="inputId(it.id,'optionC')" matInput [(ngModel)]="it.form.optionC" [disabled]="!!it.saving"
+              (focus)="setFocus(it.id,'optionC')" />
           </mat-form-field>
           <div class="box" [appMathjax]="it.form.optionC || ''"></div>
         </div>
         <div class="col-6">
           <mat-form-field appearance="outline" class="w-100">
             <mat-label>Đáp án D</mat-label>
-            <input [id]="inputId(it.id,'optionD')" matInput [(ngModel)]="it.form.optionD"
-                   [disabled]="!!it.saving" (focus)="setFocus(it.id,'optionD')" />
+            <input [id]="inputId(it.id,'optionD')" matInput [(ngModel)]="it.form.optionD" [disabled]="!!it.saving"
+              (focus)="setFocus(it.id,'optionD')" />
           </mat-form-field>
           <div class="box" [appMathjax]="it.form.optionD || ''"></div>
         </div>
@@ -131,10 +154,9 @@
       <div *ngIf="it.form.questionType === 'ESSAY'" class="mt-1">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Giải thích / đáp án</mat-label>
-          <textarea [id]="inputId(it.id,'answerText')" matInput rows="2"
-                    [(ngModel)]="it.form.answerText" [disabled]="!!it.saving"
-                    (focus)="setFocus(it.id,'answerText')"></textarea>
-          </mat-form-field>
+          <textarea [id]="inputId(it.id,'answerText')" matInput rows="2" [(ngModel)]="it.form.answerText"
+            [disabled]="!!it.saving" (focus)="setFocus(it.id,'answerText')"></textarea>
+        </mat-form-field>
         <div class="box" [appMathjax]="it.form.answerText || ''"></div>
       </div>
 
