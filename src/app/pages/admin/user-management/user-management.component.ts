@@ -175,14 +175,15 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   /** Reset mật khẩu: demo */
   resetPassword(user: User): void {
     if (this.isLoading) return;
-    const newPassword = "123abc";
+    const newPassword = "12345678";
     this._userService.resetPassword(user.id, newPassword)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: () => {
-          this._snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']});
+          this._snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success'] });
         },
-        error: () => this._snack.open('Failed to reset password.', 'Close', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})      });
+        error: () => this._snack.open('Failed to reset password.', 'Close', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
+      });
   }
 
   openAssignHeadDialog(user: User) {
@@ -208,14 +209,14 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
                 this.deptSvc.updateDepartment(deptId, { ...dept, headUser: { id: Number(user.id) } })
                   .pipe(withLoading(v => this.isLoading = v))
                   .subscribe({
-                    next: () => { this._snack.open('Đã gán HEAD thành công', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']}); this.loadUsers(); },
-                    error: () => this._snack.open('Gán HEAD thất bại (update department)', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+                    next: () => { this._snack.open('Đã gán HEAD thành công', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success'] }); this.loadUsers(); },
+                    error: () => this._snack.open('Gán HEAD thất bại (update department)', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
                   });
               },
-              error: () => this._snack.open('Không lấy được thông tin bộ môn', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+              error: () => this._snack.open('Không lấy được thông tin bộ môn', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
             });
           },
-          error: () => this._snack.open('Cập nhật role thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+          error: () => this._snack.open('Cập nhật role thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
         });
     });
   }
@@ -226,8 +227,8 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     this._userService.updateRoles(Number(user.id), nextRoles)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
-        next: () => { this._snack.open('Đã gỡ HEAD', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']}); this.loadUsers(); },
-        error: () => this._snack.open('Gỡ HEAD thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+        next: () => { this._snack.open('Đã gỡ HEAD', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success'] }); this.loadUsers(); },
+        error: () => this._snack.open('Gỡ HEAD thất bại', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
       });
   }
 
@@ -306,5 +307,18 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
       inactive: 'bg-warning text-dark'
     };
     return classes[filter] || 'bg-secondary';
+  }
+  getPrimaryRole(u: User): string {
+    const roles = (u.roles || []).map(r => String(r).toUpperCase());
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    if (roles.includes('HEAD')) return 'HEAD';
+    if (roles.includes('TEACHER')) return 'TEACHER';
+    // fallback: nếu BE có role khác hoặc trống
+    return roles[0] || 'TEACHER';
+  }
+
+  getRoleBadgeClass(u: User): string {
+    const r = this.getPrimaryRole(u).toLowerCase();
+    return `badge-${r}`;
   }
 }

@@ -5,7 +5,8 @@ import { LoginService } from '../../services/login.service';
 import { NotificationService } from '../../services/notification.service';
 import { ReviewReminderService } from '../../services/review-reminder.service';
 import { sharedImports } from '../../shared/shared-imports';
-import { NotificationItem } from '../../models/notification';
+import { Notification } from '../../models/notification';
+import { NotificationUrlResolverService } from '../../services/notification-url-resolver.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -38,7 +39,7 @@ export class NavbarComponent implements OnInit {
   unread = 0;
   muted = false;
 
-  items: NotificationItem[] = [];
+  items: Notification[] = [];
   page = 0;
   size = 5;
   hasMore = false;
@@ -52,7 +53,8 @@ export class NavbarComponent implements OnInit {
     public login: LoginService,
     private router: Router,
     private notif: NotificationService,
-    private rr: ReviewReminderService
+    private rr: ReviewReminderService,
+    private urlResolver: NotificationUrlResolverService,
   ) { }
 
   ngOnInit(): void {
@@ -65,9 +67,8 @@ export class NavbarComponent implements OnInit {
       if (this.isLoggedIn) this.refreshUnread();
     });
 
-    // badge lần đầu + theo dõi biến unread
+    // badge lần đầu
     this.refreshUnread();
-    this.notif.watchUnread().subscribe(n => { if (n != null) this.unread = n; });
 
     // trạng thái mute (dựa trên service hiện có)
     const st = this.rr.getMuteStatus?.();
@@ -112,16 +113,20 @@ export class NavbarComponent implements OnInit {
     });
   }
 
-  deleteNotif(n: NotificationItem, ev: Event) {
-    ev.stopPropagation();
-    // với schema mới có isRead, fallback sang readAt để tương thích
-    const wasUnread = !(n.isRead || !!n.readAt);
+  // Click vào 1 thông báo -> markRead + điều hướng
+  openNotif(n: Notification) {
+    const role = (this.login.getUserRole?.() || 'TEACHER') as 'ADMIN'|'HEAD'|'TEACHER';
+    this.notif.markRead(n.id).subscribe({ complete: () => this.refreshUnread() });
+    this.urlResolver.navigate(n, role);
+  }
 
-    this.notif.delete(n.id, wasUnread).subscribe({
+  deleteNotif(n: Notification, ev: Event) {
+    ev.stopPropagation();
+    const wasUnread = !(n.isRead || !!n.readAt);
+    this.notif.delete(n.id).subscribe({
       next: () => {
         this.items = this.items.filter(x => x.id !== n.id);
-        // nếu xóa 1 bản ghi chưa đọc (hiếm, vì đã markAllRead khi mở)
-        if (wasUnread) this.notif.unreadCount(true).subscribe(nc => this.unread = nc);
+        if (wasUnread) this.refreshUnread();
       },
       error: (err) => console.error('Delete notification error:', err)
     });

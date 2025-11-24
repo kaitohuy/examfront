@@ -66,7 +66,7 @@
             <td>
               <div *ngIf="subject.teachers && subject.teachers.length > 0; else noTeachers">
                 <span class="badge bg-info me-1" *ngFor="let teacher of subject.teachers">
-                  {{ teacher.firstName }} {{ teacher.lastName }}
+                  {{ teacher.lastName }} {{ teacher.firstName }}
                 </span>
               </div>
               <ng-template #noTeachers>
@@ -84,7 +84,12 @@
                   [disabled]="isLoading">
                   <i class="bi bi-people"></i> Giảng viên
                 </button>
-
+                
+                <button class="btn btn-sm btn-outline-secondary me-2" (click)="openSettingDialog(subject, $event)"
+                  [disabled]="isLoading" matTooltip="Cấu hình đề tự động">
+                  <i class="bi bi-gear"></i> Setting
+                </button>
+                
                 <button class="btn btn-sm btn-outline-danger"
                   (click)="deleteSubject(subject.id); $event.stopPropagation()" [disabled]="isLoading">
                   <i class="bi bi-trash"></i> Xóa

@@ -15,12 +15,18 @@
   </div>
 
   <mat-tab-group>
-    <mat-tab label="Câu hỏi ôn tập">
-      <app-practice-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-practice-question-tab>
+    <mat-tab label="Ngân hàng đề thi" style="font-size: 1.2em;">
+      <ng-template matTabContent>
+        <app-exam-question-tab [subjectId]="subjectId" [departmentId]="departmentId">
+        </app-exam-question-tab>
+      </ng-template>
     </mat-tab>
 
-    <mat-tab label="Ngân hàng đề thi">
-      <app-exam-question-tab [subjectId]="subjectId" [departmentId]="departmentId"></app-exam-question-tab>
+    <mat-tab label="Câu hỏi ôn tập" style="font-size: 1.2em;">
+      <ng-template matTabContent>
+        <app-practice-question-tab [subjectId]="subjectId" [departmentId]="departmentId">
+        </app-practice-question-tab>
+      </ng-template>
     </mat-tab>
   </mat-tab-group>
 </div>

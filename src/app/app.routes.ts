@@ -89,6 +89,7 @@ export const routes: Routes = [
       { path: 'department', component: ViewDepartmentComponent },
       { path: 'department/:departmentId/subjects', component: ViewSubjectComponent },
       { path: 'department/:departmentId/subjects/:subjectId', component: SubjectDetailComponent },
+      { path: 'department/:departmentId/subjects/:subjectId/questions/trash', component: TrashQuestionComponent },
       { path: 'guide', component: GuideLayoutComponent, children: GUIDE_CHILDREN },
     ],
   },

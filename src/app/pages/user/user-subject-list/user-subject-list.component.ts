@@ -17,10 +17,18 @@ export class UserSubjectListComponent implements OnInit {
   isLoading = true;
   searchText = '';
 
+  // ----- sort giống head -----
+  sortField: 'id' | 'name' | 'code' | '' = '';
+  sortDirection: 'asc' | 'desc' | '' = '';
+  sortIcons: Record<'id' | 'name' | 'code', string> = {
+    id: 'bi bi-arrow-down-up',
+    name: 'bi bi-arrow-down-up',
+    code: 'bi bi-arrow-down-up',
+  };
+
   constructor(private subjectSvc: SubjectService, private router: Router) {}
 
   ngOnInit(): void {
-    // gọi endpoint có kèm teachers
     this.subjectSvc.getMySubjectsWithTeachers()
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
@@ -31,23 +39,62 @@ export class UserSubjectListComponent implements OnInit {
       });
   }
 
-  get filtered(): SubjectWithTeachers[] {
+  // ----- filter + sort -----
+  get filteredSubjects(): SubjectWithTeachers[] {
     const t = (this.searchText || '').trim().toLowerCase();
-    if (!t) return this.subjects;
-    return this.subjects.filter(s => {
-      const name = (s.name || '').toLowerCase();
-      const code = (s.code || '').toLowerCase();
-      const teachersStr = (s.teachers || [])
-        .map((x: any) => `${x.firstName ?? ''} ${x.lastName ?? ''}`.toLowerCase())
-        .join(' ');
-      return name.includes(t) || code.includes(t) || teachersStr.includes(t);
+    let list = this.subjects;
+
+    if (t) {
+      list = list.filter(s => {
+        const name = (s.name || '').toLowerCase();
+        const code = (s.code || '').toLowerCase();
+        const teachersStr = (s.teachers || [])
+          .map((x: any) =>
+            `${x.firstName ?? ''} ${x.lastName ?? ''}`.toLowerCase()
+          )
+          .join(' ');
+        return name.includes(t) || code.includes(t) || teachersStr.includes(t);
+      });
+    }
+
+    // không sort -> trả trực tiếp
+    if (!this.sortField || !this.sortDirection) return list;
+
+    // sort theo field được chọn
+    return [...list].sort((a: any, b: any) => {
+      const A = (a[this.sortField] ?? '').toString().toLowerCase();
+      const B = (b[this.sortField] ?? '').toString().toLowerCase();
+      if (A < B) return this.sortDirection === 'asc' ? -1 : 1;
+      if (A > B) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
     });
   }
 
+  sort(field: 'id' | 'name' | 'code'): void {
+    if (this.sortField === field) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortDirection = 'asc';
+    }
+    this.updateSortIcons();
+  }
+
+  updateSortIcons(): void {
+    this.sortIcons.id = 'bi bi-arrow-down-up';
+    this.sortIcons.name = 'bi bi-arrow-down-up';
+    this.sortIcons.code = 'bi bi-arrow-down-up';
+
+    if (this.sortField && this.sortDirection) {
+      this.sortIcons[this.sortField] =
+        this.sortDirection === 'asc' ? 'bi bi-sort-down' : 'bi bi-sort-up';
+    }
+  }
+
+  // ----- misc -----
   trackById(_: number, s: SubjectWithTeachers) { return s?.id; }
 
   openSubject(s: SubjectWithTeachers) {
-    // Giữ route cũ
-    this.router.navigate(['/user-dashboard', 'subjects', s.id, 'practice']);
+    this.router.navigate(['/user-dashboard', 'subjects', s.id, 'exam']);
   }
 }

@@ -1,4 +1,3 @@
-// src/app/pages/question/question.component.ts
 import {
   Component,
   Input,
@@ -215,8 +214,13 @@ export class QuestionComponent implements OnInit, OnDestroy {
   /** Lấy object filter **không** chứa page/size/sort để gửi lên BE khi mode=FILTER */
   private buildFilterOnly(): QuestionListOpts {
     const full = this.buildListOpts();
-    const { labels, q, difficulty, chapter, type, createdBy, from, to } = full;
-    return { labels, q, difficulty, chapter, type, createdBy, from, to };
+    const { labels, q, difficulty, chapter, type, createdBy, from, to, flagged } = full;
+    const result = {
+      labels, q, difficulty, chapter, type, createdBy, from, to, flagged,
+      deleted: this.trashMode ? true : undefined
+    };
+    console.log('buildFilterOnly result:', result);
+    return result;
   }
 
   /** Helper: payload selection gửi BE (IDS | FILTER + excludeIds) */
@@ -1334,7 +1338,15 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
   openTrash() {
     const role = this.login.getUserRole();
-    if (role === 'HEAD') {
+    if (role == 'ADMIN') {
+      this.router.navigate([
+        '/admin-dashboard',
+        'department', this.departmentId,
+        'subjects', this.subjectId,
+        'questions', 'trash',
+      ]);
+    }
+    else if (role === 'HEAD') {
       this.router.navigate([
         '/head-dashboard',
         'department', this.departmentId,
@@ -1384,6 +1396,8 @@ export class QuestionComponent implements OnInit, OnDestroy {
   }
   bulkPurge() {
     const sel = this.buildSelectionRequest();
+    console.log('bulk-purge sel =', sel);
+    console.log('bulk-purge JSON =', JSON.stringify(sel));
     Swal.fire({ title: 'Xoá vĩnh viễn các câu hỏi đã chọn?', icon: 'warning', showCancelButton: true })
       .then(res => {
         if (!res.isConfirmed) return;

@@ -10,31 +10,7 @@
   <mat-divider />
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="ep-grid" autocomplete="off">
-    <div class="section col-span-full">
-      <div class="section-title">Tài khoản</div>
-    </div>
-
-    <mat-form-field appearance="outline" class="span-3">
-      <mat-label>Tài khoản *</mat-label>
-      <input matInput formControlName="username" autocomplete="off" />
-      <mat-error *ngIf="form.controls.username.hasError('required')">Bắt buộc</mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="span-3">
-      <mat-label>Mật khẩu *</mat-label>
-      <input matInput [type]="hide ? 'password' : 'text'" formControlName="password" [attr.autocomplete]="'new-password'" />
-      <button mat-icon-button matSuffix type="button" (click)="hide = !hide" [attr.aria-label]="'Toggle password'">
-        <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-      </button>
-      <mat-error *ngIf="form.controls.password.hasError('required')">Bắt buộc</mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="span-3">
-      <mat-label>Mã giảng viên *</mat-label>
-      <input matInput formControlName="teacherCode" autocomplete="off" />
-      <mat-error *ngIf="form.controls.teacherCode.hasError('required')">Bắt buộc</mat-error>
-    </mat-form-field>
-
+    <!-- 1. THÔNG TIN CÁ NHÂN -->
     <div class="section col-span-full">
       <div class="section-title">Thông tin cá nhân</div>
     </div>
@@ -51,10 +27,39 @@
       <mat-error *ngIf="form.controls.firstName.hasError('required')">Bắt buộc</mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="span-3">
+    <mat-form-field appearance="outline" class="span-6">
       <mat-label>Email</mat-label>
       <input matInput formControlName="email" autocomplete="off" />
       <mat-error *ngIf="form.controls.email.hasError('email')">Email không hợp lệ</mat-error>
+    </mat-form-field>
+
+    <!-- 2. TÀI KHOẢN -->
+    <div class="section col-span-full">
+      <div class="section-title">Tài khoản</div>
+    </div>
+
+    <mat-form-field appearance="outline" class="span-3">
+      <mat-label>Tài khoản *</mat-label>
+      <input matInput formControlName="username" autocomplete="off" />
+      <mat-hint>Được gợi ý tự động từ tên</mat-hint>
+      <mat-error *ngIf="form.controls.username.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-3">
+      <mat-label>Mật khẩu *</mat-label>
+      <input matInput [type]="hide ? 'password' : 'text'" formControlName="password"
+        [attr.autocomplete]="'new-password'" />
+      <button mat-icon-button matSuffix type="button" (click)="hide = !hide" [attr.aria-label]="'Toggle password'">
+        <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>Mặc định sinh tự động</mat-hint>
+      <mat-error *ngIf="form.controls.password.hasError('required')">Bắt buộc</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-3">
+      <mat-label>Mã giảng viên *</mat-label>
+      <input matInput formControlName="teacherCode" autocomplete="off" />
+      <mat-error *ngIf="form.controls.teacherCode.hasError('required')">Bắt buộc</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="span-3">
@@ -62,7 +67,7 @@
       <input matInput formControlName="phone" autocomplete="off" />
       <mat-error *ngIf="form.controls.phone.hasError('pattern')">Số điện thoại không hợp lệ</mat-error>
     </mat-form-field>
-
+    <!-- 3. QUYỀN & PHÂN CÔNG -->
     <div class="section col-span-full">
       <div class="section-title">Quyền & Phân công</div>
     </div>
@@ -79,14 +84,8 @@
 
     <mat-form-field appearance="outline" class="span-5">
       <mat-label>Bộ môn</mat-label>
-      <input
-        matInput
-        [matAutocomplete]="deptAuto"
-        [formControl]="departmentText"
-        placeholder="Gõ để tìm bộ môn…"
-        (blur)="syncDeptControlOnBlur()"
-        autocomplete="off"
-      />
+      <input matInput [matAutocomplete]="deptAuto" [formControl]="departmentText" placeholder="Gõ để tìm bộ môn…"
+        (blur)="syncDeptControlOnBlur()" autocomplete="off" />
       <mat-autocomplete #deptAuto="matAutocomplete" (optionSelected)="selectDepartment($event.option.value)">
         <mat-option *ngFor="let d of filteredDepartments" [value]="d">
           {{ d.name }} — ID: {{ d.id }}

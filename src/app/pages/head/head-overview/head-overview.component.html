@@ -34,7 +34,7 @@
     <div class="col-12 col-lg-3">
       <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="kpi-title">Giảng viên (trong khoa)</div>
+          <div class="kpi-title">Giảng viên (trong bộ môn)</div>
           <div class="kpi-value">{{ data?.users?.total || 0 }}</div>
           <div class="kpi-sub text-muted">
             ADMIN: {{ data?.users?.byRole?.['ADMIN'] || 0 }} ·
@@ -48,7 +48,7 @@
     <div class="col-12 col-lg-3">
       <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="kpi-title">Khoa/Bộ môn</div>
+          <div class="kpi-title">Bộ môn</div>
           <div class="kpi-value">1</div>
           <div class="kpi-sub" [class.text-success]="(data?.departments?.withoutHead||0)===0"
             [class.text-warning]="(data?.departments?.withoutHead||0)>0">
@@ -93,7 +93,7 @@
     <div class="col-12 col-lg-6">
       <div class="card kpi shadow-sm h-100">
         <div class="card-body">
-          <div class="kpi-title">Câu hỏi (theo khoa)</div>
+          <div class="kpi-title">Câu hỏi (theo bộ môn)</div>
           <div class="kpi-value mb-2">{{ data?.questions?.total || 0 }}</div>
 
           <div class="kpi-sub text-muted">Theo loại</div>
@@ -165,7 +165,7 @@
                 [attr.aria-label]="s.subjectName"></div>
             </div>
             <div class="x-small text-muted mt-1">
-              {{ ofTotalPct(s.count) | number:'1.0-1' }}% tổng câu hỏi khoa
+              {{ ofTotalPct(s.count) | number:'1.0-1' }}% tổng câu hỏi bộ môn
             </div>
           </div>
 
@@ -189,7 +189,7 @@
                 [attr.aria-label]="t.teacherName"></div>
             </div>
             <div class="x-small text-muted mt-1">
-              {{ ofTotalPct(t.count) | number:'1.0-1' }}% tổng câu hỏi khoa
+              {{ ofTotalPct(t.count) | number:'1.0-1' }}% tổng câu hỏi bộ môn
             </div>
           </div>
 

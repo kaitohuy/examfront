@@ -38,20 +38,19 @@ export type DifficultyBE = 'A' | 'B' | 'C' | 'D' | 'E';
 export type LabelBE = 'PRACTICE' | 'EXAM';
 
 export interface QuestionListOpts {
-  // server-side filters
   labels?: LabelBE[];
   q?: string;
   difficulty?: DifficultyBE;
   chapter?: number | null;
   type?: QuestionTypeBE;
   createdBy?: string;
-  from?: Date | string | null; // ISO string hoặc Date
-  to?: Date | string | null;   // ISO string hoặc Date
+  from?: Date | string | null;
+  to?: Date | string | null;
   flagged?: boolean | null;
-  // paging/sorting
-  page?: number;               // default 0
-  size?: number;               // default 20
-  sort?: string;               // ví dụ 'createdAt,desc' hoặc 'createdAt,desc;id,desc'
+  deleted?: boolean;
+  page?: number;
+  size?: number;
+  sort?: string;
 }
 
 /** ===== NEW: Bulk selection payload (IDS | FILTER) ===== */
@@ -395,9 +394,16 @@ export class QuestionService {
     return this.http.delete<void>(`${baseUrl}/subject/${subjectId}/questions/${id}/purge`);
   }
   bulkRestore(subjectId: number, selection: BulkSelectionRequest) {
-    return this.http.post<{ restored: number; requested: number }>(`${baseUrl}/subject/${subjectId}/questions/bulk-restore`, selection);
+    return this.http.post<{ restored: number; requested: number }>(
+      `${baseUrl}/subject/${subjectId}/questions/bulk-restore?deleted=true`,
+      selection
+    );  
   }
+
   bulkPurge(subjectId: number, selection: BulkSelectionRequest) {
-    return this.http.post<{ purged: number; requested: number }>(`${baseUrl}/subject/${subjectId}/questions/bulk-purge`, selection);
+    return this.http.post<{ purged: number; requested: number }>(
+      `${baseUrl}/subject/${subjectId}/questions/bulk-purge?deleted=true`,
+      selection
+    );
   }
 }

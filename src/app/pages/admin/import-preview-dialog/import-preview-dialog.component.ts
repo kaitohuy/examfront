@@ -284,7 +284,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
       this.setHint('Đang chọn tất cả câu NGHI TRÙNG trong danh sách đang hiển thị.');
     }
   }
-  
+
   private setHint(msg: string) {
     this.selectHint = msg;
     if (this.hintTimer) clearTimeout(this.hintTimer);

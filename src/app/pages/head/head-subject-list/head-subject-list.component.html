@@ -3,7 +3,8 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <!-- đổi về head-dashboard -->
-      <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']" [disabled]="isLoading">
+      <button class="btn btn-outline-secondary me-3" [routerLink]="['/head-dashboard/department']"
+        [disabled]="isLoading">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
       <h2 class="d-inline-block mb-0">DANH SÁCH HỌC PHẦN</h2>
@@ -22,13 +23,8 @@
         <span class="input-group-text bg-white border-end-0">
           <i class="bi bi-search"></i>
         </span>
-        <input
-          type="text"
-          class="form-control border-start-0"
-          placeholder="Tìm kiếm môn học..."
-          [(ngModel)]="searchText"
-          [disabled]="isLoading"
-        />
+        <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm môn học..."
+          [(ngModel)]="searchText" [disabled]="isLoading" />
       </div>
     </div>
   </div>
@@ -61,18 +57,16 @@
             </tr>
           </thead>
           <tbody>
-            <tr
-              *ngFor="let subject of filteredSubjects"
+            <tr *ngFor="let subject of filteredSubjects"
               [routerLink]="['/head-dashboard','department', departmentId, 'subjects', subject.id]"
-              style="cursor: pointer;"
-            >
+              style="cursor: pointer;">
               <td>{{ subject.id }}</td>
               <td>{{ subject.name }}</td>
               <td>{{ subject.code }}</td>
               <td>
                 <div *ngIf="subject.teachers && subject.teachers.length > 0; else noTeachers">
                   <span class="badge bg-info me-1" *ngFor="let teacher of subject.teachers">
-                    {{ teacher.firstName }} {{ teacher.lastName }}
+                    {{ teacher.lastName }} {{ teacher.firstName }}
                   </span>
                 </div>
                 <ng-template #noTeachers>
@@ -82,27 +76,23 @@
               <td class="text-center">
                 <div class="btn-group">
                   <!-- chặn bubble để không trigger routerLink -->
-                  <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    (click)="openEditDialog(subject); $event.stopPropagation()"
-                    [disabled]="isLoading"
-                  >
+                  <button class="btn btn-sm btn-outline-primary me-2"
+                    (click)="openEditDialog(subject); $event.stopPropagation()" [disabled]="isLoading">
                     <i class="bi bi-pencil"></i> Sửa
                   </button>
 
-                  <button
-                    class="btn btn-sm btn-outline-success me-2"
-                    (click)="openManageTeachersDialog(subject); $event.stopPropagation()"
-                    [disabled]="isLoading"
-                  >
+                  <button class="btn btn-sm btn-outline-success me-2"
+                    (click)="openManageTeachersDialog(subject); $event.stopPropagation()" [disabled]="isLoading">
                     <i class="bi bi-people"></i> Giảng viên
                   </button>
 
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="deleteSubject(subject.id); $event.stopPropagation()"
-                    [disabled]="isLoading"
-                  >
+                  <button class="btn btn-sm btn-outline-secondary me-2" (click)="openSettingDialog(subject, $event)"
+                    [disabled]="isLoading" matTooltip="Cấu hình đề tự động">
+                    <i class="bi bi-gear"></i> Setting
+                  </button>
+
+                  <button class="btn btn-sm btn-outline-danger"
+                    (click)="deleteSubject(subject.id); $event.stopPropagation()" [disabled]="isLoading">
                     <i class="bi bi-trash"></i> Xóa
                   </button>
                 </div>

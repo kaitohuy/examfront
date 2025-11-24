@@ -1,8 +1,7 @@
-// src/app/pages/admin/archive-file/archive-file.component.ts
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { FormControl } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, Subject, takeUntil, combineLatest, finalize, firstValueFrom } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -19,10 +18,10 @@ import { LoadingScreenComponent } from '../../loading-screen/loading-screen.comp
 import { withLoading } from '../../../shared/with-loading';
 import { MatDialog } from '@angular/material/dialog';
 import { RejectDialogComponent, RejectDialogResult } from '../reject-dialog/reject-dialog.component';
-import { NotificationService } from '../../../services/notification.service';
+// ❌ removed: NotificationService
 import { ExamTaskService } from '../../../services/exam-task.service';
 import { ReleaseAtDialogComponent, ReleaseAtDialogResult } from '../release-at-dialog/release-at-dialog.component';
-import { MatMenu, MatMenuModule, MatMenuTrigger } from "@angular/material/menu";
+import { MatMenuModule, MatMenuTrigger } from "@angular/material/menu";
 import { UploadAnswerDialogComponent, UploadAnswerDialogResult } from '../upload-answer-dialog/upload-answer-dialog.component';
 
 type OuterTab = 'ALL' | 'IMPORTS' | 'EXPORTS';
@@ -61,7 +60,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   exportTab: ExVariantTab = 'PRACTICE';
 
   private get currentVariant(): Variant {
-    // vẫn theo logic cũ, nhưng giờ exportTab có thể là 'ANSWER'
     return (this.finalKind === 'EXPORT' && !this.moderationMode && !this.reviewStatusFilter)
       ? (this.forceVariant ?? this.exportTab)
       : null;
@@ -89,10 +87,8 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   search = new FormControl<string>('', { nonNullable: true });
   filterSubjectText = new FormControl<string>('', { nonNullable: true });
   filterUploaderText = new FormControl<string>('', { nonNullable: true });
-  // ===== đổi kiểu FormControl cho from/to:
   filterFrom = new FormControl<Date | null>(null);
   filterTo = new FormControl<Date | null>(null);
-  // NEW: trạng thái (để thống nhất bộ lọc và sửa Pending mặc định)
   statusSel = new FormControl<string>(''); // '', 'PENDING', 'APPROVED', 'REJECTED'
   showFilters = false;
 
@@ -113,8 +109,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     private login: LoginService,
     private rr: ReviewReminderService,
     private dialog: MatDialog,
-    private notif: NotificationService,
-    private examTaskApi: ExamTaskService
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -152,7 +147,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => { this.pageIndex = 0; this.load(); });
 
-    // Đổi trạng thái -> reload
     this.statusSel.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => { this.pageIndex = 0; this.load(); });
@@ -184,14 +178,11 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     if (!isUserPending) cols.push('uploader');
     cols.push('size');
 
-    // Ẩn cột Kind nếu đã biết chắc (khi đã chọn kind nào đó)
     if (!this.finalKind) cols.push('kind');
 
-    // Chỉ hiện cột Variant khi là EXPORT & không khóa theo tab variant
     const showVariantCol = (this.finalKind !== 'IMPORT') && (this.currentVariant == null);
     if (showVariantCol) cols.push('variant');
 
-    // Cột Status khi ở moderation / có filter trạng thái / hoặc route ép
     if (this.moderationMode || this.reviewStatusFilter || (this.statusSel.value || '').length) {
       cols.push('status');
     }
@@ -212,20 +203,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     }, 200);
   }
 
-  // ===== Actions =====
-  // view(r: FileArchive) {
-  //   const win = window.open('about:blank', '_blank');
-  //   this.api.getViewUrl(r.id).subscribe({
-  //     next: ({ url }) => {
-  //       if (!url) { win?.close(); return; }
-  //       const finalUrl = this.needsOfficeViewer(r) ? this.wrapOfficeViewer(url) : url;
-  //       try { win?.location.replace(finalUrl); }
-  //       catch { win?.close(); window.open(finalUrl, '_blank'); }
-  //     },
-  //     error: err => { win?.close(); Swal.fire('Lỗi', 'Không lấy được link xem file.', 'error'); console.error(err); }
-  //   });
-  // }
-
   view(r: FileArchive) {
     const win = window.open('about:blank', '_blank');
     this.api.getViewUrl(r.id).subscribe({
@@ -245,21 +222,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       }
     });
   }
-
-  // download(r: FileArchive) {
-  //   if (this.downloading.has(r.id)) return;
-  //   this.downloading.add(r.id);
-  //   this.api.getDownloadUrl(r.id)
-  //     .pipe(finalize(() => this.downloading.delete(r.id)), withLoading(v => this.isLoading = v))
-  //     .subscribe({
-  //       next: ({ url }) => {
-  //         const a = document.createElement('a');
-  //         a.href = url; a.target = '_blank'; a.rel = 'noopener';
-  //         document.body.appendChild(a); a.click(); a.remove();
-  //       },
-  //       error: err => { Swal.fire('Lỗi', 'Không lấy được link tải file.', 'error'); console.error(err); }
-  //     });
-  // }
 
   download(r: FileArchive) {
     if (this.downloading.has(r.id)) return;
@@ -289,12 +251,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   private isAdmin(): boolean { return this.login.getUserRole() === 'ADMIN' || this.login.getUserRole() === 'HEAD'; }
   private isTeacher(): boolean { return this.login.getUserRole() === 'TEACHER'; }
 
-  /** Rule:
-   *  - ADMIN: xoá mọi file
-   *  - TEACHER: chỉ xoá file mình tạo
-   *      + EXPORT: không được xoá khi đã APPROVED (cho PENDING/REJECTED)
-   *      + IMPORT: được xoá file của mình
-   */
   private canDelete(r: FileArchive): boolean {
     if (this.isAdmin()) return true;
     if (!this.isTeacher()) return false;
@@ -310,7 +266,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   async confirmDelete(r: FileArchive) {
-    // kiểm tra quyền trước
     if (!this.canDelete(r)) {
       const isExportApproved = r.kind === 'EXPORT' && String(r.reviewStatus || '').toUpperCase() === 'APPROVED';
       const msg = this.isAdmin() ? 'Bạn là ADMIN (lỗi bất ngờ).' :
@@ -348,8 +303,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     });
   }
 
-
-  // archive-file.component.ts
   async approveFile(r: FileArchive) {
     const ok = (await Swal.fire({
       icon: 'question',
@@ -360,42 +313,11 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     })).isConfirmed;
     if (!ok) return;
 
-    // ✅ TỰ ĐỘNG duyệt nhiệm vụ luôn khi:
-    // - Có linkedTaskId
-    // - (tuỳ) đang vào từ context linkedTaskId (đảm bảo đúng task)
-    // - Trạng thái nhiệm vụ phù hợp để duyệt (SUBMITTED/RETURNED)
     const shouldApproveTask =
       !!r.linkedTaskId &&
       (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
       ['SUBMITTED', 'RETURNED'].includes((r.linkedTaskStatus || '').toUpperCase());
 
-    // this.api.approve(r.id, { approveTask: shouldApproveTask })
-    //   .pipe(withLoading(v => this.isLoading = v))
-    //   .subscribe({
-    //     next: (res) => {
-    //       this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
-    //       if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
-    //         this.rows = this.rows.filter(x => x.id !== r.id);
-    //         this.total = Math.max(0, this.total - 1);
-    //       } else {
-    //         (r as any).reviewStatus = 'APPROVED';
-    //       }
-    //       this.notif.invalidateUnread();
-
-    //       // Thông báo gọn, KHÔNG hỏi thêm Swal lần 2
-    //       if (shouldApproveTask && res.taskApproved) {
-    //         Swal.fire({ icon: 'success', title: 'Đã duyệt file & nhiệm vụ', timer: 1300, showConfirmButton: false });
-    //       } else if (shouldApproveTask && !res.taskApproved) {
-    //         Swal.fire({ icon: 'info', title: 'Đã duyệt file (nhiệm vụ không ở trạng thái phù hợp)', timer: 1600, showConfirmButton: false });
-    //       } else {
-    //         Swal.fire({ icon: 'success', title: 'Đã duyệt file', timer: 1200, showConfirmButton: false });
-    //       }
-    //     },
-    //     error: (err) => {
-    //       Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
-    //       console.error(err);
-    //     }
-    //   });
     this.api.approve(r.id, { approveTask: shouldApproveTask })
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
@@ -407,14 +329,51 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           } else {
             (r as any).reviewStatus = 'APPROVED';
           }
-          this.notif.invalidateUnread();
 
-          let title = 'Đã duyệt file';
-          if (shouldApproveTask && res.taskApproved) title = 'Đã duyệt file & nhiệm vụ';
-          if (res.answerBuilt) title += ' (đã sinh file đáp án)';
-          if (res.answerError) title += ' (lỗi sinh đáp án)';
+          // Base title
+          let baseTitle = 'Đã duyệt file';
+          if (shouldApproveTask && res.taskApproved) {
+            baseTitle = 'Đã duyệt file & nhiệm vụ';
+          }
 
-          Swal.fire({ icon: res.answerError ? 'info' : 'success', title, timer: 1500, showConfirmButton: false });
+          const hasAnswer = !!res.answerBuilt && !res.answerError;
+
+          // Nếu có sinh đáp án thành công -> popup chi tiết + nút "Xem file đáp án"
+          if (hasAnswer) {
+            Swal.fire({
+              icon: 'success',
+              title: baseTitle,
+              html: `
+        <div class="text-start">
+          <div>File: <strong>${r.filename}</strong></div>
+          <div class="mt-2">✅ File đáp án tương ứng đã được tạo.</div>
+          <div class="text-muted small mt-1">
+            Bạn có thể xem và đặt lịch mở ở mục <b>File đáp án</b>.
+          </div>
+        </div>
+      `,
+              showCancelButton: true,
+              confirmButtonText: 'Xem file đáp án',
+              cancelButtonText: 'Đóng'
+            }).then(result => {
+              if (result.isConfirmed) {
+                this.goToAnswerTab(r.subjectId);  // chuyển sang tab File đáp án
+              }
+            });
+          } else {
+            // Không sinh được đáp án hoặc có lỗi -> báo đơn giản
+            let title = baseTitle;
+            if (res.answerError) {
+              title += ' (lỗi sinh đáp án)';
+            }
+            Swal.fire({
+              icon: res.answerError ? 'info' : 'success',
+              title,
+              text: res.answerError || '',
+              timer: res.answerError ? undefined : 1500,
+              showConfirmButton: !!res.answerError
+            });
+          }
         },
         error: (err) => {
           Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
@@ -423,7 +382,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       });
   }
 
-  // === Helper: tính deadline từ preset/giá trị custom ===
   private computeDeadlineFromPreset(
     preset: 'none' | '4h' | '8h' | '24h' | '3d' | '7d' | 'custom',
     n?: number,
@@ -466,7 +424,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
     const { reason, deadline } = result;
 
-    // ✅ TỰ ĐỘNG “trả nhiệm vụ” khi có linkedTaskId và nhiệm vụ đang SUBMITTED
     const rejectTask =
       !!r.linkedTaskId &&
       (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
@@ -485,7 +442,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
           (r as any).reviewNote = reason;
           (r as any).reviewDeadline = deadline as any;
         }
-        this.notif.invalidateUnread();
+        // ❌ removed old: this.notif.invalidateUnread();
         Swal.fire({
           icon: 'success',
           title: rejectTask ? 'Đã từ chối & yêu cầu nộp lại nhiệm vụ' : 'Đã từ chối',
@@ -497,7 +454,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ===== helpers =====
   humanSize(n: number) {
     if (n < 1024) return `${n} B`;
     const units = ['KB', 'MB', 'GB', 'TB'];
@@ -557,7 +513,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`;
   }
 
-  // ===== Query & cache =====
   private buildListArgs(): {
     subjectId?: number; page: number; size: number;
     opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number }
@@ -607,14 +562,13 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
     const stream$ = this.api.listCached(args);
 
-    // Chỉ bật overlay khi KHÔNG có cache (giữ UX mượt)
     (hadCache ? stream$ : stream$.pipe(withLoading(v => this.isLoading = v)))
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page: PageResult<FileArchive>) => {
           this.rows = page.content;
           this.total = page.totalElements;
-          this.buildColumns(); // status col có thể thay đổi theo filter
+          this.buildColumns();
 
           this.rows.forEach(r => {
             if (!this.headStatus.has(r.id)) this.headStatus.set(r.id, undefined);
@@ -629,14 +583,12 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   get emptyMessage(): string {
-    // Khi đang lọc theo linkedTaskId (mở từ Exam Task) mà không có file
     if (this.linkedTaskIdFilter && !this.isLoading) {
       return 'File đã bị xoá hoặc không còn tồn tại (HEAD đã xoá).';
     }
     return 'Không có file nào.';
   }
 
-  // ===== Ghi nhớ state per-tab =====
   private tabState = new Map<string, { pageIndex: number; pageSize: number }>();
   private tabKey() {
     return `${this.finalKind ?? 'ALL'}|${this.currentVariant ?? '-'}|${this.statusSel.value || '-'}`;
@@ -666,9 +618,8 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   resetSnooze() {
-    this.rr.reset({ clearForever: true }); // chỉ bật lại nhắc (giữ danh sách approved đã seen)
+    this.rr.reset({ clearForever: true });
     Swal.fire({ icon: 'success', title: 'Đã bật lại thông báo', timer: 1200, showConfirmButton: false });
-    // tuỳ chọn: gọi check ngay để hiện popup nếu có
     this.rr.checkOnEnterDashboard().catch(() => { });
   }
 
@@ -687,7 +638,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     const result = await firstValueFrom(ref.afterClosed()) as ReleaseAtDialogResult | undefined;
     if (!result) return;
 
-    const { releaseAtIso } = result; // string | null
+    const { releaseAtIso } = result;
     this.api.setReleaseAt(r.id, releaseAtIso)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
@@ -709,10 +660,10 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   locked(r: FileArchive) {
-    if (!this.isAnswer(r)) return false;     // chỉ khóa với ANSWER
-    if (this.isAdmin()) return false;        // ADMIN/HEAD luôn bypass
+    if (!this.isAnswer(r)) return false;
+    if (this.isAdmin()) return false;
     const iso = (r as any).releaseAt as string | null | undefined;
-    if (!iso) return true;                   // chưa đặt lịch -> coi như khóa
+    if (!iso) return true;
     return Date.now() < new Date(iso).getTime();
   }
   get isAnswerTab(): boolean {
@@ -722,26 +673,20 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       !this.reviewStatusFilter;
   }
 
-  // ========== NEW: Check if row is submission ========== 
   isSubmissionRow(r: FileArchive): boolean {
     return r.kind === 'SUBMISSION';
   }
 
-  // ========== NEW: Can upload answer (TEACHER/HEAD/ADMIN) ========== 
   canUploadAnswer(): boolean {
     return this.isAdmin() || this.isTeacher();
   }
 
-  // ========== NEW: Can regenerate answer (HEAD/ADMIN + APPROVED EXAM submission) ========== 
   canRegenerateAnswer(r: FileArchive): boolean {
-    // if (!this.isAdmin()) return false;  // only HEAD/ADMIN
-
     return r.kind === 'SUBMISSION' &&
       (r.variant || '').toUpperCase() === 'EXAM' &&
       (r.reviewStatus || '').toUpperCase() === 'APPROVED';
   }
 
-  // ========== NEW: Open upload answer dialog ========== 
   async openUploadAnswerDialog() {
     const ref = this.dialog.open(UploadAnswerDialogComponent, {
       width: '600px',
@@ -752,12 +697,11 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     const result = await firstValueFrom(ref.afterClosed()) as UploadAnswerDialogResult | undefined;
     if (!result?.file || !result?.subjectId) return;
 
-    // Upload với subjectId từ dialog
     this.api.uploadAnswer(result.file, result.subjectId)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
-        next: (fileArchive) => {
-          this.api.invalidate(); // Invalidate toàn bộ cache
+        next: () => {
+          this.api.invalidate();
           Swal.fire({
             icon: 'success',
             title: 'Upload thành công',
@@ -775,7 +719,6 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ========== NEW: Regenerate answer from submission ========== 
   async regenerateAnswerFromSubmission(r: FileArchive) {
     const { isConfirmed } = await Swal.fire({
       icon: 'question',
@@ -830,14 +773,10 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ========== Helper: Get subject name ========== 
   private async getSubjectName(subjectId: number): Promise<string> {
     try {
-      // Nếu đã có trong cache/rows hiện tại
       const existing = this.rows.find(r => r.subjectId === subjectId);
       if (existing?.subjectName) return existing.subjectName;
-
-      // Fallback: có thể gọi API hoặc trả về mặc định
       return `Môn học #${subjectId}`;
     } catch {
       return `Môn học #${subjectId}`;
@@ -855,5 +794,17 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     } catch {
       return false;
     }
+  }
+
+  private goToAnswerTab(subjectId?: number | null) {
+    // TODO: đổi route này thành đúng path "File đáp án" trong app của bạn
+    const commands = ['/head-dashboard/archive/answers'];
+
+    const extras: any = {};
+    if (subjectId) {
+      extras.queryParams = { subjectId };
+    }
+
+    this.router.navigate(commands, extras);
   }
 }

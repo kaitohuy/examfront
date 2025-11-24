@@ -19,4 +19,16 @@ export interface PreviewBlock {
 
   duplicateBundleScore?: number;
   duplicateBundleIds?: number[];
+
+   previewPrefix?: string;
+  headerNo?: string;
+  previewCode?: string;
+  previewSubCodes?: string[];
+
+  // NEW: clone info
+  declaredCode?: string;
+  cloneBaseCode?: string;
+  cloneDesiredIndex?: number | null;
+  cloneNextIndex?: number | null;
+  clonePreviewCode?: string;
 }

@@ -114,3 +114,19 @@
 
 /* Nút Sửa cùng 40px cho thẳng hàng */
 .btn-36 { height: 40px; line-height: 40px; padding: 0 12px; }
+/* Badge dịu, luôn chữ tối */
+.badge.soft-badge {
+  background: var(--bs-secondary-bg-subtle, #f1f3f5);
+  color: var(--bs-body-color, #212529);   /* ép chữ tối */
+  border: 1px solid rgba(0,0,0,.12);
+  font-weight: 500;
+}
+
+/* Biến thể cảnh báo cho clone */
+.badge.soft-badge.warn {
+  background: var(--bs-warning-bg-subtle, #fff3cd);
+  color: var(--bs-warning-text, #664d03);
+}
+
+/* Đậm phần <b> bên trong badge một chút */
+.import-card .badge b { font-weight: 700; }

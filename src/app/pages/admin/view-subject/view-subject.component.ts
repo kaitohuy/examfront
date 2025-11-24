@@ -12,6 +12,7 @@ import { SubjectTeachersDialogComponent } from '../subject-teachers.dialog/subje
 // Loading overlay + operator
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { withLoading } from '../../../shared/with-loading';
+import { AutoPaperSettingDialogComponent } from '../auto-paper-setting-dialog/auto-paper-setting-dialog.component';
 
 @Component({
   selector: 'app-view-subject',
@@ -266,6 +267,20 @@ export class ViewSubjectComponent implements OnInit {
       verticalPosition: 'top',
       horizontalPosition: 'right',
       panelClass: ['error-snackbar']
+    });
+  }
+
+  openSettingDialog(subject: any, e?: Event) {
+    e?.stopPropagation();
+    if (this.isLoading) return;
+
+    const ref = this.dialog.open(AutoPaperSettingDialogComponent, {
+      width: '1100px',
+      data: { subjectId: Number(subject.id) }
+    });
+
+    ref.afterClosed().subscribe(res => {
+      if (res) this.showSuccess('Đã lưu cấu hình đề tự động');
     });
   }
 }

@@ -1,0 +1,15 @@
+/* khung dialog cuộn mượt, không bị “thừa viền” bên phải */
+.dialog { height: 80vh; display: flex; flex-direction: column; }
+.content { flex: 1; overflow: auto; padding: .5rem; }
+
+/* thẻ section nhẹ nhàng */
+.section {
+  background: #fff; border: 1px solid rgba(0,0,0,.06);
+  border-radius: 12px; padding: 12px; margin-bottom: 12px;
+}
+
+/* mỗi selector là 1 card chấm chấm */
+.selector {
+  border: 1px dashed rgba(0,0,0,.1);
+  background: #fafafa; border-radius: 10px; padding: 10px; margin-bottom: 8px;
+}

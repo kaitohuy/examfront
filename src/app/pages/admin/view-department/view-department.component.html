@@ -63,8 +63,7 @@
             <td>{{ dept.description || '--' }}</td>
             <td>
               <div *ngIf="dept.headUser; else noHead">
-                {{ dept.headUser.firstName }} {{ dept.headUser.lastName }}
-                <span class="badge bg-info ms-2">ID: {{ dept.headUser.id }}</span>
+                <span class="badge bg-info ms-2" style="font-size: 14px;">{{ dept.headUser.lastName }} {{ dept.headUser.firstName }}</span>
               </div>
               <ng-template #noHead><span class="text-muted">Chưa có</span></ng-template>
             </td>

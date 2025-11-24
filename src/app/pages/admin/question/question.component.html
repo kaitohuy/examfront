@@ -5,11 +5,11 @@
     <!-- Toolbar -->
     <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
       <!-- Search -->
-      <div class="flex-grow-1" style="min-width: 280px;">
+      <div class="grow" style="min-width: 280px;">
         <div class="input-group">
           <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
           <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm câu hỏi..."
-            [(ngModel)]="searchText" (input)="onSearchInput()" [disabled]="isLoading" />
+            [(ngModel)]="searchText" (input)="onSearchInput()" />
         </div>
       </div>
 
@@ -175,15 +175,15 @@
         <button class="btn btn-outline-danger" (click)="openTrash()" [disabled]="isLoading">
           <i class="bi bi-recycle me-1"></i> Thùng rác
         </button>
-        <button class="btn btn-outline-secondary" (click)="openImportDryRun()" [disabled]="isLoading"
-          *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'">
+        <button class="btn btn-outline-secondary" (click)="openImportDryRun()" [disabled]="isLoading">
+          <!-- *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'" -->
           <i class="bi bi-upload me-1"></i> Tải câu hỏi lên
         </button>
         <button class="btn btn-outline-secondary" (click)="openAutoGenDialog()" [disabled]="isLoading">
           <i class="bi bi-magic me-1"></i> Sinh đề tự động
         </button>
-        <button class="btn btn-primary" (click)="openCreateQuestionDialog()" [disabled]="isLoading"
-          *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'">
+        <button class="btn btn-primary" (click)="openCreateQuestionDialog()" [disabled]="isLoading">
+          <!-- *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'"> -->
           <i class="bi bi-plus-circle me-1"></i> Thêm Câu hỏi
         </button>
       </ng-container>
@@ -259,7 +259,7 @@
           <span *ngIf="question.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi cử</span>
         </div>
 
-        <div class="kv-row mt-2">
+        <div class="kv-row mt-2 content-question">
           <div class="kv-label">Nội dung:</div>
           <div class="kv-value math-inline" [appMathjax]="question.content || ''"></div>
         </div>
@@ -389,7 +389,7 @@
                     </div>
 
                     <div class="mt-2">
-                      <div class="kv-row mt-2">
+                      <div class="kv-row mt-2 content-question">
                         <div class="kv-label">Nội dung:</div>
                         <div class="kv-value math-inline" [appMathjax]="c.content || ''"></div>
                       </div>
@@ -420,7 +420,7 @@
                       <div *ngIf="showAnswers && c.answer" class="card-text mt-1"><strong>Đáp án:</strong> {{ c.answer
                         }}
                       </div>
-                      <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2">
+                      <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2 content-question">
                         <div class="kv-label">Giải thích:</div>
                         <div class="kv-value math-inline" [appMathjax]="c.answerText || ''"></div>
                       </div>

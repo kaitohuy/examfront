@@ -2,3 +2,50 @@
   font-weight: 600;
   letter-spacing: .2px;
 }
+
+/* Cho table full rộng & cell nhìn gọn hơn */
+:host ::ng-deep table.mat-mdc-table {
+  width: 100%;
+}
+
+:host ::ng-deep th.mat-mdc-header-cell,
+:host ::ng-deep td.mat-mdc-cell {
+  padding: .5rem .75rem;
+  vertical-align: middle;
+  font-size: 0.95rem;
+}
+
+/* Chia width tương đối cho từng cột */
+:host ::ng-deep .mat-column-title {
+  width: 28%;              /* tiêu đề + mô tả */
+}
+
+:host ::ng-deep .mat-column-subject {
+  width: 14%;
+}
+
+:host ::ng-deep .mat-column-assignee {
+  width: 22%;
+}
+
+:host ::ng-deep .mat-column-status {
+  width: 8%;
+  text-align: center;
+}
+
+:host ::ng-deep .mat-column-due,
+:host ::ng-deep .mat-column-created {
+  width: 4%;
+}
+
+:host ::ng-deep .mat-column-actions {
+  width: 16%;
+  white-space: nowrap;      /* giữ tất cả button trên 1 dòng */
+}
+
+/* Màn nhỏ thì cho phép nút xuống dòng lại để đỡ tràn ngang */
+@media (max-width: 1199.98px) {
+  :host ::ng-deep .mat-column-actions {
+    white-space: normal;
+  }
+}

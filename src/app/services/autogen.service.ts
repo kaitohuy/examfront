@@ -72,8 +72,6 @@
         params,
         headers: new HttpHeaders({ 'Content-Type': 'application/json' })
       });
-
       return this.xhrClient.request(this.withAuth(req));
-
     }
   }

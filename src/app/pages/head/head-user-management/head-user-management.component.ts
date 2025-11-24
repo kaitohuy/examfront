@@ -57,14 +57,14 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
       .subscribe({
         next: (depts) => {
           if (!depts?.length) {
-            this.snack.open('Bạn chưa được gán HEAD bộ môn nào', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']});
+            this.snack.open('Bạn chưa được gán HEAD bộ môn nào', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] });
             return;
           }
           this.headDepartmentId = depts[0].id;
           this.loadHeadStats();
           this.loadUsers();
         },
-        error: () => this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+        error: () => this.snack.open('Không lấy được department của HEAD', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
       });
   }
 
@@ -138,7 +138,7 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
 
           this.applyFilters();
         },
-        error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+        error: () => this.snack.open('Lỗi tải người dùng', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
       });
   }
 
@@ -174,8 +174,8 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
     this.userSvc.resetPassword(user.id, newPassword)
       .pipe(withLoading(v => (this.isLoading = v)))
       .subscribe({
-        next: () => this.snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success']}),
-        error: () => this.snack.open('Failed to reset password.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error']})
+        next: () => this.snack.open(`Mật khẩu mới của "${user.username}" là: ${newPassword}`, 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-success'] }),
+        error: () => this.snack.open('Failed to reset password.', 'Đóng', { duration: 3000, verticalPosition: 'top', horizontalPosition: 'right', panelClass: ['snack', 'snack-error'] })
       });
   }
 
@@ -236,7 +236,7 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
     return m[f] ?? 'bg-secondary';
   }
 
-    exportToCSV(): void {
+  exportToCSV(): void {
     if (this.isLoading) return;
     const headers = ['ID', 'Code User', 'Username', 'Email', 'Phone', 'Full Name', 'Roles'];
     const rows = this.users.map(u => [
@@ -252,5 +252,19 @@ export class HeadUserManagementComponent implements OnInit, AfterViewInit {
     const link = document.createElement('a');
     link.setAttribute('href', url); link.setAttribute('download', 'users.csv'); link.click();
     URL.revokeObjectURL(url);
+  }
+
+  getPrimaryRole(u: User): string {
+    const roles = (u.roles || []).map(r => String(r).toUpperCase());
+    if (roles.includes('ADMIN')) return 'ADMIN';
+    if (roles.includes('HEAD')) return 'HEAD';
+    if (roles.includes('TEACHER')) return 'TEACHER';
+    // fallback: nếu BE có role khác hoặc trống
+    return roles[0] || 'TEACHER';
+  }
+
+  getRoleBadgeClass(u: User): string {
+    const r = this.getPrimaryRole(u).toLowerCase();
+    return `badge-${r}`;
   }
 }

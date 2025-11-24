@@ -17,6 +17,7 @@ import { SubjectTeachersDialogComponent } from '../../admin/subject-teachers.dia
 // loading screen
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { withLoading } from '../../../shared/with-loading';
+import { AutoPaperSettingDialogComponent } from '../../admin/auto-paper-setting-dialog/auto-paper-setting-dialog.component';
 
 @Component({
   selector: 'app-head-subject-list',
@@ -48,7 +49,7 @@ export class HeadSubjectListComponent implements OnInit {
     public router: Router,
     private loginSvc: LoginService,
     private dialog: MatDialog
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const headUserId = this.loginSvc.getUserId() ?? this.loginSvc.getUser()?.id ?? 0;
@@ -251,5 +252,19 @@ export class HeadSubjectListComponent implements OnInit {
   }
   showError(msg: string) {
     this.snackBar.open(msg, 'Đóng', { duration: 3000, panelClass: ['error-snackbar'] });
+  }
+
+  openSettingDialog(subject: any, e?: Event) {
+    e?.stopPropagation();
+    if (this.isLoading) return;
+
+    const ref = this.dialog.open(AutoPaperSettingDialogComponent, {
+      width: '1100px',
+      data: { subjectId: Number(subject.id) }
+    });
+
+    ref.afterClosed().subscribe(res => {
+      if (res) this.showSuccess('Đã lưu cấu hình đề tự động');
+    });
   }
 }

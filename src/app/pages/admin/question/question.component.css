@@ -100,3 +100,7 @@ pre.card-text { white-space: pre-wrap; word-wrap: break-word; font-size: .9rem; 
   background: #fff8e1; 
   box-shadow: 0 0 0 2px #fdff91 inset; 
 }
+
+.content-question {
+  font-size: 1.2em;
+}

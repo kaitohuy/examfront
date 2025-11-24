@@ -40,7 +40,7 @@
                     <div class="kpi-sub">
                         ADMIN: {{ v(data?.users?.byRole,'ADMIN') }} ·
                         HEAD: {{ v(data?.users?.byRole,'HEAD') }} ·
-                        GV: {{ v(data?.users?.byRole,'TEACHER') }}
+                        GV: {{ v(data?.users?.byRole,'TEACHER') - v(data?.users?.byRole,'HEAD')}}
                     </div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
         <div class="col-12 col-md-6 col-lg-3">
             <div class="card kpi h-100">
                 <div class="card-body">
-                    <div class="kpi-title">Khoa/Bộ môn</div>
+                    <div class="kpi-title">Bộ môn</div>
                     <div class="kpi-value">{{ data?.departments?.count || 0 }}</div>
                     <div class="kpi-sub text-warning">
                         Chưa có trưởng bộ môn: {{ data?.departments?.withoutHead || 0 }}

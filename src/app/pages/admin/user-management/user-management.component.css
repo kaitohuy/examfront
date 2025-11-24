@@ -23,3 +23,37 @@
 
 .action-dropdown .dropdown-menu .dropdown-item { display:flex; align-items:center; gap:8px; }
 .action-icon { width:18px; text-align:center; }
+
+/* 1. Cho cái card bảng có cảm giác “panel data + footer paginator” */
+.table-container {
+  /* card đang padding:0 của bạn -> giữ nguyên */
+  min-height: 360px;           /* đảm bảo luôn có đủ chiều cao nhìn gọn, tránh paginator đè dropdown */
+  position: relative;
+  display: flex;               /* redundancy, in case class binding d-flex fail */
+  flex-direction: column;
+}
+
+/* 2. Phần thân bảng (nơi <table>) chiếm hết không gian trên */
+.table-responsive {
+  flex-grow: 1;
+  /* rất quan trọng:
+     - không cắt dropdown khi nó vượt ra chiều cao row
+     - vẫn cho scroll ngang nếu bảng rộng */
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+  min-height: 240px;           /* optional: để khi có ít dòng vẫn đủ cao */
+}
+
+/* 3. Phần paginator luôn ở đáy card, có nền trắng để nhìn giống footer */
+.paginator-wrapper {
+  background-color: #fff;
+  padding: 0.75rem 1rem;
+  z-index: 5;
+}
+
+/* 4. (tuỳ chọn) nâng z-index dropdown để nó nằm trên paginator-wrapper */
+.action-dropdown .dropdown-menu {
+  z-index: 1000; /* bootstrap mặc định ~1000, cứ để lớn cho chắc */
+  position: absolute;
+}

@@ -32,6 +32,10 @@ export class AddUserComponent implements OnInit {
   private snack = inject(MatSnackBar);
   private router = inject(Router);
   private login = inject(LoginService);
+  private usernameTouchedByAdmin = false;
+  private emailTouchedByAdmin = false;
+  private passwordTouchedByAdmin = false;
+
   role: RoleType = null;
   isLoading = false;
   hide = true;
@@ -69,11 +73,11 @@ export class AddUserComponent implements OnInit {
         this.departments = ds ?? [];
         this.filteredDepartments = this.departments;
       },
-      error: () => this.snack.open('Không tải được danh sách bộ môn', 'Đóng', { 
-        duration: 2500, 
+      error: () => this.snack.open('Không tải được danh sách bộ môn', 'Đóng', {
+        duration: 2500,
         verticalPosition: 'top',
-          horizontalPosition: 'right',
-        panelClass: ['snack', 'snack-error'] 
+        horizontalPosition: 'right',
+        panelClass: ['snack', 'snack-error']
       }),
     });
 
@@ -83,10 +87,10 @@ export class AddUserComponent implements OnInit {
       this.filteredDepartments = !s
         ? this.departments
         : this.departments.filter(d =>
-            d.name.toLowerCase().includes(s) ||
-            String(d.id).includes(s) ||
-            (d.description || '').toLowerCase().includes(s)
-          );
+          d.name.toLowerCase().includes(s) ||
+          String(d.id).includes(s) ||
+          (d.description || '').toLowerCase().includes(s)
+        );
     });
 
     // Filter subjects by text
@@ -96,10 +100,10 @@ export class AddUserComponent implements OnInit {
       this.filteredSubjects = !s
         ? base
         : base.filter(x =>
-            x.name.toLowerCase().includes(s) ||
-            x.code.toLowerCase().includes(s) ||
-            String(x.id).includes(s)
-          );
+          x.name.toLowerCase().includes(s) ||
+          x.code.toLowerCase().includes(s) ||
+          String(x.id).includes(s)
+        );
     });
 
     // When department changes -> load subjects
@@ -120,12 +124,12 @@ export class AddUserComponent implements OnInit {
           this.filteredSubjects = this.subjectsInDept;
           this.rebuildSubjMap();
         },
-        error: () => this.snack.open('Không tải được danh sách môn học', 'Đóng', { 
+        error: () => this.snack.open('Không tải được danh sách môn học', 'Đóng', {
           verticalPosition: 'top',
           horizontalPosition: 'right',
-          panelClass: ['snack', 'snack-error'], 
+          panelClass: ['snack', 'snack-error'],
           duration: 2500
-         }),
+        }),
       });
     });
 
@@ -138,6 +142,24 @@ export class AddUserComponent implements OnInit {
 
       if (r !== 'TEACHER') this.form.get('subjectIds')!.setValue([]);
     });
+
+    // Đánh dấu admin đã sửa tay username/email/password
+    this.form.get('username')!.valueChanges.subscribe(() => {
+      this.usernameTouchedByAdmin = true;
+    });
+    this.form.get('email')!.valueChanges.subscribe(() => {
+      this.emailTouchedByAdmin = true;
+    });
+    this.form.get('password')!.valueChanges.subscribe(() => {
+      this.passwordTouchedByAdmin = true;
+    });
+
+    // Khi họ tên đổi => auto suggest
+    const firstCtrl = this.form.get('firstName')!;
+    const lastCtrl = this.form.get('lastName')!;
+
+    firstCtrl.valueChanges.subscribe(() => this.autoFillAccountFields());
+    lastCtrl.valueChanges.subscribe(() => this.autoFillAccountFields());
   }
 
   private rebuildSubjMap() {
@@ -190,11 +212,12 @@ export class AddUserComponent implements OnInit {
   submit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.snack.open('Vui lòng nhập đủ thông tin bắt buộc', 'Đóng', { 
-        duration: 2500, 
+      this.snack.open('Vui lòng nhập đủ thông tin bắt buộc', 'Đóng', {
+        duration: 2500,
         verticalPosition: 'top',
-          horizontalPosition: 'right',
-        panelClass: ['snack', 'snack-error'] });
+        horizontalPosition: 'right',
+        panelClass: ['snack', 'snack-error']
+      });
       return;
     }
 
@@ -204,11 +227,12 @@ export class AddUserComponent implements OnInit {
     const subjectIds = this.subjectIdsSafe();
 
     if (subjectIds.length > 0 && !departmentId) {
-      this.snack.open('Hãy chọn Bộ môn trước khi phân công môn dạy', 'Đóng', { 
-        duration: 2500, 
+      this.snack.open('Hãy chọn Bộ môn trước khi phân công môn dạy', 'Đóng', {
+        duration: 2500,
         verticalPosition: 'top',
-          horizontalPosition: 'right',
-        panelClass: ['snack', 'snack-error'] });
+        horizontalPosition: 'right',
+        panelClass: ['snack', 'snack-error']
+      });
       return;
     }
 
@@ -260,25 +284,79 @@ export class AddUserComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        this.snack.open('Tạo người dùng thành công', 'Đóng', { 
-          duration: 2500, 
+        this.snack.open('Tạo người dùng thành công', 'Đóng', {
+          duration: 2500,
           verticalPosition: 'top',
           horizontalPosition: 'right',
-          panelClass: ['snack', 'snack-success'] });
+          panelClass: ['snack', 'snack-success']
+        });
         this.goBackByRole();
       },
       error: (err) => {
         console.error(err);
-        this.snack.open('Tạo người dùng thất bại', 'Đóng', { 
-          duration: 3000, 
+        this.snack.open('Tạo người dùng thất bại', 'Đóng', {
+          duration: 3000,
           verticalPosition: 'top',
           horizontalPosition: 'right',
-          panelClass: ['snack', 'snack-error'] });
+          panelClass: ['snack', 'snack-error']
+        });
       },
     });
   }
 
   cancel() {
     this.goBackByRole();
+  }
+
+  // Loại bỏ dấu tiếng Việt, bỏ ký tự không phải a-z0-9
+  private normalize(str: string): string {
+    return (str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // xóa dấu
+      .replace(/đ/gi, 'd')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')    // chỉ giữ chữ/số, chống ký tự lạ
+      .trim();
+  }
+
+  // Lấy chữ cái đầu mỗi từ
+  private initialsOfWords(str: string): string {
+    return this.normalize(str)
+      .split(/\s+/)
+      .filter(x => x.length > 0)
+      .map(x => x[0])
+      .join('');
+  }
+
+  // Gợi ý username kiểu firstName + initials(lastName)
+  private buildSuggestedUsername(firstName: string, lastName: string): string {
+    const first = this.normalize(firstName).replace(/\s+/g, '');
+    const lastInit = this.initialsOfWords(lastName);
+    return (first + lastInit);
+  }
+
+  private autoFillAccountFields() {
+    const firstName = this.form.get('firstName')!.value || '';
+    const lastName = this.form.get('lastName')!.value || '';
+
+    if (!firstName || !lastName) return;
+
+    const suggestedUser = this.buildSuggestedUsername(firstName, lastName);
+
+    // username
+    if (!this.usernameTouchedByAdmin) {
+      this.form.get('username')!.setValue(suggestedUser, { emitEvent: false });
+    }
+
+    // email
+    if (!this.emailTouchedByAdmin) {
+      const emailVal = suggestedUser + '@ptit.edu.vn';
+      this.form.get('email')!.setValue(emailVal, { emitEvent: false });
+    }
+
+    // password
+    if (!this.passwordTouchedByAdmin) {
+      this.form.get('password')!.setValue('12345678', { emitEvent: false });
+    }
   }
 }

@@ -1,0 +1,149 @@
+<div class="dialog container-fluid">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between py-2">
+    <div class="d-flex gap-2">
+      <button mat-stroked-button type="button" (click)="resetDefault()" matTooltip="Đặt về mặc định">
+        <mat-icon>visibility</mat-icon>&nbsp;Mặc định
+      </button>
+      <button mat-stroked-button type="button" (click)="loadAll()" matTooltip="Nạp lại từ máy chủ">
+        <mat-icon>refresh</mat-icon>&nbsp;Nạp lại
+      </button>
+    </div>
+    <button mat-icon-button matTooltip="Đóng" (click)="close()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading()" class="px-2"><mat-progress-bar mode="indeterminate"></mat-progress-bar></div>
+
+  <!-- Content -->
+  <form *ngIf="!loading()" [formGroup]="form" class="content">
+    <!-- Hàng gọn: tên – các input nhỏ + toggles -->
+    <div class="row g-3 section">
+      <div class="col-12 col-lg">
+        <mat-form-field class="w-100" appearance="outline">
+          <mat-label>Tên cấu hình***</mat-label>
+          <input matInput formControlName="name" placeholder="vd: Default, Giữa kỳ, Cuối kỳ">
+        </mat-form-field>
+      </div>
+
+      <div class="col-6 col-lg-2">
+        <mat-form-field class="w-100" appearance="outline">
+          <mat-label>Số đề mặc định</mat-label>
+          <input matInput type="number" min="1" formControlName="variants">
+        </mat-form-field>
+      </div>
+
+      <div class="col-6 col-lg-2">
+        <mat-form-field class="w-100" appearance="outline">
+          <mat-label>Số năm tái sử dụng</mat-label>
+          <input matInput type="number" min="0" formControlName="notUsedYears">
+        </mat-form-field>
+      </div>
+
+      <div class="col-12 col-lg-3 d-flex flex-column justify-content-center gap-1">
+        <mat-slide-toggle formControlName="noRepeatWithin">Không lặp trong 1 đề</mat-slide-toggle>
+        <mat-slide-toggle formControlName="noRepeatAcross">Không lặp giữa các đề</mat-slide-toggle>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="section">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h4 class="m-0">Danh sách Câu ({{ stepsFA.length }})</h4>
+        <button mat-stroked-button color="primary" (click)="addStep()" type="button">
+          <mat-icon>add</mat-icon>&nbsp;Thêm Câu
+        </button>
+      </div>
+
+      <mat-accordion multi>
+        <mat-expansion-panel *ngFor="let step of stepsFA.controls; let i = index" class="mb-2" [formGroup]="step">
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{ titleOf(i) }}</mat-panel-title>
+            <mat-panel-description>
+              <button mat-icon-button color="warn" matTooltip="Xóa câu này"
+                      (click)="$event.stopPropagation(); removeStep(i)" type="button">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+
+          <!-- Tiêu đề -->
+          <div class="mb-2">
+            <mat-form-field class="w-100" appearance="outline">
+              <mat-label>Tiêu đề câu</mat-label>
+              <input matInput formControlName="title" placeholder="vd: Câu 1: 1đ Ch.1 + 1đ Ch.5">
+            </mat-form-field>
+          </div>
+
+          <!-- Selectors -->
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h3 class="m-0">Điều kiện chọn</h3>
+            <button mat-stroked-button (click)="addSelector(i)" type="button">
+              <mat-icon>add</mat-icon>&nbsp;Thêm ý nhỏ trong câu
+            </button>
+          </div>
+
+          <div class="selector" *ngFor="let sel of selectorsFA(i).controls; let j = index" [formGroup]="sel">
+            <div class="row g-2 d-flex justify-content-between">
+              <div class="col-6 col-lg-2">
+                <mat-form-field class="w-100" appearance="outline">
+                  <mat-label>Đơn vị</mat-label>
+                  <mat-select formControlName="unitKind">
+                    <mat-option *ngFor="let uk of unitKinds" [value]="uk.value">{{ uk.label }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="col-6 col-lg-2">
+                <mat-form-field class="w-100" appearance="outline">
+                  <mat-label>Chương</mat-label>
+                  <mat-select formControlName="chapterIn" multiple>
+                    <mat-option *ngFor="let ch of [1,2,3,4,5]" [value]="ch">Chương {{ ch }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="col-6 col-lg-2">
+                <mat-form-field class="w-100" appearance="outline">
+                  <mat-label>Điểm =</mat-label>
+                  <input matInput type="number" formControlName="pointsEq" placeholder="1 hoặc 2">
+                </mat-form-field>
+              </div>
+
+              <div class="col-6 col-lg-2">
+                <mat-form-field class="w-100" appearance="outline">
+                  <mat-label>Type code</mat-label>
+                  <mat-select formControlName="typeCodeIn" multiple>
+                    <mat-option *ngFor="let t of typeCodes" [value]="t">{{ t }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="col-6 col-lg-2">
+                <mat-form-field class="w-100" appearance="outline">
+                  <mat-label>Bản chất</mat-label>
+                  <mat-select formControlName="nature">
+                    <mat-option [value]="null">—</mat-option>
+                    <mat-option *ngFor="let n of natures" [value]="n.value">{{ n.label }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <div class="col-12 col-lg-1">
+                <button mat-icon-button color="warn" class="ms-auto"
+                        matTooltip="Xóa selector này" (click)="removeSelector(i,j)" type="button">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-expansion-panel>
+      </mat-accordion>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <button mat-stroked-button type="button" (click)="close()">Hủy</button>
+      <button mat-flat-button color="primary" type="button" (click)="save()" [disabled]="saving()">Lưu cấu hình</button>
+    </div>
+  </form>
+</div>

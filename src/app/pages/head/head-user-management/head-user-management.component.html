@@ -47,31 +47,20 @@
           <span class="input-group-text bg-white border-end-0">
             <i class="bi bi-search"></i>
           </span>
-          <input
-            type="text"
-            class="form-control border-start-0"
-            placeholder="Tìm kiếm người dùng..."
-            [value]="searchTerm"
-            (input)="onSearch($event)"
-            [disabled]="isLoading"
-          />
+          <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm người dùng..."
+            [value]="searchTerm" (input)="onSearch($event)" [disabled]="isLoading" />
           <button class="btn btn-primary" (click)="applyFilters()" [disabled]="isLoading">Tìm kiếm</button>
         </div>
 
         <div class="mt-2" *ngIf="activeFilters.length > 0">
           <div class="d-flex flex-wrap gap-2 align-items-center">
-            <span
-              class="badge filter-tag"
-              *ngFor="let filter of activeFilters"
-              style="cursor: pointer;"
-              [ngClass]="getFilterClass(filter)"
-              (click)="filterBy(filter)"
-            >
+            <span class="badge filter-tag" *ngFor="let filter of activeFilters" style="cursor: pointer;"
+              [ngClass]="getFilterClass(filter)" (click)="filterBy(filter)">
               {{ getFilterLabel(filter) }}
               <i class="bi bi-x ms-1" style="font-size: 0.8rem;"></i>
             </span>
             <a href="javascript:void(0);" class="text-danger link-offset-2 link-underline link-underline-opacity-0"
-               (click)="clearFilters()">Xóa tất cả</a>
+              (click)="clearFilters()">Xóa tất cả</a>
           </div>
         </div>
       </div>
@@ -79,7 +68,8 @@
       <div class="col-md-4">
         <div class="d-flex gap-2 justify-content-end">
           <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="isLoading">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+              [disabled]="isLoading">
               <i class="bi bi-filter me-1"></i> Lọc
             </button>
             <ul class="dropdown-menu">
@@ -120,14 +110,14 @@
             <td>{{ user.phone }}</td>
             <td>{{ user.lastName + ' ' + user.firstName }}</td>
             <td>
-              <ng-container *ngFor="let role of user.roles">
-                <span class="badge" [ngClass]="'badge-' + role.toLowerCase()">{{ role }}</span>
-              </ng-container>
+              <span class="badge" [ngClass]="getRoleBadgeClass(user)">
+                {{ getPrimaryRole(user) }}
+              </span>
             </td>
-
             <td>
               <div class="dropdown action-dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" [disabled]="isLoading">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                  [disabled]="isLoading">
                   <i class="bi bi-gear"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
@@ -141,7 +131,9 @@
                       <i class="bi bi-pencil-square action-icon text-primary"></i> Sửa hồ sơ
                     </a>
                   </li>
-                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <hr class="dropdown-divider" />
+                  </li>
                   <li>
                     <a class="dropdown-item text-danger" (click)="deleteUser(user.id)">
                       <i class="bi bi-trash action-icon"></i> Xóa người dùng
@@ -161,10 +153,7 @@
       </table>
     </div>
 
-    <mat-paginator
-      [length]="dataSource.filteredData.length"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[5, 10, 20]"
+    <mat-paginator [length]="dataSource.filteredData.length" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 20]"
       showFirstLastButtons>
     </mat-paginator>
   </div>
