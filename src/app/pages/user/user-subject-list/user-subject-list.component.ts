@@ -5,6 +5,10 @@ import { SubjectService } from '../../../services/subject.service';
 import { SubjectWithTeachers } from '../../../models/subjectWithTeachers';
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { withLoading } from '../../../shared/with-loading';
+import { AutoSettingKind } from '../../../models/autoGen';
+import { AutoPaperSettingDialogComponent } from '../../admin/auto-paper-setting-dialog/auto-paper-setting-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-user-subject-list',
@@ -26,7 +30,12 @@ export class UserSubjectListComponent implements OnInit {
     code: 'bi bi-arrow-down-up',
   };
 
-  constructor(private subjectSvc: SubjectService, private router: Router) {}
+  constructor(
+    private subjectSvc: SubjectService,
+    private router: Router,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit(): void {
     this.subjectSvc.getMySubjectsWithTeachers()
@@ -96,5 +105,29 @@ export class UserSubjectListComponent implements OnInit {
 
   openSubject(s: SubjectWithTeachers) {
     this.router.navigate(['/user-dashboard', 'subjects', s.id, 'exam']);
+  }
+
+  openSettingDialog(s: SubjectWithTeachers, e?: Event) {
+    e?.stopPropagation();
+    if (this.isLoading) return;
+
+    const kind: AutoSettingKind = 'PRACTICE';
+
+    const ref = this.dialog.open(AutoPaperSettingDialogComponent, {
+      width: '1100px',
+      data: {
+        subjectId: Number(s.id),
+        kind
+      }
+    });
+
+    ref.afterClosed().subscribe(res => {
+      if (res) {
+        this.snackBar.open('Đã lưu cấu hình đề ÔN TẬP', 'Đóng', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+      }
+    });
   }
 }

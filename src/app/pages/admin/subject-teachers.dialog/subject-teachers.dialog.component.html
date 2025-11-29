@@ -21,7 +21,7 @@
     <div class="row-item" *ngFor="let u of filtered" (click)="toggleSelect(u)">
       <mat-checkbox [checked]="isSelected(u)" (click)="$event.stopPropagation(); toggleSelect(u)"></mat-checkbox>
       <div class="info">
-        <div class="name">{{ u.firstName }} {{ u.lastName }}</div>
+        <div class="name">{{ u.lastName }} {{ u.firstName }}</div>
         <div class="muted" *ngIf="u.teacherCode">Mã GV: {{ u.teacherCode }}</div>
       </div>
     </div>

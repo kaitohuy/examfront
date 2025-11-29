@@ -56,4 +56,12 @@ export class UserService {
   getUserStatistics() {
     return this.http.get<AdminStats>(`${baseUrl}/user/user-statistics`);
   }
+
+  getTeachersByDepartment(deptId: number): Observable<UserWithRolesAndDeptDTO[]> {
+    return this.http.get<UserWithRolesAndDeptDTO[]>(`${baseUrl}/user/teachers-by-dept/${deptId}`);
+  }
+
+  getTeachersOnly(): Observable<UserWithRolesAndDeptDTO[]> {
+    return this.http.get<UserWithRolesAndDeptDTO[]>(`${baseUrl}/user/teachers-only`);
+  }
 }

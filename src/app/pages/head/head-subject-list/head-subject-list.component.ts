@@ -18,6 +18,7 @@ import { SubjectTeachersDialogComponent } from '../../admin/subject-teachers.dia
 import { LoadingScreenComponent } from '../../loading-screen/loading-screen.component';
 import { withLoading } from '../../../shared/with-loading';
 import { AutoPaperSettingDialogComponent } from '../../admin/auto-paper-setting-dialog/auto-paper-setting-dialog.component';
+import { AutoSettingKind } from '../../../models/autoGen';
 
 @Component({
   selector: 'app-head-subject-list',
@@ -254,17 +255,23 @@ export class HeadSubjectListComponent implements OnInit {
     this.snackBar.open(msg, 'Đóng', { duration: 3000, panelClass: ['error-snackbar'] });
   }
 
-  openSettingDialog(subject: any, e?: Event) {
+  openSettingDialog(subject: any, kind: AutoSettingKind, e?: Event) {
     e?.stopPropagation();
     if (this.isLoading) return;
 
     const ref = this.dialog.open(AutoPaperSettingDialogComponent, {
       width: '1100px',
-      data: { subjectId: Number(subject.id) }
+      data: {
+        subjectId: Number(subject.id),
+        kind
+      }
     });
 
     ref.afterClosed().subscribe(res => {
-      if (res) this.showSuccess('Đã lưu cấu hình đề tự động');
+      if (res) {
+        const label = kind === 'EXAM' ? 'đề THI' : 'đề ÔN TẬP';
+        this.showSuccess(`Đã lưu cấu hình ${label}`);
+      }
     });
   }
 }

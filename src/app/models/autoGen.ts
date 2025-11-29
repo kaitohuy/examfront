@@ -3,6 +3,7 @@ export type QuestionLabel = 'EXAM' | 'PRACTICE';
 export type UnitKind = 'SUB_ITEM' | 'FULL_QUESTION';
 export type ItemNature = 'THEORY' | 'EXERCISE';
 export type RecordStatus = 'APPROVED' | 'REJECTED' | 'PENDING';
+export type AutoSettingKind = 'EXAM' | 'PRACTICE';
 
 export interface AutoGenSelectorDTO {
   unitKind: UnitKind | null;
@@ -31,4 +32,5 @@ export interface AutoPaperSettingDTO {
   notUsedYears: number;
   labelScope?: QuestionLabel[] | null;
   steps: AutoGenStepDTO[];
+  kind?: AutoSettingKind;
 }

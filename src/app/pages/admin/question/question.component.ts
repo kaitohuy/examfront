@@ -1280,33 +1280,53 @@ export class QuestionComponent implements OnInit, OnDestroy {
       if (!r || r.mode !== 'autogen') return;
 
       const {
-        variants, fileName, variant, format,
+        variants, fileName,
         semester, academicYear, classes, duration, program, examForm, mau
       } = r;
 
+      // NEW: suy ra kind từ labelFilter
+      const kind = this.labelFilter === 'EXAM' ? 'EXAM' : 'PRACTICE';
+
       // body & query cho AutogenService
-      const body = { variants: r.variants, labels: r.labels };
-      const query = {
+      const body: AutoGenRequest = {
+        variants: r.variants,
+        labels: r.labels
+      };
+
+      const query: any = {
         commit: true,
+        kind,               // NEW
         fileName,
         program, semester, academicYear, classes, duration, examForm, mau
       };
 
-      this.startProgress('Đang sinh và đóng gói đề…', 'Đang tạo DOCX & ma trận, vui lòng đợi');
+      this.startProgress(
+        'Đang sinh và đóng gói đề…',
+        'Đang tạo DOCX & ma trận, vui lòng đợi'
+      );
 
       this.autogen.exportZipProgress(this.subjectId, body, query).subscribe({
         next: (ev: any) => {
           if (ev?.type === 1) {
-            if (typeof ev.total === 'number') this.progress = Math.round((ev.loaded / ev.total) * 30);
-            else this.progress = Math.min((this.progress ?? 0) + 1, 29);
+            if (typeof ev.total === 'number') {
+              this.progress = Math.round((ev.loaded / ev.total) * 30);
+            } else {
+              this.progress = Math.min((this.progress ?? 0) + 1, 29);
+            }
           } else if (ev?.type === 3) {
-            if (typeof ev.total === 'number') this.progress = 30 + Math.round((ev.loaded / ev.total) * 70);
-            else this.progress = Math.min((this.progress ?? 30) + 1, 99);
+            if (typeof ev.total === 'number') {
+              this.progress = 30 + Math.round((ev.loaded / ev.total) * 70);
+            } else {
+              this.progress = Math.min((this.progress ?? 30) + 1, 99);
+            }
           } else if (ev?.type === 4) {
             const resp = ev;
             const blob = resp.body as Blob;
             const cd = resp.headers?.get?.('content-disposition') || '';
-            const suggested = this.tryParseZipFileNameFromCD(cd, `${fileName || 'de_tu_dong'}.zip`);
+            const suggested = this.tryParseZipFileNameFromCD(
+              cd,
+              `${fileName || 'de_tu_dong'}.zip`
+            );
             this.triggerDownload(blob, suggested);
             this.progress = 100;
             this.showSuccess(`Đã sinh ${variants} đề và tải ZIP về máy.`);
@@ -1315,7 +1335,10 @@ export class QuestionComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.stopProgress();
-          this.showError('Sinh đề tự động thất bại: ' + (err?.error?.message || 'Không xác định'));
+          this.showError(
+            'Sinh đề tự động thất bại: ' +
+            (err?.error?.message || 'Không xác định')
+          );
         },
       });
     });

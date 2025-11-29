@@ -22,7 +22,7 @@ export interface SubjectTeachersData {
 export class SubjectTeachersDialogComponent implements OnInit {
   private userSvc = inject(UserService);
   private dialogRef = inject(MatDialogRef<SubjectTeachersDialogComponent>);
-  constructor(@Inject(MAT_DIALOG_DATA) public data: SubjectTeachersData) {}
+  constructor(@Inject(MAT_DIALOG_DATA) public data: SubjectTeachersData) { }
 
   subject = this.data.subject;
 
@@ -33,14 +33,23 @@ export class SubjectTeachersDialogComponent implements OnInit {
   selected: UserLite[] = [];
 
   ngOnInit(): void {
-    // ⬇️ Phòng thủ: nếu không có teachers thì lấy []
     const init = Array.isArray(this.subject?.teachers) ? this.subject!.teachers! : [];
-    this.selected = init.map(t => ({ id: Number(t.id), firstName: t.firstName ?? '', lastName: t.lastName ?? '', teacherCode: t.teacherCode }));
+    this.selected = init.map(t => ({
+      id: Number(t.id),
+      firstName: t.firstName ?? '',
+      lastName: t.lastName ?? '',
+      teacherCode: t.teacherCode
+    }));
 
-    this.userSvc.getAllUsers().subscribe({
+    this.userSvc.getTeachersOnly().subscribe({
       next: (users: UserWithRolesAndDeptDTO[]) => {
         this.allTeachers = (users ?? [])
-          .filter(u => (u.roles ?? []).includes('TEACHER'))
+          // BE đã lọc “teacher-only”, đoạn filter dưới có thể giữ cho chắc hoặc bỏ cũng được
+          .filter(u =>
+            Array.isArray(u.roles) &&
+            u.roles.length === 1 &&
+            u.roles.includes('TEACHER')
+          )
           .map(u => ({
             id: Number(u.id),
             firstName: u.firstName ?? '',
@@ -56,11 +65,11 @@ export class SubjectTeachersDialogComponent implements OnInit {
       this.filtered = !s
         ? this.allTeachers
         : this.allTeachers.filter(u =>
-            (u.firstName || '').toLowerCase().includes(s) ||
-            (u.lastName || '').toLowerCase().includes(s) ||
-            (u.teacherCode || '').toLowerCase().includes(s) ||
-            `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
-          );
+          (u.firstName || '').toLowerCase().includes(s) ||
+          (u.lastName || '').toLowerCase().includes(s) ||
+          (u.teacherCode || '').toLowerCase().includes(s) ||
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
+        );
     });
   }
 
@@ -70,6 +79,6 @@ export class SubjectTeachersDialogComponent implements OnInit {
   }
   isSelected(u: UserLite) { return this.selected.some(x => x.id === u.id); }
 
-  save()   { this.dialogRef.close(this.selected.map(u => ({ id: u.id }))); }
+  save() { this.dialogRef.close(this.selected.map(u => ({ id: u.id }))); }
   cancel() { this.dialogRef.close(); }
 }

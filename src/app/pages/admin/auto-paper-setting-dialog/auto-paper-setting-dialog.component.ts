@@ -13,10 +13,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { AutoPaperSettingService } from '../../../services/auto-paper-setting.service';
 import {
-  UnitKind, ItemNature, AutoGenSelectorDTO, AutoGenStepDTO, AutoPaperSettingDTO
+  UnitKind, ItemNature, AutoGenSelectorDTO, AutoGenStepDTO, AutoPaperSettingDTO,
+  AutoSettingKind
 } from '../../../models/autoGen';
 
-type DialogData = { subjectId: number };
+type DialogData = { subjectId: number; kind?: AutoSettingKind };
 
 @Component({
   selector: 'app-auto-paper-setting-dialog',
@@ -32,24 +33,28 @@ type DialogData = { subjectId: number };
   styleUrls: ['./auto-paper-setting-dialog.component.css']
 })
 export class AutoPaperSettingDialogComponent implements OnInit {
+
+  kind: AutoSettingKind = 'EXAM';
+  dialogTitle = 'Cấu hình đề THI tự động';
+
   loading = signal(true);
-  saving  = signal(false);
+  saving = signal(false);
 
   // UI choices
   unitKinds: { value: UnitKind, label: string }[] = [
-    { value: 'SUB_ITEM',       label: 'Ý nhỏ' },
-    { value: 'FULL_QUESTION',  label: 'Cả câu' },
+    { value: 'SUB_ITEM', label: 'Ý nhỏ' },
+    { value: 'FULL_QUESTION', label: 'Cả câu' },
   ];
   natures: { value: ItemNature, label: string }[] = [
-    { value: 'THEORY',   label: 'Lý thuyết' },
+    { value: 'THEORY', label: 'Lý thuyết' },
     { value: 'EXERCISE', label: 'Ứng dụng' },
   ];
   typeCodes: string[] = [];
 
   form = this.fb.group({
-    name:           this.fb.control<string>('Default', { nonNullable: true, validators: [Validators.required] }),
-    variants:       this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(1)] }),
-    notUsedYears:   this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(0)] }),
+    name: this.fb.control<string>('Default', { nonNullable: true, validators: [Validators.required] }),
+    variants: this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(1)] }),
+    notUsedYears: this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(0)] }),
     noRepeatWithin: this.fb.control<boolean>(true, { nonNullable: true }),
     noRepeatAcross: this.fb.control<boolean>(false, { nonNullable: true }),
     // labelScope bỏ khỏi UI => không tạo control để tránh chiếm chỗ
@@ -61,7 +66,7 @@ export class AutoPaperSettingDialogComponent implements OnInit {
   // để render tiêu đề ở header panel
   titleOf(i: number) {
     const g = this.stepsFA.at(i) as FormGroup;
-    return (g?.get('title')?.value as string) || `Câu ${i+1}`;
+    return (g?.get('title')?.value as string) || `Câu ${i + 1}`;
   }
 
   constructor(
@@ -69,9 +74,19 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     private fb: FormBuilder,
     public ref: MatDialogRef<AutoPaperSettingDialogComponent>,
     private api: AutoPaperSettingService
-  ) {}
+  ) { }
 
-  ngOnInit(): void { this.loadAll(); }
+  ngOnInit(): void {
+    // NEW: đọc kind từ data
+    this.kind = this.data.kind ?? 'EXAM';
+
+    // NEW: đặt title theo kind
+    this.dialogTitle = this.kind === 'EXAM'
+      ? 'Cấu hình đề THI tự động'
+      : 'Cấu hình đề ÔN TẬP tự động';
+
+    this.loadAll();
+  }
 
   loadAll() {
     this.loading.set(true);
@@ -81,7 +96,8 @@ export class AutoPaperSettingDialogComponent implements OnInit {
       error: () => (this.typeCodes = [])
     });
 
-    this.api.get(this.data.subjectId).subscribe({
+    // NEW: truyền kind
+    this.api.get(this.data.subjectId, this.kind).subscribe({
       next: (dto) => { this.patchAll(dto); this.loading.set(false); },
       error: (err) => { console.error(err); this.loading.set(false); }
     });
@@ -89,7 +105,8 @@ export class AutoPaperSettingDialogComponent implements OnInit {
 
   resetDefault() {
     this.loading.set(true);
-    this.api.resetDefault(this.data.subjectId).subscribe({
+    // NEW: truyền kind
+    this.api.resetDefault(this.data.subjectId, this.kind).subscribe({
       next: (dto) => { this.patchAll(dto); this.loading.set(false); },
       error: (err) => { console.error(err); this.loading.set(false); }
     });
@@ -125,11 +142,11 @@ export class AutoPaperSettingDialogComponent implements OnInit {
 
   buildSelectorFG(sel?: AutoGenSelectorDTO) {
     return this.fb.group({
-      unitKind:  new FormControl<UnitKind | null>(sel?.unitKind ?? 'SUB_ITEM'),
+      unitKind: new FormControl<UnitKind | null>(sel?.unitKind ?? 'SUB_ITEM'),
       chapterIn: new FormControl<number[] | null>(sel?.chapterIn ?? null),
-      pointsEq:  new FormControl<number | null>(sel?.pointsEq ?? null),
+      pointsEq: new FormControl<number | null>(sel?.pointsEq ?? null),
       typeCodeIn: new FormControl<string[] | null>(sel?.typeCodeIn ?? null),
-      nature:    new FormControl<ItemNature | null>(sel?.nature ?? null),
+      nature: new FormControl<ItemNature | null>(sel?.nature ?? null),
       // status/cognitive bỏ khỏi UI — nếu BE muốn mặc định:
       // status: new FormControl<RecordStatus | null>('APPROVED'),
       // cognitive: new FormControl<string | null>(null)
@@ -152,14 +169,14 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     const steps: AutoGenStepDTO[] = this.stepsFA.controls.map(stepFG => {
       const selArr: AutoGenSelectorDTO[] = (stepFG.get('selectors') as FormArray<FormGroup>).controls.map(sfg => {
         return {
-          unitKind:  sfg.get('unitKind')?.value ?? null,
+          unitKind: sfg.get('unitKind')?.value ?? null,
           chapterIn: sfg.get('chapterIn')?.value ?? null,
-          pointsEq:  sfg.get('pointsEq')?.value ?? null,
-          pointsMin: null,                       // bỏ min/max theo yêu cầu
+          pointsEq: sfg.get('pointsEq')?.value ?? null,
+          pointsMin: null,
           pointsMax: null,
-          typeCodeIn: sfg.get('typeCodeIn')?.value ?? null, // dropdown nhiều lựa chọn
-          nature:    sfg.get('nature')?.value ?? null,
-          status:    'APPROVED',                 // BE đang lọc APPROVED — gửi cố định
+          typeCodeIn: sfg.get('typeCodeIn')?.value ?? null,
+          nature: sfg.get('nature')?.value ?? null,
+          status: 'APPROVED',
           cognitive: null
         };
       });
@@ -172,20 +189,24 @@ export class AutoPaperSettingDialogComponent implements OnInit {
       notUsedYears: v.notUsedYears!,
       noRepeatWithin: v.noRepeatWithin!,
       noRepeatAcross: v.noRepeatAcross!,
-      labelScope: [], // bỏ khỏi UI ⇒ để trống
-      steps
+      labelScope: [],
+      steps,
+      kind: this.kind
     };
   }
+
 
   save() {
     if (this.form.invalid) return;
     const dto = this.toDto();
     this.saving.set(true);
-    this.api.update(this.data.subjectId, dto).subscribe({
+    // NEW: truyền kind
+    this.api.update(this.data.subjectId, dto, this.kind).subscribe({
       next: (res) => { this.saving.set(false); this.ref.close(res); },
       error: (err) => { console.error(err); this.saving.set(false); }
     });
   }
+
 
   close() { this.ref.close(); }
 }

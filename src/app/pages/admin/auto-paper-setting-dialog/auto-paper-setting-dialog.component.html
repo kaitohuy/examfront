@@ -1,15 +1,29 @@
 <div class="dialog container-fluid">
   <!-- Header -->
   <div class="d-flex align-items-center justify-content-between py-2">
-    <div class="d-flex gap-2">
+    <!-- NEW: Title + subtitle -->
+    <div class="d-flex flex-column">
+      <h3 class="m-0">{{ dialogTitle }}</h3>
+      <small class="text-muted" *ngIf="kind === 'EXAM'">
+        Áp dụng cho cấu hình sinh đề THI chính thức.
+      </small>
+      <small class="text-muted" *ngIf="kind === 'PRACTICE'">
+        Áp dụng cho cấu hình sinh đề ÔN TẬP cho sinh viên.
+      </small>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
       <button mat-stroked-button type="button" (click)="resetDefault()" matTooltip="Đặt về mặc định">
         <mat-icon>visibility</mat-icon>&nbsp;Mặc định
       </button>
       <button mat-stroked-button type="button" (click)="loadAll()" matTooltip="Nạp lại từ máy chủ">
         <mat-icon>refresh</mat-icon>&nbsp;Nạp lại
       </button>
+
+      <button mat-icon-button matTooltip="Đóng" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
     </div>
-    <button mat-icon-button matTooltip="Đóng" (click)="close()"><mat-icon>close</mat-icon></button>
   </div>
 
   <!-- Loading -->

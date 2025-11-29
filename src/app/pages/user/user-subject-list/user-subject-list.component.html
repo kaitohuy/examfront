@@ -1,9 +1,7 @@
 <div class="container mt-4 position-relative">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <button class="btn btn-outline-secondary me-3"
-              [routerLink]="['/user-dashboard']"
-              [disabled]="isLoading">
+      <button class="btn btn-outline-secondary me-3" [routerLink]="['/user-dashboard']" [disabled]="isLoading">
         <i class="bi bi-arrow-left me-1"></i> Quay lại
       </button>
       <h2 class="d-inline-block mb-0">MÔN TÔI DẠY</h2>
@@ -23,12 +21,8 @@
         <span class="input-group-text bg-white border-end-0">
           <i class="bi bi-search"></i>
         </span>
-        <input
-          type="text"
-          class="form-control border-start-0"
-          placeholder="Tìm kiếm môn học (tên / mã / giảng viên)…"
-          [(ngModel)]="searchText"
-          [disabled]="isLoading" />
+        <input type="text" class="form-control border-start-0" placeholder="Tìm kiếm môn học (tên / mã / giảng viên)…"
+          [(ngModel)]="searchText" [disabled]="isLoading" />
       </div>
     </div>
   </div>
@@ -57,28 +51,35 @@
                 Mã môn học <i class="{{ sortIcons['code'] }} ms-1"></i>
               </th>
               <th>Giảng viên khác</th>
+              <th class="text-center" style="width: 160px;">
+                Hành động
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              *ngFor="let s of filteredSubjects; trackBy: trackById"
-              (click)="openSubject(s)"
-              (keydown.enter)="openSubject(s)"
-              tabindex="0"
-              style="cursor:pointer">
+            <tr *ngFor="let s of filteredSubjects; trackBy: trackById" (click)="openSubject(s)"
+              (keydown.enter)="openSubject(s)" tabindex="0" style="cursor:pointer">
+
               <td>{{ s.id }}</td>
               <td>{{ s.name }}</td>
               <td>{{ s.code }}</td>
               <td>
                 <div *ngIf="s.teachers && s.teachers.length > 0; else noTeachers">
-                  <span class="badge bg-info me-1"
-                        *ngFor="let t of s.teachers">
+                  <span class="badge bg-info me-1" *ngFor="let t of s.teachers">
                     {{ t.lastName }} {{ t.firstName }}
                   </span>
                 </div>
                 <ng-template #noTeachers>
                   <span class="text-muted">Chưa phân công</span>
                 </ng-template>
+              </td>
+
+              <!-- NEW: Hành động -->
+              <td class="text-center" (click)="$event.stopPropagation()">
+                <button class="btn btn-sm btn-outline-secondary" [disabled]="isLoading"
+                  (click)="openSettingDialog(s, $event)">
+                  <i class="bi bi-gear"></i> Setting
+                </button>
               </td>
             </tr>
           </tbody>

@@ -5,7 +5,7 @@ export interface PreviewBlock {
   index: number;
   questionType: QuestionType;
   difficulty: Difficulty;
-  chapter: number;
+  chapter: number | null;
   content: string;
   optionA?: string; optionB?: string; optionC?: string; optionD?: string;
   answer?: string;  // for MC
