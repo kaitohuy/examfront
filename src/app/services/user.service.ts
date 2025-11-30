@@ -64,4 +64,8 @@ export class UserService {
   getTeachersOnly(): Observable<UserWithRolesAndDeptDTO[]> {
     return this.http.get<UserWithRolesAndDeptDTO[]>(`${baseUrl}/user/teachers-only`);
   }
+
+  getNonAdminUsers(): Observable<UserWithRolesAndDeptDTO[]> {
+    return this.http.get<UserWithRolesAndDeptDTO[]>(`${baseUrl}/user/non-admin`);
+  }
 }

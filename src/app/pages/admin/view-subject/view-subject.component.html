@@ -57,8 +57,8 @@
           </tr>
         </thead>
         <tbody>
+          <!-- [routerLink]="['/admin-dashboard/department', departmentId, 'subjects', subject.id]" -->
           <tr *ngFor="let subject of filteredSubjects"
-            [routerLink]="['/admin-dashboard/department', departmentId, 'subjects', subject.id]"
             style="cursor: pointer;">
             <td>{{ subject.id }}</td>
             <td>{{ subject.name }}</td>

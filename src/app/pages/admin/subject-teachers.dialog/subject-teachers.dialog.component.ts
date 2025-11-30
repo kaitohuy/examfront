@@ -5,6 +5,7 @@ import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } fro
 import { sharedImports } from '../../../shared/shared-imports';
 import { UserService } from '../../../services/user.service';
 import { UserWithRolesAndDeptDTO } from '../../../models/user-dto';
+import { LoginService } from '../../../services/login.service';
 
 type UserLite = { id: number; firstName: string; lastName: string; teacherCode?: string };
 
@@ -22,6 +23,8 @@ export interface SubjectTeachersData {
 export class SubjectTeachersDialogComponent implements OnInit {
   private userSvc = inject(UserService);
   private dialogRef = inject(MatDialogRef<SubjectTeachersDialogComponent>);
+  private loginSvc = inject(LoginService);     
+
   constructor(@Inject(MAT_DIALOG_DATA) public data: SubjectTeachersData) { }
 
   subject = this.data.subject;
@@ -41,10 +44,36 @@ export class SubjectTeachersDialogComponent implements OnInit {
       teacherCode: t.teacherCode
     }));
 
+    const role = this.loginSvc.getUserRole();
+
+    if (role === 'HEAD') {
+      this.loadForHead();
+    } else if (role === 'ADMIN') {
+      this.loadForAdmin();
+    } else {
+      this.loadForHead();
+    }
+
+    this.searchCtrl.valueChanges.subscribe(q => {
+      const s = (q || '').toLowerCase().trim();
+      this.filtered = !s
+        ? this.allTeachers
+        : this.allTeachers.filter(u =>
+            (u.firstName || '').toLowerCase().includes(s) ||
+            (u.lastName || '').toLowerCase().includes(s) ||
+            (u.teacherCode || '').toLowerCase().includes(s) ||
+            `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
+          );
+    });
+  }
+
+  // ====== LOAD DATA THEO ROLE ======
+
+  /** HEAD: chỉ account có đúng 1 role = TEACHER */
+  private loadForHead(): void {
     this.userSvc.getTeachersOnly().subscribe({
       next: (users: UserWithRolesAndDeptDTO[]) => {
         this.allTeachers = (users ?? [])
-          // BE đã lọc “teacher-only”, đoạn filter dưới có thể giữ cho chắc hoặc bỏ cũng được
           .filter(u =>
             Array.isArray(u.roles) &&
             u.roles.length === 1 &&
@@ -57,28 +86,32 @@ export class SubjectTeachersDialogComponent implements OnInit {
             teacherCode: u.teacherCode ?? undefined,
           }));
         this.filtered = this.allTeachers;
-      },
-    });
-
-    this.searchCtrl.valueChanges.subscribe(q => {
-      const s = (q || '').toLowerCase().trim();
-      this.filtered = !s
-        ? this.allTeachers
-        : this.allTeachers.filter(u =>
-          (u.firstName || '').toLowerCase().includes(s) ||
-          (u.lastName || '').toLowerCase().includes(s) ||
-          (u.teacherCode || '').toLowerCase().includes(s) ||
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(s)
-        );
+      }
     });
   }
 
+  /** ADMIN: mọi user không có role ADMIN (role != ADMIN) */
+  private loadForAdmin(): void {
+    this.userSvc.getNonAdminUsers().subscribe({
+      next: (users: UserWithRolesAndDeptDTO[]) => {
+        this.allTeachers = (users ?? []).map(u => ({
+          id: Number(u.id),
+          firstName: u.firstName ?? '',
+          lastName: u.lastName ?? '',
+          teacherCode: u.teacherCode ?? undefined,
+        }));
+        this.filtered = this.allTeachers;
+      }
+    });
+  }
+
+  // ====== Chọn / lưu ======
   toggleSelect(u: UserLite) {
     const exists = this.selected.some(x => x.id === u.id);
     this.selected = exists ? this.selected.filter(x => x.id !== u.id) : [...this.selected, u];
   }
   isSelected(u: UserLite) { return this.selected.some(x => x.id === u.id); }
 
-  save() { this.dialogRef.close(this.selected.map(u => ({ id: u.id }))); }
+  save()   { this.dialogRef.close(this.selected.map(u => ({ id: u.id }))); }
   cancel() { this.dialogRef.close(); }
 }

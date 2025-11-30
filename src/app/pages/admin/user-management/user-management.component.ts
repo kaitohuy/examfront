@@ -107,7 +107,7 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
   }
 
   loadUsers(): void {
-    this._userService.getAllUsers()
+    this._userService.getNonAdminUsers()
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: (data: UserWithRolesAndDeptDTO[]) => {
