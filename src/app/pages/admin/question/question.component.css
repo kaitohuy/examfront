@@ -104,3 +104,17 @@ pre.card-text { white-space: pre-wrap; word-wrap: break-word; font-size: .9rem; 
 .content-question {
   font-size: 1.2em;
 }
+
+/* Tùy chỉnh nút Toggle */
+.custom-toggle {
+  /* Phóng to toàn bộ component lên 1.3 lần */
+  transform: scale(1.2);
+  /* Đảm bảo khi phóng to nó vẫn bám sát lề trái, không bị trôi ra giữa */
+  transform-origin: left center; 
+}
+
+/* Tùy chỉnh riêng phần chữ bên cạnh nút toggle (nếu cần chữ to hơn nữa) */
+.custom-toggle ::ng-deep .mat-slide-toggle-content {
+  font-weight: 500; /* Làm chữ đậm hơn một chút cho dễ nhìn */
+  padding-left: 10px; /* Tăng khoảng cách giữa nút gạt và chữ */
+}

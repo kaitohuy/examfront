@@ -117,7 +117,6 @@ export class ImportPreviewDialogComponent implements OnDestroy {
       } as PreviewState;
     });
     this.state = [...this.allState];
-
     this.searchCtrl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()).subscribe(() => this.applyFilters());
     this.filterDifficulty.valueChanges.subscribe(() => this.applyFilters());
     this.filterChapter.valueChanges.subscribe(() => this.applyFilters());

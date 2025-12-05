@@ -253,7 +253,7 @@
               (focus)="setFocus(i,'content')" (click)="$event.stopPropagation()"
               placeholder="Ví dụ: Bài toán $x^2+y^2=1$ hay \(\frac{a}{b}\)"></textarea>
           </mat-form-field>
-          <div class="rounded border p-2 mb-1" style="white-space: pre-wrap" [appMathjax]="s.content"></div>
+          <div class="rounded border p-2 mb-1" style="white-space: -0+pre-wrap" [appMathjax]="s.content"></div>
 
           <div *ngIf="s.questionType === 'MULTIPLE_CHOICE'" class="mt-1" (click)="$event.stopPropagation()">
             <div class="row g-2">

@@ -312,9 +312,9 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     const roles = (u.roles || []).map(r => String(r).toUpperCase());
     if (roles.includes('ADMIN')) return 'ADMIN';
     if (roles.includes('HEAD')) return 'HEAD';
-    if (roles.includes('TEACHER')) return 'TEACHER';
+    if (roles.includes('TEACHER')) return 'LECTURER';
     // fallback: nếu BE có role khác hoặc trống
-    return roles[0] || 'TEACHER';
+    return roles[0] || 'LECTURER';
   }
 
   getRoleBadgeClass(u: User): string {

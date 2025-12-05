@@ -1,0 +1,160 @@
+<h2 mat-dialog-title>Xem trước cập nhật đáp án</h2>
+
+<div class="content-wrap">
+    <div class="px-4 pt-3">
+        <div class="alert alert-info py-2 small mb-0" role="alert">
+            <div class="d-flex gap-2">
+                <mat-icon style="font-size: 20px; width: 20px; height: 20px;">info</mat-icon>
+                <div>
+                    <div>Tick chọn các block muốn cập nhật. Sử dụng <b>Tool Math</b> để chèn công thức.</div>
+                    <div>Các ô màu <span
+                            style="background:#f0fdf4; border:1px solid #86efac; padding:0 4px; border-radius:3px; color:#166534">xanh
+                            lá</span> hiển thị đáp án mới sẽ được áp dụng.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 py-3 border-bottom bg-white sticky-top shadow-sm" style="z-index: 10;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+            <div class="small text-muted d-flex gap-3 align-items-center">
+                <div>Tổng: <b>{{ totalBlocks }}</b></div>
+                <div class="text-primary">Đang chọn: <b>{{ selectedCount }}</b></div>
+                <div class="text-success">Hợp lệ: <b>{{ validSelectedCount }}</b></div>
+                <div *ngIf="invalidSelectedCount > 0" class="text-danger fw-bold">
+                    <mat-icon inline>warning</mat-icon> Lỗi: {{ invalidSelectedCount }}
+                </div>
+            </div>
+
+            <div class="toolbar-actions">
+                <button mat-stroked-button [matMenuTriggerFor]="selectMenu" [disabled]="isSaving || !blocks.length">
+                    <mat-icon>checklist</mat-icon> Chọn nhanh
+                </button>
+                <mat-menu #selectMenu="matMenu">
+                    <button mat-menu-item (click)="selectAll('ALL')">Tất cả</button>
+                    <button mat-menu-item (click)="selectAll('NONE')">Bỏ chọn hết</button>
+                    <mat-divider></mat-divider>
+                    <button mat-menu-item (click)="selectAll('VALID')">Chỉ câu hợp lệ</button>
+                    <button mat-menu-item (click)="selectAll('INVALID')">Chỉ câu lỗi</button>
+                </mat-menu>
+
+                <app-tool-math [dense]="true" [label]="'Chèn công thức'" [roundedIcon]="false"
+                    (insert)="insertToFocused($event.tpl, $event.inline)">
+                </app-tool-math>
+            </div>
+        </div>
+    </div>
+
+    <mat-dialog-content class="preview-list bg-light">
+
+        <div *ngIf="!blocks.length" class="empty-state">
+            <mat-icon>content_paste_off</mat-icon>
+            <div>Không có dữ liệu xem trước</div>
+        </div>
+
+        <mat-card class="mb-3 import-card" *ngFor="let b of blocks; trackBy: trackByIndex" [class.selected]="b.include"
+            [ngClass]="blockToneClass(b)" (click)="onCardClick($event, b)">
+
+            <mat-card-content class="p-3">
+                <div class="block-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <mat-checkbox [(ngModel)]="b.include" [disabled]="isSaving || !b.valid"
+                            (click)="$event.stopPropagation()" color="primary">
+                        </mat-checkbox>
+
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold fs-6">{{ blockHeader(b) }}</span>
+                                <span class="badge type-badge"
+                                    [ngClass]="b.questionType === 'MULTIPLE_CHOICE' ? 'bg-mcq' : 'bg-essay'">
+                                    {{ blockTypeLabel(b) }}
+                                </span>
+                            </div>
+                            <div class="text-danger small fst-italic mt-1" *ngIf="!b.valid || hasWarnings(b)">
+                                <mat-icon inline style="vertical-align: text-bottom; font-size:14px">error</mat-icon>
+                                {{ (b.warnings && b.warnings.length > 0) ? b.warnings.join(', ') : 'lỗi không xác định' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button mat-icon-button (click)="toggleEdit(b, $event)" [disabled]="isSaving"
+                            matTooltip="Chỉnh sửa">
+                            <mat-icon>{{ b.editing ? 'check_circle' : 'edit' }}</mat-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <mat-icon style="font-size:16px; width:16px; height:16px;"
+                            class="text-muted">description</mat-icon>
+                        <span class="small text-muted fw-bold">Nội dung trích xuất:</span>
+                    </div>
+                    <div class="raw-text-box" [appMathjax]="b.raw || ''"></div>
+                </div>
+
+                <div class="comparison-grid">
+                    <div class="grid-header">Ý / Mã</div>
+                    <div class="grid-header">Đáp án hiện tại</div>
+                    <div class="grid-header"></div>
+                    <div class="grid-header">Đáp án mới</div>
+
+                    <div class="grid-row" *ngFor="let key of subKeysOf(b)" (click)="$event.stopPropagation()">
+
+                        <div class="col-key">
+                            <span class="key-badge">{{ key || '—' }}</span>
+                            <span class="code-badge" *ngIf="targetCode(b, key) as code"
+                                matTooltip="Mã câu hỏi hệ thống">
+                                {{ code }}
+                            </span>
+                            <span class="badge bg-danger text-white" *ngIf="!targetCode(b, key)"
+                                style="font-size:0.6rem">No Map</span>
+                        </div>
+
+                        <div class="col-old">
+                            <div [appMathjax]="currentAns(b, key) || ''"></div>
+                            <div *ngIf="!currentAns(b, key)" class="text-muted small fst-italic opacity-50">Trống</div>
+                        </div>
+
+                        <div class="col-arrow">
+                            <mat-icon>arrow_forward</mat-icon>
+                        </div>
+
+                        <div class="col-new">
+                            <ng-container *ngIf="!b.editing">
+                                <div class="new-ans-view" [class.empty]="!newAns(b, key)"
+                                    [appMathjax]="newAns(b, key) || ''">
+                                    <span *ngIf="!newAns(b, key)">Không thay đổi</span>
+                                </div>
+                            </ng-container>
+
+                            <ng-container *ngIf="b.editing">
+                                <textarea class="new-ans-input" rows="2" [id]="answerElementId(b.index, key)"
+                                    [ngModel]="newAns(b, key)" (ngModelChange)="setNewAns(b, key, $event)"
+                                    (focus)="setFocus(b.index, key)" [disabled]="isSaving"
+                                    placeholder="Nhập TeX..."></textarea>
+                                <div class="math-preview-mini" [appMathjax]="newAns(b, key) || ''"
+                                    *ngIf="newAns(b, key)"></div>
+                            </ng-container>
+                        </div>
+
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </mat-dialog-content>
+
+    <app-loading-screen *ngIf="isSaving" [embedded]="true" [title]="'Đang cập nhật...'"
+        [subtitle]="'Đang ghi dữ liệu vào hệ thống'" [showProgressBar]="true" [progress]="commitProgress"
+        (action)="onAbortCommit()">
+    </app-loading-screen>
+</div>
+
+<mat-dialog-actions align="end" class="bg-white border-top py-2 px-3">
+    <button mat-button (click)="onCancel()" [disabled]="isSaving">Đóng</button>
+    <button mat-flat-button color="primary" (click)="onCommit()" [disabled]="isSaving || !blocks.length">
+        <mat-icon>publish</mat-icon> Cập nhật {{ selectedCount }} mục
+    </button>
+</mat-dialog-actions>

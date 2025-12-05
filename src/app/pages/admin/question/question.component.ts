@@ -1045,7 +1045,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
                 const preview = (ev as any).body;
                 const dref = this.dialog.open(ImportPreviewDialogComponent, {
                   width: '1100px',
-                  maxHeight: '90vh',
+                  maxHeight: '100vh',
                   data: { subjectId: this.subjectId, preview, saveCopy },
                   autoFocus: false,
                 });
@@ -1445,4 +1445,88 @@ export class QuestionComponent implements OnInit, OnDestroy {
       this.router.navigate(['/admin-dashboard', 'department', this.departmentId, 'subjects', this.subjectId]);
     }
   }
+
+  async openImportAnswers(): Promise<void> {
+    const { UploadQuestionsDialogComponent } = await import(
+      '../upload-questions-dialog/upload-questions-dialog.component'
+    );
+
+    const ref = this.dialog.open(UploadQuestionsDialogComponent, {
+      width: '560px',
+      maxHeight: '90vh',
+      data: {
+        accept: '.docx,.pdf',
+        maxSizeMb: 20,
+        defaultSaveCopy: false,
+        mode: 'answers',
+      },
+      autoFocus: false,
+      panelClass: 'rounded-dialog',
+    });
+
+    ref.afterClosed().subscribe((res) => {
+      if (!res) return;
+      const { file } = res;
+      const labels: LabelBE[] = this.labelFilter === 'EXAM' ? ['EXAM'] : ['PRACTICE'];
+      this.startProgress('Đang tải file đáp án…', 'Đang trích xuất đáp án từ tệp');
+      this.questionService
+        .importAnswersPreviewProgress(this.subjectId, file, labels)
+        .subscribe({
+          next: (ev) => {
+            switch (ev.type) {
+              case HttpEventType.UploadProgress: {
+                const total = (ev as any).total;
+                const up = total
+                  ? Math.round((((ev as any).loaded || 0) / total) * 30)
+                  : Math.min((this.progress ?? 0) + 1, 29);
+                this.progress = Math.max(up, this.progress ?? 0);
+                if (up >= 30) this.startRamp();
+                break;
+              }
+              case HttpEventType.Response: {
+                this.stopRamp();
+                this.progress = 100;
+                const preview = (ev as any).body;
+
+                import('../essay-answer-preview-dialog/essay-answer-preview-dialog.component')
+                  .then(({ EssayAnswerPreviewDialogComponent }) => {
+                    const dref = this.dialog.open(EssayAnswerPreviewDialogComponent, {
+                      width: '1100px',
+                      maxHeight: '100vh',
+                      data: {
+                        subjectId: this.subjectId,
+                        preview,
+                      },
+                      autoFocus: false,
+                    });
+
+                    dref.afterOpened().subscribe(() => this.stopProgress());
+                    dref.afterClosed().subscribe((r: any) => {
+                      if (r?.committed) {
+                        const updated = r.result?.totalQuestions ?? 0;
+                        const notFound = r.result?.notFound ?? 0;
+
+                        this.showSuccess(
+                          `Đã cập nhật đáp án cho ${updated} câu hỏi.` +
+                          (notFound > 0 ? ` ${notFound} mã trong file không tìm thấy trong hệ thống.` : '')
+                        );
+                        this.loadQuestions();
+                      }
+                    });
+                  });
+                break;
+              }
+            }
+          },
+          error: (err) => {
+            this.stopRamp();
+            this.stopProgress();
+            this.showError(
+              'Bản xem trước đáp án lỗi: ' + (err?.error?.message || 'Không xác định')
+            );
+          },
+        });
+    });
+  }
+
 }

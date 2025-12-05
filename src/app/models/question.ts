@@ -22,12 +22,15 @@ export interface Question {
   optionD?: string;
   answer?: string;
   answerText?: string;
-  imageUrl?: string;            
-  images?: QuestionImageDTO[];   
+  imageUrl?: string;
+  images?: QuestionImageDTO[];
   createdAt: string;
   createdBy?: User;
   labels?: ("PRACTICE" | "EXAM")[];
-  parentId?: number | null; 
-  cloneIndex?: number | null; 
-  flagged?: boolean; 
+  parentId?: number | null;
+  cloneIndex?: number | null;
+  flagged?: boolean;
+
+  bundleId?: number | null;
+  bundleInstructions?: string | null;
 }

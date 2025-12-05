@@ -24,13 +24,23 @@
         <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 360px;">
 
           <div class="row g-2">
-            <div class="mb-3">
+            <div class="mb-3 col-6">
               <label class="form-label mb-1">Báo lỗi</label>
               <select class="form-select" [(ngModel)]="pendingFilters.flagged" (click)="$event.stopPropagation()"
                 [disabled]="isLoading">
                 <option [ngValue]="null">Tất cả</option>
                 <option [ngValue]="true">Chỉ bị báo lỗi</option>
                 <option [ngValue]="false">Không bị báo lỗi</option>
+              </select>
+            </div>
+
+            <div class="mb-3 col-6">
+              <label class="form-label mb-1">Loại câu hỏi</label>
+              <select class="form-select" [(ngModel)]="pendingFilters.type" (click)="$event.stopPropagation()"
+                [disabled]="isLoading">
+                <option value="">Tất cả</option>
+                <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+                <option value="ESSAY">Tự luận</option>
               </select>
             </div>
 
@@ -62,16 +72,6 @@
                 <option [ngValue]="7">7</option>
               </select>
             </div>
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label mb-1">Loại câu hỏi</label>
-            <select class="form-select" [(ngModel)]="pendingFilters.type" (click)="$event.stopPropagation()"
-              [disabled]="isLoading">
-              <option value="">Tất cả</option>
-              <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
-              <option value="ESSAY">Tự luận</option>
-            </select>
           </div>
 
           <div class="mb-3">
@@ -170,29 +170,43 @@
     </div>
 
     <!-- Hàng nút phụ -->
-    <div class="d-flex justify-content-end gap-2 mt-2">
-      <ng-container *ngIf="!trashMode; else trashToolbar">
-        <button class="btn btn-outline-danger" (click)="openTrash()" [disabled]="isLoading">
-          <i class="bi bi-recycle me-1"></i> Thùng rác
-        </button>
-        <button class="btn btn-outline-secondary" (click)="openImportDryRun()" [disabled]="isLoading">
-          <!-- *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'" -->
-          <i class="bi bi-upload me-1"></i> Tải câu hỏi lên
-        </button>
-        <button class="btn btn-outline-secondary" (click)="openAutoGenDialog()" [disabled]="isLoading">
-          <i class="bi bi-magic me-1"></i> Sinh đề tự động
-        </button>
-        <button class="btn btn-primary" (click)="openCreateQuestionDialog()" [disabled]="isLoading">
-          <!-- *ngIf="isAdminOrHead || labelFilter === 'PRACTICE'"> -->
-          <i class="bi bi-plus-circle me-1"></i> Thêm Câu hỏi
-        </button>
-      </ng-container>
+    <div class="d-flex justify-content-between align-items-center mt-2">
 
-      <ng-template #trashToolbar>
-        <button class="btn btn-outline-secondary" (click)="closeTrash()" [disabled]="isLoading">
-          <i class="bi bi-arrow-left-circle me-1"></i> Quay về kho đề
-        </button>
-      </ng-template>
+      <div>
+        <ng-container *ngIf="!trashMode && this.isAdminOrHead">
+          <mat-slide-toggle [(ngModel)]="showAnswers" color="primary" (change)="checkAuthorization()"
+            [disabled]="isLoading" class="custom-toggle">
+            {{ showAnswers ? 'Ẩn đáp án' : 'Hiện đáp án' }}
+          </mat-slide-toggle>
+        </ng-container>
+      </div>
+
+      <div class="d-flex gap-2">
+        <ng-container *ngIf="!trashMode; else trashToolbar">
+          <button class="btn btn-outline-danger" (click)="openTrash()" [disabled]="isLoading">
+            <i class="bi bi-recycle me-1"></i> Thùng rác
+          </button>
+          <button class="btn btn-outline-secondary" (click)="openImportDryRun()" [disabled]="isLoading">
+            <i class="bi bi-upload me-1"></i> Tải câu hỏi lên
+          </button>
+          <button class="btn btn-outline-secondary" (click)="openImportAnswers()" [disabled]="isLoading">
+            <i class="bi bi-journal-check me-1"></i> Tải đáp án
+          </button>
+          <button class="btn btn-outline-secondary" (click)="openAutoGenDialog()" [disabled]="isLoading">
+            <i class="bi bi-magic me-1"></i> Sinh đề tự động
+          </button>
+          <button class="btn btn-primary" (click)="openCreateQuestionDialog()" [disabled]="isLoading">
+            <i class="bi bi-plus-circle me-1"></i> Thêm Câu hỏi
+          </button>
+        </ng-container>
+
+        <ng-template #trashToolbar>
+          <button class="btn btn-outline-secondary" (click)="closeTrash()" [disabled]="isLoading">
+            <i class="bi bi-arrow-left-circle me-1"></i> Quay về kho đề
+          </button>
+        </ng-template>
+      </div>
+
     </div>
 
     <!-- Bulk action bar -->
@@ -259,10 +273,18 @@
           <span *ngIf="question.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi cử</span>
         </div>
 
-        <div class="kv-row mt-2 content-question">
-          <div class="kv-label">Nội dung:</div>
-          <div class="kv-value math-inline" [appMathjax]="question.content || ''"></div>
+        <!-- NEW: Nếu có đề chung -->
+        <div *ngIf="question.bundleInstructions" class="kv-row mt-2 content-question">
+          <div class="kv-label">Đề chung:</div>
+          <div class="kv-value math-inline" [appMathjax]="question.bundleInstructions"></div>
         </div>
+
+        <!-- Nội dung câu hỏi (giữ nguyên) -->
+        <div class="kv-row mt-2 content-question">
+          <div class="kv-label">Nội dung: </div>
+          <div class="kv-value math-inline" style="white-space: pre-wrap" [appMathjax]="question.content || ''"></div>
+        </div>
+
 
         <div class="position-absolute top-0 end-0 mt-2 me-2 text-muted small text-end">
           <p class="mb-0"><strong>Chương:</strong> {{ question.chapter }}</p>
@@ -300,8 +322,9 @@
 
         <p *ngIf="showAnswers && question.answer" class="card-text"><strong>Đáp án:</strong> {{ question.answer }}</p>
         <div *ngIf="showAnswers && question.answerText" class="kv-row mt-2">
-          <div class="kv-label">Giải thích:</div>
-          <div class="kv-value math-inline" [appMathjax]="question.answerText || ''"></div>
+          <div *ngIf="question.answerText && showAnswers" class="kv-label fw-bold">Đáp án: </div>
+          <div *ngIf="question.answerText && showAnswers" class="kv-value math-inline fst-italic"
+            [appMathjax]="question.answerText || ''"></div>
         </div>
       </div>
 
@@ -389,6 +412,13 @@
                     </div>
 
                     <div class="mt-2">
+                      <!-- NEW: Nếu bản sao này cũng có đề chung -->
+                      <div *ngIf="c.bundleInstructions" class="kv-row mt-2 content-question">
+                        <div class="kv-label">Đề chung:</div>
+                        <div class="kv-value math-inline" [appMathjax]="c.bundleInstructions"></div>
+                      </div>
+
+                      <!-- Nội dung câu hỏi riêng -->
                       <div class="kv-row mt-2 content-question">
                         <div class="kv-label">Nội dung:</div>
                         <div class="kv-value math-inline" [appMathjax]="c.content || ''"></div>
@@ -421,7 +451,7 @@
                         }}
                       </div>
                       <div *ngIf="showAnswers && c.answerText" class="kv-row mt-2 content-question">
-                        <div class="kv-label">Giải thích:</div>
+                        <div class="kv-label">Đáp án: </div>
                         <div class="kv-value math-inline" [appMathjax]="c.answerText || ''"></div>
                       </div>
                     </div>

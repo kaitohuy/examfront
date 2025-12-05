@@ -18,6 +18,7 @@ import { CreateQuestion } from '../models/createQuestion';
 import { ExportOptions } from '../models/exportOptions';
 import { CloneRequest } from '../models/CloneRequest';
 import { LoginService } from './login.service';
+import { AnswerImportPreviewResponse, AnswerImportResult, AnswerUpdatePreviewBlockFE } from '../models/answer-import.models';
 
 /** Kiểu trang Spring Data */
 export interface Page<T> {
@@ -397,7 +398,7 @@ export class QuestionService {
     return this.http.post<{ restored: number; requested: number }>(
       `${baseUrl}/subject/${subjectId}/questions/bulk-restore?deleted=true`,
       selection
-    );  
+    );
   }
 
   bulkPurge(subjectId: number, selection: BulkSelectionRequest) {
@@ -406,4 +407,51 @@ export class QuestionService {
       selection
     );
   }
+
+  importAnswersPreviewProgress(
+    subjectId: number,
+    file: File,
+    labels?: LabelBE[]
+  ): Observable<HttpEvent<AnswerImportPreviewResponse>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    let params = new HttpParams();
+    if (labels?.length) {
+      params = params.set('labels', labels.join(','));
+    }
+
+    return this.http.post<AnswerImportPreviewResponse>(
+      `${baseUrl}/subject/${subjectId}/questions/answers/import/preview`,
+      formData,
+      {
+        params,
+        observe: 'events',
+        reportProgress: true
+      }
+    );
+  }
+
+
+  /**
+   * Commit cập nhật đáp án theo session + danh sách block (index + include)
+   * BE trả về AnswerImportResult
+   */
+  importAnswersCommitProgress(
+    subjectId: number,
+    payload: {
+      sessionId: string;
+      blocks: Array<Pick<AnswerUpdatePreviewBlockFE, 'index' | 'include'>>;
+    }
+  ): Observable<HttpEvent<AnswerImportResult>> {
+    return this.http.post<AnswerImportResult>(
+      `${baseUrl}/subject/${subjectId}/questions/answers/import/commit`,
+      payload,
+      {
+        observe: 'events',
+        reportProgress: true
+      }
+    );
+  }
+
 }
