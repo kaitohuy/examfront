@@ -19,6 +19,7 @@ import { ExportOptions } from '../models/exportOptions';
 import { CloneRequest } from '../models/CloneRequest';
 import { LoginService } from './login.service';
 import { AnswerImportPreviewResponse, AnswerImportResult, AnswerUpdatePreviewBlockFE } from '../models/answer-import.models';
+import { ArchiveVariant } from '../models/fileArchive';
 
 /** Kiểu trang Spring Data */
 export interface Page<T> {
@@ -244,15 +245,21 @@ export class QuestionService {
 
   importCommitProgress(
     subjectId: number,
-    payload: { sessionId: string; blocks: Array<{ index: number; include: boolean }> },
-    saveCopy = false
+    payload: any,
+    saveCopy = false,
+    variant: ArchiveVariant | null = null
   ): Observable<HttpEvent<any>> {
     const url = `${baseUrl}/subject/${subjectId}/questions/commit`;
-    const params = new HttpParams().set('saveCopy', String(!!saveCopy));
+
+    let params = new HttpParams().set('saveCopy', String(!!saveCopy));
+    if (variant) {
+      params = params.set('variant', variant);   // ← Sửa ở đây: gán lại params
+    }
+
     const req = new HttpRequest('POST', url, payload, {
       reportProgress: true,
       responseType: 'json',
-      params,
+      params
     });
     return this.xhrClient.request(this.withAuth(req));
   }

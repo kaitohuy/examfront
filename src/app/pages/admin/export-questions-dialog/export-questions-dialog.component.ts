@@ -2,6 +2,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef, MatDialogActions, MatDialogContent } from '@angular/material/dialog';
 import { ExportOptions, NhchtForm } from '../../../models/exportOptions';
 import { sharedImports } from '../../../shared/shared-imports';
+import { ArchiveVariant } from '../../../models/fileArchive';
 
 type Mode = 'export' | 'autogen';
 
@@ -19,7 +20,7 @@ type Mode = 'export' | 'autogen';
 })
 export class ExportQuestionsDialogComponent implements OnInit {
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: { selectedCount: number, mode?: Mode },
+    @Inject(MAT_DIALOG_DATA) public data: { selectedCount: number, mode?: Mode, exportVariant: ArchiveVariant },
     private ref: MatDialogRef<ExportQuestionsDialogComponent>
   ) { }
 
@@ -28,6 +29,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
   submitted = false;
 
   // ===== export mode state (giữ nguyên) =====
+  exportVariant = this.data.exportVariant;
   variant: 'practice' | 'exam' = 'exam';
   fileName = '';
   format: 'pdf' | 'docx' = 'docx';

@@ -38,6 +38,7 @@ import { LoadingScreenComponent } from '../../loading-screen/loading-screen.comp
 import { MathjaxDirective } from '../../../shared/mathjax.directive';
 import { AutoGenRequest, AutogenService } from '../../../services/autogen.service';
 import { Router } from '@angular/router';
+import { ArchiveVariant } from '../../../models/fileArchive';
 
 type CloneState = { items: any[]; open: boolean; loading: boolean };
 
@@ -73,6 +74,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
   questions: any[] = [];
   paginatedQuestions: any[] = []; // alias cho HTML cũ
   totalItems = 0;
+  variant: ArchiveVariant | null = null;
 
   // ========= Clones cache =========
   clonesState: Partial<Record<number, CloneState>> = {};
@@ -150,6 +152,11 @@ export class QuestionComponent implements OnInit, OnDestroy {
     this.eventsSub = this.qevents.changed$.subscribe((e) => {
       if (e.subjectId === this.subjectId) this.applyEvent(e);
     });
+    if(this.labelFilter = 'EXAM') {
+      this.variant = 'EXAM';
+    }else {
+      this.variant = 'PRACTICE';
+    }
   }
 
   ngOnDestroy(): void {
@@ -865,7 +872,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
     const ref = this.dialog.open(ExportQuestionsDialogComponent, {
       width: '720px',
       maxHeight: '90vh',
-      data: { selectedCount: this.selectedCount },
+      data: { selectedCount: this.selectedCount, exportVariant: this.variant },
       autoFocus: false,
     });
 
@@ -1046,7 +1053,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
                 const dref = this.dialog.open(ImportPreviewDialogComponent, {
                   width: '1100px',
                   maxHeight: '100vh',
-                  data: { subjectId: this.subjectId, preview, saveCopy },
+                  data: { subjectId: this.subjectId, preview, saveCopy, variant: this.variant },
                   autoFocus: false,
                 });
                 dref.afterOpened().subscribe(() => this.stopProgress());

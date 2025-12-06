@@ -16,6 +16,7 @@ import { ToolMathComponent } from '../../../shared/tool-math/tool-math.component
 import Swal from 'sweetalert2';
 import { DuplicateListDialogComponent } from '../duplicate-list-dialog/duplicate-list-dialog.component';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { ArchiveVariant } from '../../../models/fileArchive';
 
 type QuestionLabel = 'PRACTICE' | 'EXAM';
 type TexField = 'content' | 'answerText' | 'optionA' | 'optionB' | 'optionC' | 'optionD';
@@ -62,6 +63,7 @@ export class ImportPreviewDialogComponent implements OnDestroy {
   loading = false;
   saveCopy = !!this.data.saveCopy;
   commitProgress: number | null = null;
+  variant = this.data.variant;
 
   private rafId = 0;
   private rampStart = 0;
@@ -388,8 +390,9 @@ export class ImportPreviewDialogComponent implements OnDestroy {
     });
 
     const payload = { sessionId: this.data.preview.sessionId, blocks };
-
-    this.qs.importCommitProgress(this.data.subjectId, payload, this.saveCopy).subscribe({
+    const commitVariant: ArchiveVariant = this.variant ?? 'PRACTICE';
+    console.log("commitVariant: " + commitVariant);
+    this.qs.importCommitProgress(this.data.subjectId, payload, this.saveCopy, commitVariant).subscribe({
       next: (ev) => {
         if (ev.type === HttpEventType.UploadProgress) {
           const total = (ev as any).total;

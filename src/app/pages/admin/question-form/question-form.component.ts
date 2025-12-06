@@ -31,12 +31,12 @@ export class QuestionFormComponent implements OnInit, OnChanges {
 
   form!: FormGroup;
 
+  // Options
   readonly questionTypes = [
     { value: 'MULTIPLE_CHOICE' as QuestionType, label: 'Trắc nghiệm' },
     { value: 'ESSAY' as QuestionType, label: 'Tự luận' },
   ];
 
-  // Hiển thị label điểm số nhưng giữ value theo enum Difficulty (A..E)
   readonly diffOptions: Array<{ value: Difficulty; label: string }> = [
     { value: 'A' as Difficulty, label: '5 điểm' },
     { value: 'B' as Difficulty, label: '4 điểm' },
@@ -51,12 +51,18 @@ export class QuestionFormComponent implements OnInit, OnChanges {
     { value: 'EXAM', label: 'Thi cử' }
   ];
 
-  // Trạng thái ô đang focus để Tool Math chèn template
+  // [NEW] Options cho ItemNature
+  readonly natureOptions = [
+    { value: 'THEORY', label: 'Lý thuyết' },
+    { value: 'EXERCISE', label: 'Bài tập' }
+  ];
+
+  // Tool Math state
   focused: { field: TexField } | null = null;
 
   constructor(private fb: FormBuilder) { }
 
-  // ==== Getters tiện lợi ====
+  // ==== Getters ====
   get isMultiple() { return this.form.get('questionType')?.value === 'MULTIPLE_CHOICE'; }
   get labels(): QuestionLabel[] { return this.form.get('labels')?.value ?? []; }
 
@@ -72,14 +78,23 @@ export class QuestionFormComponent implements OnInit, OnChanges {
     }
   }
 
-  // ==== Form ====
+  // ==== Form Build & Patch ====
   private buildForm(q: Partial<Question>) {
+    // Nếu BE trả về typeCode/itemNature lồng trong meta, ta lấy an toàn
+    const typeCode = q.typeCode ?? (q as any).meta?.typeCode ?? '';
+    const itemNature = q.itemNature ?? (q as any).meta?.itemNature ?? null;
+
     this.form = this.fb.group({
       content: [q.content ?? '', [Validators.required, Validators.maxLength(10000)]],
       labels: [(q.labels as QuestionLabel[]) ?? ['PRACTICE']],
       questionType: [q.questionType ?? 'MULTIPLE_CHOICE', Validators.required],
       chapter: [q.chapter ?? 0],
       difficulty: [q.difficulty ?? ('C' as Difficulty), Validators.required],
+      
+      // [NEW] Fields
+      typeCode: [typeCode],
+      itemNature: [itemNature],
+
       optionA: [q.optionA ?? ''],
       optionB: [q.optionB ?? ''],
       optionC: [q.optionC ?? ''],
@@ -93,12 +108,20 @@ export class QuestionFormComponent implements OnInit, OnChanges {
   }
 
   private patchForm(q: Partial<Question>) {
+    const typeCode = q.typeCode ?? (q as any).meta?.typeCode ?? '';
+    const itemNature = q.itemNature ?? (q as any).meta?.itemNature ?? null;
+
     this.form.patchValue({
       content: q.content ?? '',
       labels: (q.labels as QuestionLabel[]) ?? ['PRACTICE'],
       questionType: q.questionType ?? 'MULTIPLE_CHOICE',
       chapter: q.chapter ?? 0,
       difficulty: q.difficulty ?? ('C' as Difficulty),
+      
+      // [NEW]
+      typeCode: typeCode,
+      itemNature: itemNature,
+
       optionA: q.optionA ?? '',
       optionB: q.optionB ?? '',
       optionC: q.optionC ?? '',
@@ -112,6 +135,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
   private applyTypeValidators(type: QuestionType) {
     const a = this.form.get('optionA')!, b = this.form.get('optionB')!, c = this.form.get('optionC')!, d = this.form.get('optionD')!;
     const ans = this.form.get('answer')!, ansText = this.form.get('answerText')!;
+    
     if (type === 'MULTIPLE_CHOICE') {
       a.setValidators([Validators.required]);
       b.setValidators([Validators.required]);
@@ -121,12 +145,14 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       ansText.clearValidators();
     } else {
       a.clearValidators(); b.clearValidators(); c.clearValidators(); d.clearValidators();
-      ans.clearValidators(); ansText.setValidators([]); // essay có thể rỗng
+      ans.clearValidators(); 
+      ansText.setValidators([]); 
     }
+    
     [a, b, c, d, ans, ansText].forEach(x => x.updateValueAndValidity());
   }
 
-  // ==== Labels ====
+  // ==== Labels Helper ====
   toggleLabel(label: QuestionLabel, checked: boolean) {
     const set = new Set(this.labels);
     if (checked) set.add(label); else set.delete(label);
@@ -134,14 +160,13 @@ export class QuestionFormComponent implements OnInit, OnChanges {
     this.form.get('labels')?.setValue(out.length ? out : ['PRACTICE']);
   }
 
-  // ==== Tool Math integration ====
+  // ==== Tool Math Logic ====
   setFocus(field: TexField) { this.focused = { field }; }
 
   private elBy(field: TexField): HTMLTextAreaElement | HTMLInputElement | null {
     return document.getElementById(`tex-${field}`) as any;
   }
 
-  /** Chèn template vào trường đang focus; nếu inline=true, tự bọc \( \) */
   insertToFocused(rawTpl: string, inline = true) {
     if (!this.focused) return;
     this.insertTpl(this.focused.field, rawTpl, inline);
@@ -178,7 +203,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
     });
   }
 
-  // ==== Public API cho dialog ====
+  // ==== Public API for Parent Dialog ====
   toPayload(): CreateQuestion {
     const v = this.form.value;
     return {
@@ -186,6 +211,11 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       content: v.content,
       difficulty: v.difficulty,
       chapter: Number(v.chapter),
+      
+      // [NEW] Map to DTO
+      typeCode: v.typeCode?.trim() || null,
+      itemNature: v.itemNature || null,
+
       optionA: v.optionA || '',
       optionB: v.optionB || '',
       optionC: v.optionC || '',

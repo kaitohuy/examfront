@@ -271,6 +271,8 @@
           <span *ngIf="question.flagged" class="badge rounded-pill text-bg-warning ms-2">Đã báo lỗi</span>
           <span *ngIf="question.labels?.includes('PRACTICE')" class="badge rounded-pill text-bg-info ms-2">Ôn tập</span>
           <span *ngIf="question.labels?.includes('EXAM')" class="badge rounded-pill text-bg-warning ms-1">Thi cử</span>
+          <span *ngIf="question.itemNature === 'THEORY'" class="badge rounded-pill text-bg-indigo ms-1">Lý thuyết</span>
+          <span *ngIf="question.itemNature === 'EXERCISE'" class="badge rounded-pill text-bg-teal ms-1">Bài tập</span>
         </div>
 
         <!-- NEW: Nếu có đề chung -->

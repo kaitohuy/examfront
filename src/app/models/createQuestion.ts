@@ -22,4 +22,7 @@ export interface CreateQuestion {
 
   /** 🔹 nhãn: nếu không truyền, BE mặc định PRACTICE */
   labels?: ("PRACTICE" | "EXAM")[];
+
+  typeCode?: string;
+  itemNature?: string;
 }

@@ -1,3 +1,4 @@
+import { ArchiveVariant } from "./fileArchive";
 import { PreviewBlock } from "./previewBlock";
 
 export interface DialogData {
@@ -8,4 +9,5 @@ export interface DialogData {
     totalBlocks?: number;
     blocks: PreviewBlock[];
   };
+  variant?: ArchiveVariant;
 }

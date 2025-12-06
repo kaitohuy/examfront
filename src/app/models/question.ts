@@ -33,4 +33,7 @@ export interface Question {
 
   bundleId?: number | null;
   bundleInstructions?: string | null;
+
+  typeCode?: string;
+  itemNature?: string;
 }

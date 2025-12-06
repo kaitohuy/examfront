@@ -53,11 +53,12 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   forceVariant: Variant = null;
   moderationMode = false;
   reviewStatusFilter: 'PENDING' | 'APPROVED' | 'REJECTED' | null = null;
+  viewMode: 'me' | 'subject' = 'me';
 
   // tabs
   showOuterTabs = true;
   outerTab: OuterTab = 'ALL';
-  exportTab: ExVariantTab = 'PRACTICE';
+  exportTab: ExVariantTab = 'EXAM';
 
   private get currentVariant(): Variant {
     return (this.finalKind === 'EXPORT' && !this.moderationMode && !this.reviewStatusFilter)
@@ -122,7 +123,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         this.reviewStatusFilter = (data['reviewStatus'] ?? null) as any;
 
         this.showOuterTabs = (this.forceKind == null) && !this.moderationMode;
-        this.exportTab = (this.forceVariant ?? 'PRACTICE') as ExVariantTab;
+        this.exportTab = (this.forceVariant ?? 'EXAM') as ExVariantTab;
 
         if (this.reviewStatusFilter) {
           this.statusSel.setValue(this.reviewStatusFilter);
@@ -153,6 +154,10 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+
+  get isTeacherOnly(): boolean {
+    return this.login.getUserRole() === 'TEACHER';
+  }
 
   onPage(e: PageEvent) {
     this.pageIndex = e.pageIndex;
@@ -515,7 +520,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
   private buildListArgs(): {
     subjectId?: number; page: number; size: number;
-    opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number }
+    opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number, view?: 'me' | 'subject' }
   } {
     const opts: ArchiveQuery & { reviewStatus?: string, linkedTaskId?: number } = {};
 
@@ -545,6 +550,9 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
         ? (this.forceVariant ?? this.exportTab) : null;
       if (variant) opts.variant = variant as any;
     }
+    if (this.isTeacherOnly) {
+       opts.view = this.viewMode;
+    }
 
     const q = this.search.value?.trim(); if (q) opts.q = q;
     const subj = this.filterSubjectText.value?.trim(); if (subj) opts.subject = subj;
@@ -555,6 +563,11 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     return { subjectId: this.subjectId ?? undefined, page: this.pageIndex, size: this.pageSize, opts };
   }
 
+  onViewModeChange() {
+    this.pageIndex = 0; // Reset về trang 1
+    this.load();
+  }
+  
   private load() {
     const args = this.buildListArgs();
 
@@ -608,7 +621,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
   onExportTabChange(idx: number) {
     this.tabState.set(this.tabKey(), { pageIndex: this.pageIndex, pageSize: this.pageSize });
-    this.exportTab = idx === 0 ? 'PRACTICE' : 'EXAM';
+    this.exportTab = idx === 0 ? 'EXAM':'PRACTICE';
 
     const saved = this.tabState.get(this.tabKey());
     if (saved) { this.pageIndex = saved.pageIndex; this.pageSize = saved.pageSize; }

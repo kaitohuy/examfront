@@ -9,4 +9,5 @@ export interface ArchiveQuery {
   to?: string;   // yyyy-MM-dd
   variant?: ArchiveVariant;
   reviewStatus?: ReviewStatus; // NEW
+  view?: 'me' | 'subject';
 }

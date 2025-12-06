@@ -12,6 +12,7 @@ import { ReleaseAtDTO } from '../models/ReleaseAtDTO';
 type ReviewableQuery = ArchiveQuery & {
   reviewStatus?: string;
   linkedTaskId?: number;        // <-- NEW
+  view?: 'me' | 'subject';
 };
 type ListArgs = { subjectId?: number, page: number, size: number, opts?: ReviewableQuery };
 export type ApproveResp = {
@@ -54,7 +55,7 @@ export class FileArchiveService {
 
     // <-- NEW: truyền linkedTaskId xuống BE
     if (opts?.linkedTaskId != null) params = params.set('linkedTaskId', String(opts.linkedTaskId));
-
+    if (opts?.view) params = params.set('view', opts.view);
     return this.http.get<PageResult<FileArchive>>(`${baseUrl}/api/files`, { params });
   }
 

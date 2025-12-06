@@ -118,3 +118,20 @@ pre.card-text { white-space: pre-wrap; word-wrap: break-word; font-size: .9rem; 
   font-weight: 500; /* Làm chữ đậm hơn một chút cho dễ nhìn */
   padding-left: 10px; /* Tăng khoảng cách giữa nút gạt và chữ */
 }
+
+/* [NEW] Custom Badge Colors */
+.text-bg-indigo {
+  background-color: #a981e8 !important;
+  color: #fff !important;
+}
+
+.text-bg-teal {
+  background-color: #20c997 !important;
+  color: #fff !important;
+}
+
+/* Tùy chỉnh khoảng cách nếu cần */
+.badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+}

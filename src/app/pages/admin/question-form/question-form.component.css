@@ -1,41 +1,75 @@
-.two-col {
+/* --- CSS GRID LAYOUT --- */
+
+/* 1. Grid cho phần thông tin chung (Meta fields) */
+.meta-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Tự động chia cột: mỗi cột tối thiểu 140px, còn lại chia đều (1fr) */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
-}
-@media (max-width: 768px) {
-  .two-col { grid-template-columns: 1fr; }
-}
-.mf-compact .mat-mdc-text-field-wrapper { padding-bottom: 0; }
-/* Lưới 2 cột cho A,C | B,D */
-.ans-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
+  width: 100%;
 }
 
-/* Mỗi cột xếp dọc: input -> preview -> input -> preview */
-.ans-col {
+/* 2. Grid cho phần đáp án (A/C bên trái, B/D bên phải) */
+.ans-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  align-content: start;
+  grid-template-columns: 1fr 1fr; /* 2 cột đều nhau */
+  gap: 16px;
+}
+
+/* Cột chứa Input + Preview */
+.ans-col {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-/* Ô preview đồng bộ kích thước với input, không quá to */
+/* Ô preview công thức toán */
 .preview {
   border: 1px solid rgba(0,0,0,.12);
-  border-radius: 8px;
-  padding: 8px;
-  min-height: 44px;         /* gần chiều cao input */
-  background: #fff;
-  white-space: pre-wrap;
+  border-radius: 4px;
+  padding: 12px;
+  min-height: 56px;
+  background: #f8f9fa;
+  white-space: pre-wrap; /* Giữ xuống dòng */
+  
+  /* --- SỬA ĐỔI TẠI ĐÂY --- */
+  /* Xóa hoặc comment dòng display: flex và align-items: center */
+  /* display: flex; */
+  /* align-items: center; */
+  
+  display: block; /* Dùng block để text chạy từ trên xuống dưới tự nhiên */
+  overflow-x: auto; /* Thêm cái này để nếu công thức toán quá dài thì hiện thanh cuộn ngang, không vỡ layout */
 }
 
-/* Nén khoảng trống của mat-form-field */
-.mf-compact .mat-mdc-text-field-wrapper { padding-bottom: 0; }
+/* Thu gọn padding của mat-form-field để tiết kiệm diện tích */
+.mf-compact .mat-mdc-text-field-wrapper {
+  padding-bottom: 0;
+}
+::ng-deep .mf-compact .mat-mdc-form-field-subscript-wrapper {
+  display: none; /* Ẩn khoảng trống báo lỗi nếu không cần thiết để form gọn hơn */
+}
 
-/* Mobile: chuyển về 1 cột */
+/* --- RESPONSIVE --- */
+
+/* Tablet & Mobile: Meta grid chuyển về 2 cột hoặc 1 cột */
+@media (max-width: 992px) {
+  .meta-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+/* Mobile: Chuyển hết về 1 cột */
 @media (max-width: 768px) {
-  .ans-grid { grid-template-columns: 1fr; }
+  .ans-grid {
+    grid-template-columns: 1fr;
+  }
+  .meta-grid {
+    grid-template-columns: 1fr 1fr; /* Vẫn giữ 2 cột trên mobile cho các field nhỏ */
+  }
+}
+
+@media (max-width: 480px) {
+  .meta-grid {
+    grid-template-columns: 1fr; /* Màn hình quá nhỏ thì 1 cột */
+  }
 }
