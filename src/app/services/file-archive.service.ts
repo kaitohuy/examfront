@@ -154,12 +154,22 @@ export class FileArchiveService {
     return this.http.post<FileArchive>(`${baseUrl}/api/files/upload-answer`, formData);
   }
 
-  regenerateAnswer(submissionArchiveId: number, releaseAt?: string | null) {
-    const body = releaseAt ? { releaseAt } : {};
+  // regenerateAnswer(submissionArchiveId: number, releaseAt?: string | null) {
+  //   const body = releaseAt ? { releaseAt } : {};
+  //   return this.http.post<RegenerateAnswerResp>(
+  //     `${baseUrl}/api/files/${submissionArchiveId}/regenerate-answer`,
+  //     body
+  //   );
+  // }
+
+  regenerateAnswer(submissionArchiveId: number, releaseAt?: string | null, merge: boolean = false) {
+    const body = { 
+        releaseAt: releaseAt || null,
+        merge: merge // [NEW] Truyền tham số merge lên BE
+    };
     return this.http.post<RegenerateAnswerResp>(
       `${baseUrl}/api/files/${submissionArchiveId}/regenerate-answer`,
       body
     );
   }
-
 }

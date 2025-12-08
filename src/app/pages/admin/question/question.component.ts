@@ -1287,7 +1287,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       if (!r || r.mode !== 'autogen') return;
 
       const {
-        variants, fileName,
+        variants, fileName, merge,
         semester, academicYear, classes, duration, program, examForm, mau
       } = r;
 
@@ -1303,6 +1303,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
       const query: any = {
         commit: true,
         kind,               // NEW
+        merge,
         fileName,
         program, semester, academicYear, classes, duration, examForm, mau
       };

@@ -308,25 +308,32 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     });
   }
 
+  // --- Hàm chính: Duyệt file ---
   async approveFile(r: FileArchive) {
-    const ok = (await Swal.fire({
+    // 1. Xác nhận duyệt file (Đơn giản, không hỏi sinh đáp án vội)
+    const { isConfirmed } = await Swal.fire({
       icon: 'question',
-      title: 'Duyệt file?',
-      text: `Duyệt và chuyển file "${r.filename}" sang kho chính.`,
+      title: 'Xác nhận duyệt',
+      text: `Bạn có chắc chắn muốn duyệt file "${r.filename}"?`,
       showCancelButton: true,
-      confirmButtonText: 'Duyệt'
-    })).isConfirmed;
-    if (!ok) return;
+      confirmButtonText: 'Duyệt',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#198754'
+    });
 
+    if (!isConfirmed) return;
+
+    // 2. Gọi API Approve
+    this.isLoading = true;
     const shouldApproveTask =
       !!r.linkedTaskId &&
       (this.linkedTaskIdFilter ? r.linkedTaskId === this.linkedTaskIdFilter : true) &&
       ['SUBMITTED', 'RETURNED'].includes((r.linkedTaskStatus || '').toUpperCase());
 
     this.api.approve(r.id, { approveTask: shouldApproveTask })
-      .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: (res) => {
+          // Cập nhật UI
           this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId ?? null}`));
           if ((this.reviewStatusFilter || '').toUpperCase() === 'PENDING') {
             this.rows = this.rows.filter(x => x.id !== r.id);
@@ -335,54 +342,90 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
             (r as any).reviewStatus = 'APPROVED';
           }
 
-          // Base title
-          let baseTitle = 'Đã duyệt file';
-          if (shouldApproveTask && res.taskApproved) {
-            baseTitle = 'Đã duyệt file & nhiệm vụ';
-          }
+          this.isLoading = false;
 
-          const hasAnswer = !!res.answerBuilt && !res.answerError;
+          // 3. [NEW FLOW] Sau khi duyệt xong -> Hỏi sinh đáp án
+          this.askToRegenerateAnswer(r);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
+          console.error(err);
+        }
+      });
+  }
 
-          // Nếu có sinh đáp án thành công -> popup chi tiết + nút "Xem file đáp án"
-          if (hasAnswer) {
-            Swal.fire({
-              icon: 'success',
-              title: baseTitle,
-              html: `
-        <div class="text-start">
-          <div>File: <strong>${r.filename}</strong></div>
-          <div class="mt-2">✅ File đáp án tương ứng đã được tạo.</div>
-          <div class="text-muted small mt-1">
-            Bạn có thể xem và đặt lịch mở ở mục <b>File đáp án</b>.
+  // --- Hàm phụ: Hỏi sinh đáp án ---
+  async askToRegenerateAnswer(r: FileArchive) {
+    const { isConfirmed, value } = await Swal.fire({
+      icon: 'success',
+      title: 'File đã được duyệt!',
+      html: `
+        <div class="text-start" style="margin: 4px;">
+          <p class="mb-3">Bạn có muốn <b>sinh file đáp án</b> cho file vừa duyệt không?</p>
+          
+          <div class="form-check ms-3 p-2 bg-light rounded border">
+             <input class="form-check-input" type="checkbox" id="swal-merge-file">
+             <label class="form-check-label" for="swal-merge-file" style="margin: 4px;">
+               Gộp tất cả mã đề vào 1 file Word
+             </label>
           </div>
         </div>
       `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="bi bi-magic"></i> Sinh đáp án',
+      cancelButtonText: 'Để sau',
+      confirmButtonColor: '#0d6efd',
+      preConfirm: () => {
+        return {
+          merge: (document.getElementById('swal-merge-file') as HTMLInputElement).checked
+        };
+      }
+    });
+
+    if (isConfirmed && value) {
+      // Gọi hàm sinh đáp án
+      this.performRegenerate(r.id, value.merge, r.subjectId);
+    }
+  }
+
+  // --- Hàm phụ: Thực hiện sinh đáp án ---
+  private performRegenerate(archiveId: number, merge: boolean, subjectId?: number | null) {
+    this.isLoading = true;
+    this.api.regenerateAnswer(archiveId, null, merge)
+      .subscribe({
+        next: (resp) => {
+          this.isLoading = false;
+          if (resp.success) {
+            // 4. Thông báo thành công & Dẫn link
+            Swal.fire({
+              icon: 'success',
+              title: 'Sinh đáp án thành công',
+              html: `
+                 <div class="text-start">
+                   <div>File: <strong>${resp.filename}</strong></div>
+                   <div class="text-muted small mt-2">Đã lưu vào mục File đáp án.</div>
+                 </div>
+               `,
               showCancelButton: true,
               confirmButtonText: 'Xem file đáp án',
               cancelButtonText: 'Đóng'
-            }).then(result => {
-              if (result.isConfirmed) {
-                this.goToAnswerTab(r.subjectId);  // chuyển sang tab File đáp án
+            }).then((res) => {
+              if (res.isConfirmed) {
+                this.goToAnswerTab(subjectId);
               }
             });
+
+            // Refresh list (nếu đang ở tab All)
+            this.load();
           } else {
-            // Không sinh được đáp án hoặc có lỗi -> báo đơn giản
-            let title = baseTitle;
-            if (res.answerError) {
-              title += ' (lỗi sinh đáp án)';
-            }
-            Swal.fire({
-              icon: res.answerError ? 'info' : 'success',
-              title,
-              text: res.answerError || '',
-              timer: res.answerError ? undefined : 1500,
-              showConfirmButton: !!res.answerError
-            });
+            Swal.fire('Cảnh báo', 'Lỗi sinh đáp án: ' + resp.error, 'warning');
           }
         },
         error: (err) => {
-          Swal.fire('Lỗi', 'Duyệt thất bại.', 'error');
-          console.error(err);
+          this.isLoading = false;
+          const msg = err?.error?.message || 'Lỗi hệ thống';
+          Swal.fire('Lỗi', 'Sinh đáp án thất bại: ' + msg, 'error');
         }
       });
   }
@@ -551,7 +594,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       if (variant) opts.variant = variant as any;
     }
     if (this.isTeacherOnly) {
-       opts.view = this.viewMode;
+      opts.view = this.viewMode;
     }
 
     const q = this.search.value?.trim(); if (q) opts.q = q;
@@ -567,7 +610,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
     this.pageIndex = 0; // Reset về trang 1
     this.load();
   }
-  
+
   private load() {
     const args = this.buildListArgs();
 
@@ -621,7 +664,7 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
 
   onExportTabChange(idx: number) {
     this.tabState.set(this.tabKey(), { pageIndex: this.pageIndex, pageSize: this.pageSize });
-    this.exportTab = idx === 0 ? 'EXAM':'PRACTICE';
+    this.exportTab = idx === 0 ? 'EXAM' : 'PRACTICE';
 
     const saved = this.tabState.get(this.tabKey());
     if (saved) { this.pageIndex = saved.pageIndex; this.pageSize = saved.pageSize; }

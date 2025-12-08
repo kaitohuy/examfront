@@ -44,6 +44,7 @@ export class AutogenService {
     body?: AutoGenRequest,
     query?: {
       commit?: boolean;
+      merge?: boolean;
       fileName?: string;
       program?: string;
       semester?: string;
@@ -56,6 +57,7 @@ export class AutogenService {
     }
   ): Observable<HttpEvent<Blob>> {
     let params = new HttpParams().set('commit', String(query?.commit ?? true));
+    if (query?.merge) params = params.set('merge', 'true');
     if (query?.fileName) params = params.set('fileName', query.fileName);
     if (query?.program) params = params.set('program', query.program);
     if (query?.semester) params = params.set('semester', query.semester);

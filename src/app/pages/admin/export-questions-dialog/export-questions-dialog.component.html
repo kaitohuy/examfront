@@ -24,7 +24,8 @@
         <label class="form-label">Tên file</label>
         <div class="input-group">
           <input class="form-control" [placeholder]="variant==='practice' ? 'on-tap' : 'de-thi'" [(ngModel)]="fileName">
-          <button class="btn btn-outline-secondary" type="button" *ngIf="fileName" (click)="clearFileName()" aria-label="Xoá tên file">
+          <button class="btn btn-outline-secondary" type="button" *ngIf="fileName" (click)="clearFileName()"
+            aria-label="Xoá tên file">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
@@ -46,7 +47,7 @@
       <div class="col-12 col-md-3">
         <label class="form-label">Số lượng đề <span class="text-danger">*</span></label>
         <input class="form-control" type="number" min="1" [(ngModel)]="variants"
-               [class.is-invalid]="submitted && (!variants || variants<1)">
+          [class.is-invalid]="submitted && (!variants || variants<1)">
         <div *ngIf="submitted && (!variants || variants<1)" class="invalid-feedback d-block">Số lượng phải ≥ 1</div>
       </div>
 
@@ -54,7 +55,8 @@
         <label class="form-label">Tên file (.zip)</label>
         <div class="input-group">
           <input class="form-control" placeholder="de_tu_dong" [(ngModel)]="fileName">
-          <button class="btn btn-outline-secondary" type="button" *ngIf="fileName" (click)="clearFileName()" aria-label="Xoá tên file">
+          <button class="btn btn-outline-secondary" type="button" *ngIf="fileName" (click)="clearFileName()"
+            aria-label="Xoá tên file">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
@@ -75,6 +77,18 @@
           <option value="pdf">PDF</option>
           <option value="docx">Word</option>
         </select>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="mode==='autogen'">
+    <div>
+      <label class="form-label">Tùy chọn xuất</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="mergeFileCheck" [(ngModel)]="mergeFile">
+        <label class="form-check-label" for="mergeFileCheck">
+          Gộp vào 1 file (bỏ chọn nếu muốn mỗi đề 1 file)
+        </label>
       </div>
     </div>
   </ng-container>
@@ -103,7 +117,7 @@
 
         <div class="col-12 col-md-3">
           <label class="form-label">Lớp</label>
-          <input name="classes" class="form-control" placeholder="D18CN, D18AT" [(ngModel)]="classes"/>
+          <input name="classes" class="form-control" placeholder="D18CN, D18AT" [(ngModel)]="classes" />
         </div>
 
         <div class="col-12 col-md-3">
@@ -115,7 +129,7 @@
       <div class="row g-3 mt-1">
         <div class="col-12 col-md-3">
           <label class="form-label">khoa</label>
-          <input name="faculty" class="form-control" [(ngModel)]="program"/>
+          <input name="faculty" class="form-control" [(ngModel)]="program" />
         </div>
 
         <!-- MÃ ĐỀ: chỉ hiện ở export mode -->
@@ -134,7 +148,7 @@
 
         <div class="col-12 col-md-3">
           <label class="form-label">Mẫu</label>
-          <input class="form-control"[(ngModel)]="mau">
+          <input class="form-control" [(ngModel)]="mau">
         </div>
       </div>
     </div>

@@ -50,6 +50,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
 
   // ===== autogen mode =====
   variants: number = 5;   // số lượng đề
+  mergeFile = false;
 
   ngOnInit(): void {
     this.applySmartDefaults();
@@ -119,7 +120,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
         fileName: this.fileName?.trim() || 'de_tu_dong',
         variant: this.variant,
         format: this.format,
-
+        merge: this.mergeFile,
         // >>> THÊM DÒNG NÀY
         labels: this.variant === 'exam' ? ['EXAM'] : ['PRACTICE'],
 
