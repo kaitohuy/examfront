@@ -776,33 +776,52 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
   }
 
   async regenerateAnswerFromSubmission(r: FileArchive) {
-    const { isConfirmed } = await Swal.fire({
+    const { isConfirmed, value } = await Swal.fire({
       icon: 'question',
-      title: 'Sinh đáp án tự động?',
+      title: 'Sinh đáp án tự động',
       html: `
-        <div style="text-align:left">
-          <div class="mb-2">Sinh đáp án từ submission: <strong>${r.filename}</strong></div>
-          <div class="text-muted small">
-            • Hệ thống sẽ đọc blueprint.json từ file ZIP<br/>
-            • Tạo file ZIP chứa DOCX đáp án cho từng đề<br/>
-            • File đáp án sẽ được lưu với trạng thái APPROVED<br/>
-            • Thời gian mở sẽ đặt sau
+        <div class="text-start">
+          <div class="mb-3">
+            Sinh đáp án từ submission: <strong>${r.filename}</strong>
+          </div>
+          
+          <div class="form-check p-2 bg-light rounded border d-flex align-items-center">
+             <input class="form-check-input ms-1" type="checkbox" id="swal-merge-file">
+             <label class="form-check-label ms-2 user-select-none" for="swal-merge-file">
+               Gộp tất cả mã đề vào 1 file Word
+             </label>
+          </div>
+
+          <div class="text-muted small mt-3">
+            • Hệ thống sẽ đọc blueprint/ma trận từ file ZIP<br/>
+            • Tạo file ZIP chứa DOCX đáp án tương ứng<br/>
+            • File đáp án sẽ được lưu với trạng thái APPROVED
           </div>
         </div>
       `,
       showCancelButton: true,
-      confirmButtonText: 'Sinh đáp án',
-      cancelButtonText: 'Hủy'
+      confirmButtonText: '<i class="bi bi-magic"></i> Sinh đáp án',
+      cancelButtonText: 'Hủy',
+      confirmButtonColor: '#0d6efd',
+      preConfirm: () => {
+        return {
+          // Lấy giá trị checkbox
+          merge: (document.getElementById('swal-merge-file') as HTMLInputElement).checked
+        };
+      }
     });
 
-    if (!isConfirmed) return;
+    if (!isConfirmed || !value) return;
 
-    this.api.regenerateAnswer(r.id)
+    // Gọi API với tham số merge
+    // regenerateAnswer(id, releaseAt, merge)
+    this.api.regenerateAnswer(r.id, null, value.merge)
       .pipe(withLoading(v => this.isLoading = v))
       .subscribe({
         next: (resp) => {
           if (resp.success) {
             this.api.invalidate(k => k.includes(`"subjectId":${this.subjectId}`));
+            
             Swal.fire({
               icon: 'success',
               title: 'Sinh đáp án thành công',
@@ -814,8 +833,15 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
                   </div>
                 </div>
               `,
-              confirmButtonText: 'OK'
+              showCancelButton: true,
+              confirmButtonText: 'Xem file đáp án',
+              cancelButtonText: 'Đóng'
+            }).then((res) => {
+               if (res.isConfirmed) {
+                 this.goToAnswerTab(r.subjectId);
+               }
             });
+
             this.load();
           } else {
             Swal.fire('Lỗi', resp.error || 'Sinh đáp án thất bại', 'error');
