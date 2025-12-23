@@ -271,10 +271,18 @@ export class QuestionService {
       .set('fileName', String(opts.fileName ?? 'file'))
       .set('variant', opts.variant);
 
+    // Common params: Level & TrainingType (Mới)
+    // Mặc định backend đã có defaultValue, nhưng FE cứ gửi lên cho chắc
+    params = params.set('level', opts.level ?? 'Đại học');
+    if (opts.trainingType) {
+      params = params.set('trainingType', opts.trainingType);
+    }
+
     if (opts.variant === 'practice') {
       if ((opts as any).saveCopy) params = params.set('saveCopy', 'true');
-      params = params.set('form', opts.form ?? 'TU_LUAN')
-        .set('level', opts.level ?? 'Đại học chính quy');
+      params = params.set('form', opts.form ?? 'TU_LUAN');
+      // Lưu ý: Practice cũ có thể dùng level là chuỗi dài "Đại học chính quy",
+      // nhưng giờ tách ra, tùy BE xử lý ghép chuỗi hoặc lấy riêng.
     } else {
       const duration = (opts as any).durationMinutes ? `${(opts as any).durationMinutes} phút` : (opts as any).duration;
       if (opts.semester) params = params.set('semester', opts.semester);
@@ -283,9 +291,8 @@ export class QuestionService {
       if (duration) params = params.set('duration', duration);
       if (opts.paperNo != null) params = params.set('paperNo', String(opts.paperNo));
       if (opts.examForm) params = params.set('examForm', opts.examForm);
-      if (opts.program) params = params.set('program', opts.program);
+      if (opts.faculty) params = params.set('faculty', opts.faculty);
       if ((opts as any).mau) params = params.set('mau', (opts as any).mau);
-      params = params.set('level', opts.level ?? 'Đại học chính quy');
     }
     return params;
   }
@@ -458,6 +465,11 @@ export class QuestionService {
         observe: 'events',
         reportProgress: true
       }
+    );
+  }
+  getProblemTypes(subjectId: number): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${baseUrl}/subject/${subjectId}/question-meta/problem-types`
     );
   }
 

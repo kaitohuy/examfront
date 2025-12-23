@@ -37,7 +37,9 @@ export class ExportQuestionsDialogComponent implements OnInit {
   saveCopy = false;
 
   form: NhchtForm = 'TRAC_NGHIEM';
-  level = 'Đại học chính quy';
+  // Tách ra làm 2 biến
+  level = 'Đại học'; 
+  trainingType = 'Chính quy';
 
   semester = '';
   academicYear = '';
@@ -45,7 +47,7 @@ export class ExportQuestionsDialogComponent implements OnInit {
   durationMinutes: number | null = 90;
   paperNo: number | null = 1;
   examForm: 'viết' | 'trắc nghiệm' = 'viết';
-  program = 'Công nghệ thông tin';
+  faculty = 'Công nghệ thông tin';
   mau = '3a';
 
   // ===== autogen mode =====
@@ -121,38 +123,45 @@ export class ExportQuestionsDialogComponent implements OnInit {
         variant: this.variant,
         format: this.format,
         merge: this.mergeFile,
-        // >>> THÊM DÒNG NÀY
         labels: this.variant === 'exam' ? ['EXAM'] : ['PRACTICE'],
 
-        // header (optional)
+        // header info
         semester: this.semester?.trim() || undefined,
         academicYear: this.academicYear?.trim() || undefined,
         classes: this.classes?.trim() || undefined,
         duration,
-        program: this.program?.trim() || undefined,
+        faculty: this.faculty?.trim() || undefined,
         examForm: this.examForm ? ('hình thức thi ' + this.examForm) : undefined,
-        mau: this.mau?.trim() ? ('Mẫu ' + this.mau.trim()) : undefined
+        mau: this.mau?.trim() ? ('Mẫu ' + this.mau.trim()) : undefined,
+        
+        // MAPPING MỚI
+        level: this.level?.trim(),
+        trainingType: this.trainingType?.trim()
       });
       return;
     }
 
+    // MODE EXPORT THƯỜNG
     const opts: ExportOptions = {
       format: this.format,
       includeAnswers: this.includeAnswers,
       variant: this.variant,
       fileName: this.fileName?.trim() || '',
-      saveCopy: this.saveCopy
+      saveCopy: this.saveCopy,
+      // MAPPING MỚI
+      level: this.level?.trim(),
+      trainingType: this.trainingType?.trim()
     };
 
     if (this.variant === 'practice') {
       opts.form = this.form;
-      opts.level = this.level;
+      // Practice có thể cần ghép chuỗi hoặc gửi rời tùy BE, 
+      // nhưng ở đây cứ gửi rời theo object ExportOptions mới cập nhật.
     } else {
-      // chỉ gán nếu có giá trị (tránh chuỗi rỗng)
       const sem = this.semester?.trim();
       const ay = this.academicYear?.trim();
       const cls = this.classes?.trim();
-      const prog = this.program?.trim();
+      const fal = this.faculty?.trim();
       const mau = this.mau?.trim();
 
       if (sem) opts.semester = sem;
@@ -160,9 +169,8 @@ export class ExportQuestionsDialogComponent implements OnInit {
       if (cls) opts.classes = cls;
       if (this.durationMinutes != null) opts.durationMinutes = this.durationMinutes;
       if (this.paperNo != null) opts.paperNo = this.paperNo;
-      // examForm/mẫu cũng để optional
       if (this.examForm) opts.examForm = 'hình thức thi ' + this.examForm;
-      if (prog) opts.program = prog;
+      if (fal) opts.faculty = fal;
       if (mau) opts.mau = 'Mẫu ' + mau;
     }
 

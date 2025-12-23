@@ -115,10 +115,10 @@
           <input class="form-control" placeholder="2024-2025" [(ngModel)]="academicYear">
         </div>
 
-        <div class="col-12 col-md-3">
-          <label class="form-label">Lớp</label>
-          <input name="classes" class="form-control" placeholder="D18CN, D18AT" [(ngModel)]="classes" />
-        </div>
+        <!-- <div class="col-12 col-md-3">
+          <label class="form-label">Trình độ</label>
+          <input class="form-control" placeholder="Đại học" [(ngModel)]="level">
+        </div> -->
 
         <div class="col-12 col-md-3">
           <label class="form-label">Thời lượng (phút)</label>
@@ -128,11 +128,10 @@
 
       <div class="row g-3 mt-1">
         <div class="col-12 col-md-3">
-          <label class="form-label">khoa</label>
-          <input name="faculty" class="form-control" [(ngModel)]="program" />
+          <label class="form-label">Mẫu</label>
+          <input class="form-control" [(ngModel)]="mau">
         </div>
 
-        <!-- MÃ ĐỀ: chỉ hiện ở export mode -->
         <div class="col-12 col-md-3" *ngIf="mode==='export'">
           <label class="form-label">Mã đề</label>
           <input class="form-control" type="number" min="1" [(ngModel)]="paperNo">
@@ -146,10 +145,17 @@
           </select>
         </div>
 
-        <div class="col-12 col-md-3">
-          <label class="form-label">Mẫu</label>
-          <input class="form-control" [(ngModel)]="mau">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Khoa</label>
+          <input name="faculty" class="form-control" [(ngModel)]="faculty" />
         </div>
+        
+        <!-- <div class="col-12 col-md-3">
+          <label class="form-label">Hình thức ĐT</label>
+          <input class="form-control" placeholder="Chính quy" [(ngModel)]="trainingType">
+        </div> -->
+
+        <div class="col-12 col-md-3" *ngIf="false"> </div>
       </div>
     </div>
   </div>

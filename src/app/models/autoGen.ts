@@ -12,6 +12,8 @@ export interface AutoGenSelectorDTO {
   pointsMin?: number | null;
   pointsMax?: number | null;
   typeCodeIn?: string[] | null;
+  problemTypeIn?: string[] | null;
+  cloIn?: string[] | null;
   nature?: ItemNature | null;
   status?: RecordStatus | null;
   cognitive?: string | null;

@@ -75,7 +75,7 @@
             <mat-panel-title>{{ titleOf(i) }}</mat-panel-title>
             <mat-panel-description>
               <button mat-icon-button color="warn" matTooltip="Xóa câu này"
-                      (click)="$event.stopPropagation(); removeStep(i)" type="button">
+                (click)="$event.stopPropagation(); removeStep(i)" type="button">
                 <mat-icon>delete</mat-icon>
               </button>
             </mat-panel-description>
@@ -99,55 +99,86 @@
 
           <div class="selector" *ngFor="let sel of selectorsFA(i).controls; let j = index" [formGroup]="sel">
             <div class="row g-2 d-flex justify-content-between">
-              <div class="col-6 col-lg-2">
-                <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Đơn vị</mat-label>
-                  <mat-select formControlName="unitKind">
-                    <mat-option *ngFor="let uk of unitKinds" [value]="uk.value">{{ uk.label }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
+              <div class="col-12 col-lg-10 g-2 d-flex justify-content-between">
+                <div class="col-6 col-lg-2">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Đơn vị</mat-label>
+                    <mat-select formControlName="unitKind">
+                      <mat-option *ngFor="let uk of unitKinds" [value]="uk.value">{{ uk.label }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
 
-              <div class="col-6 col-lg-2">
-                <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Chương</mat-label>
-                  <mat-select formControlName="chapterIn" multiple>
-                    <mat-option *ngFor="let ch of [1,2,3,4,5]" [value]="ch">Chương {{ ch }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
+                <div class="col-6 col-lg-2">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Điểm =</mat-label>
+                    <input matInput type="number" formControlName="pointsEq" placeholder="1 hoặc 2">
+                  </mat-form-field>
+                </div>
 
-              <div class="col-6 col-lg-2">
-                <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Điểm =</mat-label>
-                  <input matInput type="number" formControlName="pointsEq" placeholder="1 hoặc 2">
-                </mat-form-field>
-              </div>
+                <div class="col-6 col-lg-3">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Chương</mat-label>
+                    <mat-select formControlName="chapterIn" multiple>
+                      <mat-option *ngFor="let ch of [1,2,3,4,5]" [value]="ch">Chương {{ ch }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
 
-              <div class="col-6 col-lg-2">
-                <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Type code</mat-label>
-                  <mat-select formControlName="typeCodeIn" multiple>
-                    <mat-option *ngFor="let t of typeCodes" [value]="t">{{ t }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
-              </div>
-
-              <div class="col-6 col-lg-2">
-                <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Bản chất</mat-label>
-                  <mat-select formControlName="nature">
-                    <mat-option [value]="null">—</mat-option>
-                    <mat-option *ngFor="let n of natures" [value]="n.value">{{ n.label }}</mat-option>
-                  </mat-select>
-                </mat-form-field>
+                <div class="col-6 col-lg-3">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Type code</mat-label>
+                    <mat-select formControlName="typeCodeIn" multiple>
+                      <mat-option *ngFor="let t of typeCodes" [value]="t">{{ t }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
               </div>
 
               <div class="col-12 col-lg-1">
-                <button mat-icon-button color="warn" class="ms-auto"
-                        matTooltip="Xóa selector này" (click)="removeSelector(i,j)" type="button">
+                <button mat-icon-button color="warn" class="ms-auto" matTooltip="Xóa selector này"
+                  (click)="removeSelector(i,j)" type="button">
                   <mat-icon>close</mat-icon>
                 </button>
+              </div>
+            </div>
+
+            <!-- row 2 -->
+            <div class="row d-flex justify-content-between">
+              <div class="col-12 col-lg-10 d-flex">
+                <div class="col-6 col-lg-2" style="margin-right: 3em;">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Bản chất</mat-label>
+                    <mat-select formControlName="nature">
+                      <mat-option [value]="null">—</mat-option>
+                      <mat-option *ngFor="let n of natures" [value]="n.value">{{ n.label }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="col-6 col-lg-2" style="margin-right: 3em;">
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>CLO</mat-label>
+                    <mat-select formControlName="cloIn" multiple>
+                      <mat-option *ngFor="let c of clos" [value]="c">
+                        {{ c }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+
+                <div class="col-6 col-lg-4" *ngIf="sel.get('unitKind')?.value === 'SUB_ITEM'">
+
+                  <mat-form-field class="w-100" appearance="outline">
+                    <mat-label>Dạng bài</mat-label>
+                    <mat-select formControlName="problemTypeIn" multiple>
+                      <mat-option *ngFor="let p of problemTypes" [value]="p">
+                        {{ p }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+
+                </div>
               </div>
             </div>
           </div>

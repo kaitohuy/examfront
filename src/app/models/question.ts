@@ -36,4 +36,5 @@ export interface Question {
 
   typeCode?: string;
   itemNature?: string;
+  problemType?: string;
 }

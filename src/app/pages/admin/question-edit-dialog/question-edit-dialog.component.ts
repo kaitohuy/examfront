@@ -14,11 +14,11 @@ import { withLoading } from '../../../shared/with-loading';
   standalone: true,
   imports: [MatDialogModule, QuestionFormComponent, ...sharedImports, LoadingScreenComponent],
   templateUrl: './question-edit-dialog.component.html',
-  styleUrls: ['./question-edit-dialog.component.css'] 
+  styleUrls: ['./question-edit-dialog.component.css']
 })
 export class QuestionEditDialogComponent implements OnDestroy {
   private form!: FormGroup;
-
+  subjectId!: number;
   /** Ảnh người dùng vừa chọn (gallery mới) */
   imageFiles: File[] = [];
   imagePreviews: string[] = [];
@@ -40,7 +40,9 @@ export class QuestionEditDialogComponent implements OnDestroy {
     private ref: MatDialogRef<QuestionEditDialogComponent>,
     private qs: QuestionService,
     private qevents: QuestionEventsService
-  ) { }
+  ) {
+    this.subjectId = data.subjectId;
+  }
 
   @ViewChild(QuestionFormComponent) formComp!: QuestionFormComponent;
 

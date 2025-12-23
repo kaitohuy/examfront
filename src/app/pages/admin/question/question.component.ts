@@ -152,9 +152,9 @@ export class QuestionComponent implements OnInit, OnDestroy {
     this.eventsSub = this.qevents.changed$.subscribe((e) => {
       if (e.subjectId === this.subjectId) this.applyEvent(e);
     });
-    if(this.labelFilter = 'EXAM') {
+    if (this.labelFilter = 'EXAM') {
       this.variant = 'EXAM';
-    }else {
+    } else {
       this.variant = 'PRACTICE';
     }
   }
@@ -881,7 +881,6 @@ export class QuestionComponent implements OnInit, OnDestroy {
       const selection = this.buildSelectionRequest();
 
       this.startProgress('Đang xuất file…', 'Đang đóng gói câu hỏi');
-
       this.questionService
         .exportQuestionsProgressBySelection(this.subjectId, selection, opts)
         .subscribe({
@@ -1286,26 +1285,35 @@ export class QuestionComponent implements OnInit, OnDestroy {
     ref.afterClosed().subscribe((r) => {
       if (!r || r.mode !== 'autogen') return;
 
+      // [SỬA ĐỔI 1] Destructure thêm level, trainingType, faculty
       const {
         variants, fileName, merge,
-        semester, academicYear, classes, duration, program, examForm, mau
+        semester, academicYear, classes, duration,
+        examForm, mau,
+        // Các trường mới:
+        faculty,      // Dialog trả về 'faculty', code cũ của bạn đang dùng 'program' là sai
+        level,        // New
+        trainingType  // New
       } = r;
 
-      // NEW: suy ra kind từ labelFilter
       const kind = this.labelFilter === 'EXAM' ? 'EXAM' : 'PRACTICE';
 
-      // body & query cho AutogenService
       const body: AutoGenRequest = {
         variants: r.variants,
         labels: r.labels
       };
 
+      // [SỬA ĐỔI 2] Bổ sung vào query params
       const query: any = {
         commit: true,
-        kind,               // NEW
+        kind,
         merge,
         fileName,
-        program, semester, academicYear, classes, duration, examForm, mau
+        semester, academicYear, classes, duration, examForm, mau,
+        // Mapping mới:
+        faculty,       // Gửi faculty xuống BE
+        level,         // Gửi level
+        trainingType   // Gửi trainingType
       };
 
       this.startProgress(
@@ -1315,6 +1323,7 @@ export class QuestionComponent implements OnInit, OnDestroy {
 
       this.autogen.exportZipProgress(this.subjectId, body, query).subscribe({
         next: (ev: any) => {
+          // ... (Giữ nguyên logic xử lý progress)
           if (ev?.type === 1) {
             if (typeof ev.total === 'number') {
               this.progress = Math.round((ev.loaded / ev.total) * 30);

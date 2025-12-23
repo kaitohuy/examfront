@@ -16,6 +16,7 @@ import {
   UnitKind, ItemNature, AutoGenSelectorDTO, AutoGenStepDTO, AutoPaperSettingDTO,
   AutoSettingKind
 } from '../../../models/autoGen';
+import { QuestionService } from '../../../services/question.service';
 
 type DialogData = { subjectId: number; kind?: AutoSettingKind };
 
@@ -51,6 +52,10 @@ export class AutoPaperSettingDialogComponent implements OnInit {
   ];
   typeCodes: string[] = [];
 
+  problemTypes: string[] = [];
+
+  clos: string[] = ['CLO1', 'CLO2', 'CLO3', 'CLO4', 'CLO5'];
+
   form = this.fb.group({
     name: this.fb.control<string>('Default', { nonNullable: true, validators: [Validators.required] }),
     variants: this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(1)] }),
@@ -73,7 +78,8 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: DialogData,
     private fb: FormBuilder,
     public ref: MatDialogRef<AutoPaperSettingDialogComponent>,
-    private api: AutoPaperSettingService
+    private api: AutoPaperSettingService,
+    private questionService: QuestionService
   ) { }
 
   ngOnInit(): void {
@@ -100,6 +106,11 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     this.api.get(this.data.subjectId, this.kind).subscribe({
       next: (dto) => { this.patchAll(dto); this.loading.set(false); },
       error: (err) => { console.error(err); this.loading.set(false); }
+    });
+
+    this.questionService.getProblemTypes(this.data.subjectId).subscribe({
+      next: (types) => this.problemTypes = types ?? [],
+      error: () => this.problemTypes = []
     });
   }
 
@@ -141,16 +152,23 @@ export class AutoPaperSettingDialogComponent implements OnInit {
   }
 
   buildSelectorFG(sel?: AutoGenSelectorDTO) {
-    return this.fb.group({
+    const fg = this.fb.group({
       unitKind: new FormControl<UnitKind | null>(sel?.unitKind ?? 'SUB_ITEM'),
       chapterIn: new FormControl<number[] | null>(sel?.chapterIn ?? null),
       pointsEq: new FormControl<number | null>(sel?.pointsEq ?? null),
       typeCodeIn: new FormControl<string[] | null>(sel?.typeCodeIn ?? null),
       nature: new FormControl<ItemNature | null>(sel?.nature ?? null),
-      // status/cognitive bỏ khỏi UI — nếu BE muốn mặc định:
-      // status: new FormControl<RecordStatus | null>('APPROVED'),
-      // cognitive: new FormControl<string | null>(null)
+      problemTypeIn: new FormControl<string[] | null>(sel?.problemTypeIn ?? null),
+      cloIn: new FormControl<string[] | null>(sel?.cloIn ?? null),
     });
+
+    fg.get('unitKind')!.valueChanges.subscribe(v => {
+      if (v !== 'SUB_ITEM') {
+        fg.get('problemTypeIn')!.setValue(null);
+      }
+    });
+
+    return fg;
   }
 
   // ==== operations ====
@@ -177,7 +195,9 @@ export class AutoPaperSettingDialogComponent implements OnInit {
           typeCodeIn: sfg.get('typeCodeIn')?.value ?? null,
           nature: sfg.get('nature')?.value ?? null,
           status: 'APPROVED',
-          cognitive: null
+          cognitive: null,
+          problemTypeIn: sfg.get('problemTypeIn')?.value ?? null,
+          cloIn: sfg.get('cloIn')?.value ?? null,
         };
       });
       return { title: stepFG.get('title')?.value ?? '', selectors: selArr };

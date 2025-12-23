@@ -9,6 +9,8 @@ import { Question } from '../../../models/question';
 
 import { MathjaxDirective } from '../../../shared/mathjax.directive';
 import { ToolMathComponent } from '../../../shared/tool-math/tool-math.component';
+import { map, Observable, startWith } from 'rxjs';
+import { QuestionService } from '../../../services/question.service';
 
 type QuestionLabel = 'PRACTICE' | 'EXAM';
 type TexField = 'content' | 'optionA' | 'optionB' | 'optionC' | 'optionD' | 'answer' | 'answerText';
@@ -27,6 +29,7 @@ type TexField = 'content' | 'optionA' | 'optionB' | 'optionC' | 'optionD' | 'ans
 })
 export class QuestionFormComponent implements OnInit, OnChanges {
   @Input() value?: Partial<Question>;
+  @Input() subjectId!: number;
   @Output() formReady = new EventEmitter<FormGroup>();
 
   form!: FormGroup;
@@ -60,21 +63,52 @@ export class QuestionFormComponent implements OnInit, OnChanges {
   // Tool Math state
   focused: { field: TexField } | null = null;
 
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder, private questionService: QuestionService) { }
 
   // ==== Getters ====
   get isMultiple() { return this.form.get('questionType')?.value === 'MULTIPLE_CHOICE'; }
   get labels(): QuestionLabel[] { return this.form.get('labels')?.value ?? []; }
 
-  // ==== Lifecycle ====
+  problemTypes: string[] = [];
+  filteredProblemTypes$!: Observable<string[]>;
+
   ngOnInit(): void {
     this.buildForm(this.value || {});
+
+    this.questionService.getProblemTypes(this.subjectId).subscribe(types => {
+      this.problemTypes = types;
+
+      this.filteredProblemTypes$ = this.form.get('problemType')!.valueChanges.pipe(
+        startWith(''),
+        map(v =>
+          !v ? this.problemTypes :
+            this.problemTypes.filter(t =>
+              t.toLowerCase().includes(v.toLowerCase())
+            )
+        )
+      );
+    });
+
     this.formReady.emit(this.form);
   }
 
+
+  private filterProblemTypes(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.problemTypes.filter(t =>
+      t.toLowerCase().includes(filterValue)
+    );
+  }
+
+
+  // Trong QuestionFormComponent
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['value'] && this.form) {
-      this.patchForm(this.value || {});
+    if (changes['value'] && this.value) {
+      console.log('DATA ĐẦU VÀO:', this.value); // <--- Kiểm tra dòng này ở Console trình duyệt
+      // Kiểm tra xem có thuộc tính problemType không, hay nó tên là problem_type?
+      if (this.form) {
+        this.patchForm(this.value || {});
+      }
     }
   }
 
@@ -83,14 +117,16 @@ export class QuestionFormComponent implements OnInit, OnChanges {
     // Nếu BE trả về typeCode/itemNature lồng trong meta, ta lấy an toàn
     const typeCode = q.typeCode ?? (q as any).meta?.typeCode ?? '';
     const itemNature = q.itemNature ?? (q as any).meta?.itemNature ?? null;
+    const problemType = q.problemType ?? (q as any).meta?.problemType ?? '';
 
+    console.log("problemType: " + problemType);
     this.form = this.fb.group({
       content: [q.content ?? '', [Validators.required, Validators.maxLength(10000)]],
       labels: [(q.labels as QuestionLabel[]) ?? ['PRACTICE']],
       questionType: [q.questionType ?? 'MULTIPLE_CHOICE', Validators.required],
       chapter: [q.chapter ?? 0],
       difficulty: [q.difficulty ?? ('C' as Difficulty), Validators.required],
-      
+
       // [NEW] Fields
       typeCode: [typeCode],
       itemNature: [itemNature],
@@ -101,6 +137,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       optionD: [q.optionD ?? ''],
       answer: [q.answer ?? ''],
       answerText: [q.answerText ?? ''],
+      problemType: [problemType ?? '']
     });
 
     this.applyTypeValidators(this.form.get('questionType')!.value);
@@ -110,6 +147,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
   private patchForm(q: Partial<Question>) {
     const typeCode = q.typeCode ?? (q as any).meta?.typeCode ?? '';
     const itemNature = q.itemNature ?? (q as any).meta?.itemNature ?? null;
+    const problemType = (q as any).problemType ?? (q as any).meta?.problemType ?? '';
 
     this.form.patchValue({
       content: q.content ?? '',
@@ -117,7 +155,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       questionType: q.questionType ?? 'MULTIPLE_CHOICE',
       chapter: q.chapter ?? 0,
       difficulty: q.difficulty ?? ('C' as Difficulty),
-      
+
       // [NEW]
       typeCode: typeCode,
       itemNature: itemNature,
@@ -128,6 +166,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       optionD: q.optionD ?? '',
       answer: q.answer ?? '',
       answerText: q.answerText ?? '',
+      problemType: problemType
     }, { emitEvent: false });
     this.applyTypeValidators(this.form.get('questionType')!.value);
   }
@@ -135,7 +174,7 @@ export class QuestionFormComponent implements OnInit, OnChanges {
   private applyTypeValidators(type: QuestionType) {
     const a = this.form.get('optionA')!, b = this.form.get('optionB')!, c = this.form.get('optionC')!, d = this.form.get('optionD')!;
     const ans = this.form.get('answer')!, ansText = this.form.get('answerText')!;
-    
+
     if (type === 'MULTIPLE_CHOICE') {
       a.setValidators([Validators.required]);
       b.setValidators([Validators.required]);
@@ -145,10 +184,10 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       ansText.clearValidators();
     } else {
       a.clearValidators(); b.clearValidators(); c.clearValidators(); d.clearValidators();
-      ans.clearValidators(); 
-      ansText.setValidators([]); 
+      ans.clearValidators();
+      ansText.setValidators([]);
     }
-    
+
     [a, b, c, d, ans, ansText].forEach(x => x.updateValueAndValidity());
   }
 
@@ -211,10 +250,10 @@ export class QuestionFormComponent implements OnInit, OnChanges {
       content: v.content,
       difficulty: v.difficulty,
       chapter: Number(v.chapter),
-      
-      // [NEW] Map to DTO
+
       typeCode: v.typeCode?.trim() || null,
       itemNature: v.itemNature || null,
+      problemType: v.problemType?.trim() || null,
 
       optionA: v.optionA || '',
       optionB: v.optionB || '',

@@ -7,9 +7,6 @@ export interface CreateQuestion {
   difficulty: Difficulty;
   chapter: number;
 
-  // Các field dưới tùy theo loại câu hỏi:
-  // - MULTIPLE_CHOICE: optionA–D + answer
-  // - ESSAY: answerText
   optionA?: string;
   optionB?: string;
   optionC?: string;
@@ -17,12 +14,13 @@ export interface CreateQuestion {
   answer?: string;
   answerText?: string;
 
-  // Cover có thể để BE tự set từ ảnh upload → optional
   imageUrl?: string;
-
-  /** 🔹 nhãn: nếu không truyền, BE mặc định PRACTICE */
   labels?: ("PRACTICE" | "EXAM")[];
 
   typeCode?: string;
   itemNature?: string;
+
+  /** 🔹 Loại bài / dạng toán */
+  problemType?: string;
 }
+

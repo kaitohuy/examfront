@@ -3,7 +3,7 @@
 </h2>
 
 <mat-dialog-content class="pt-3" [attr.aria-busy]="isLoading">
-  <app-question-form [value]="data.question" (formReady)="captureForm($event)">
+  <app-question-form [subjectId]="subjectId" [value]="data.question" (formReady)="captureForm($event)">
   </app-question-form>
 
   <div class="mt-2">

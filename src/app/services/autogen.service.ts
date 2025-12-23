@@ -12,10 +12,9 @@ import { Observable } from 'rxjs';
 import baseUrl from './helper';
 import { LoginService } from './login.service';
 
-/** Body gửi lên /autogen/...  khớp với AutoGenRequest phía BE */
 export interface AutoGenRequest {
-  variants?: number;       // số đề cần sinh
-  steps?: any[];           // nếu để mặc định cho service build thì có thể bỏ qua
+  variants?: number;
+  steps?: any[];
   labels?: ('EXAM' | 'PRACTICE')[];
 }
 
@@ -33,12 +32,6 @@ export class AutogenService {
     return req.clone({ headers });
   }
 
-  /**
-   * Gọi /subject/{subjectId}/autogen/export
-   * - Body: AutoGenRequest (ví dụ: { variants: 5 })
-   * - Query: commit, fileName, program, semester, academicYear, classes, duration, examForm, mau
-   * - Trả HttpEvent<Blob> để bắt progress và tự download.
-   */
   exportZipProgress(
     subjectId: number,
     body?: AutoGenRequest,
@@ -46,7 +39,7 @@ export class AutogenService {
       commit?: boolean;
       merge?: boolean;
       fileName?: string;
-      program?: string;
+      program?: string; // (Vẫn giữ để tương thích nếu cần, nhưng logic chính sẽ dùng faculty)
       semester?: string;
       academicYear?: string;
       classes?: string;
@@ -54,19 +47,38 @@ export class AutogenService {
       examForm?: string;
       mau?: string;
       kind?: 'EXAM' | 'PRACTICE';
+      // [NEW PARAMS]
+      faculty?: string;     // Thay thế cho program cũ (Khoa)
+      level?: string;       // Trình độ
+      trainingType?: string; // Hình thức ĐT
     }
   ): Observable<HttpEvent<Blob>> {
     let params = new HttpParams().set('commit', String(query?.commit ?? true));
     if (query?.merge) params = params.set('merge', 'true');
     if (query?.fileName) params = params.set('fileName', query.fileName);
-    if (query?.program) params = params.set('program', query.program);
+    
+    // Logic cũ của bạn dùng `program` gửi lên BE nhưng thực tế đó là tên Khoa
+    // Ở đây ta ưu tiên gửi `faculty` nếu có, nếu không thì fallback về `program`
+    const fac = query?.faculty || query?.program;
+    if (fac) params = params.set('faculty', fac); // Backend sẽ đổi @RequestParam thành 'faculty'
+    
+    // Nếu BE vẫn dùng tham số 'program' để hứng tên Bộ môn, thì bạn cần thêm param đó riêng
+    // Tuy nhiên theo logic Header mới, ta có: Institute, Faculty, Program (Bộ môn)
+    // Ở FE Dialog bạn đang map: faculty -> Faculty, program -> Program.
+    // Nên tốt nhất gửi cả 2:
+    if (query?.program) params = params.set('program', query.program); // Bộ môn
+    
     if (query?.semester) params = params.set('semester', query.semester);
     if (query?.academicYear) params = params.set('academicYear', query.academicYear);
     if (query?.classes) params = params.set('classes', query.classes);
     if (query?.duration) params = params.set('duration', query.duration);
     if (query?.examForm) params = params.set('examForm', query.examForm);
     if (query?.mau) params = params.set('mau', query.mau);
-    if (query?.kind) params = params.set('kind', query.kind); // NEW
+    if (query?.kind) params = params.set('kind', query.kind);
+    
+    // [NEW] Gửi thêm params mới
+    if (query?.level) params = params.set('level', query.level);
+    if (query?.trainingType) params = params.set('trainingType', query.trainingType);
 
     const url = `${baseUrl}/subject/${subjectId}/autogen/export`;
     const payload = new Blob([JSON.stringify(body ?? {})], { type: 'application/json' });

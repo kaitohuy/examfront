@@ -47,6 +47,18 @@
                 </mat-select>
             </mat-form-field>
 
+            <mat-form-field appearance="outline" class="mf-compact">
+                <mat-label>Dạng bài</mat-label>
+
+                <input matInput formControlName="problemType" [matAutocomplete]="autoProblem"
+                    placeholder="VD: Bài toán đếm 1" />
+
+                <mat-autocomplete #autoProblem="matAutocomplete">
+                    <mat-option *ngFor="let p of filteredProblemTypes$ | async" [value]="p">
+                        {{ p }}
+                    </mat-option>
+                </mat-autocomplete>
+            </mat-form-field>
         </div>
 
 
@@ -122,5 +134,6 @@
         </mat-form-field>
         <div class="preview" [appMathjax]="form.value.answerText || ''"></div>
     </div>
+
 
 </form>

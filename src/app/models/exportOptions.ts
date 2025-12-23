@@ -10,17 +10,21 @@ export interface ExportOptions {
   variant: ExportVariant;
   saveCopy?: boolean;
 
-  // practice
-  form?: NhchtForm;                 // TU_LUAN | TRAC_NGHIEM
-  level?: string;                   // "Đại học chính quy", ...
+  // New fields for Mapping
+  level?: string;         // "Đại học", "Cao đẳng"
+  trainingType?: string;  // "Chính quy", "Vừa làm vừa học"
 
+  // practice
+  form?: NhchtForm;
+  
   // exam
-  semester?: string;                // "I" | "II" | "Hè" ...
-  academicYear?: string;            // "2024-2025"
-  classes?: string;                 // "D18CN, D18AT"
-  durationMinutes?: number;         // chỉ nhập số phút
-  paperNo?: number;                 // 1,2,...
+  semester?: string;
+  academicYear?: string;
+  classes?: string;
+  durationMinutes?: number;
+  paperNo?: number;
   examForm?: 'Viết' | 'Trắc nghiệm' | string;
-  program?: string;                 // bộ môn
-  mau?: string;                     // Nhãn "Mẫu 3a", ...
+  faculty?: string;
+  program?: string;
+  mau?: string;
 }
