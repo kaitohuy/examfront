@@ -54,7 +54,7 @@ export class AutoPaperSettingDialogComponent implements OnInit {
 
   problemTypes: string[] = [];
 
-  clos: string[] = ['CLO1', 'CLO2', 'CLO3', 'CLO4', 'CLO5'];
+  clos: string[] = ['CLO1', 'CLO2'];
 
   form = this.fb.group({
     name: this.fb.control<string>('Default', { nonNullable: true, validators: [Validators.required] }),
