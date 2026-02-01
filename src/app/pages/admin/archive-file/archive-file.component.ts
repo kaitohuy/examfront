@@ -363,10 +363,10 @@ export class ArchiveFileComponent implements OnInit, OnDestroy {
       html: `
         <div class="text-start" style="margin: 4px;">
           <p class="mb-3">Bạn có muốn <b>sinh file đáp án</b> cho file vừa duyệt không?</p>
-          
-          <div class="form-check ms-3 p-2 bg-light rounded border">
-             <input class="form-check-input" type="checkbox" id="swal-merge-file">
-             <label class="form-check-label" for="swal-merge-file" style="margin: 4px;">
+
+          <div class="form-check p-2 bg-light rounded border d-flex align-items-center">
+             <input class="form-check-input ms-1" type="checkbox" id="swal-merge-file">
+             <label class="form-check-label ms-2 user-select-none" for="swal-merge-file">
                Gộp tất cả mã đề vào 1 file Word
              </label>
           </div>

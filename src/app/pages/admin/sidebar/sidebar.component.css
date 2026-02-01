@@ -116,6 +116,6 @@ a.mat-list-item.active {
 /* Thêm hiệu ứng khi di chuột (hover) hoặc focus bằng phím */
 a.mat-list-item:hover, 
 a.mat-list-item:focus {
-  background-color: #f5f5f5; /* Màu xám nhạt hơn khi lướt qua */
+  background-color: #393838; /* Màu xám nhạt hơn khi lướt qua */
   outline: none; /* Bỏ viền outline mặc định của trình duyệt */
 }

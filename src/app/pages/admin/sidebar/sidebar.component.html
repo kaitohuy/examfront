@@ -68,7 +68,7 @@
       <a *ngIf="showTasks" mat-list-item [routerLink]="to('tasks')" routerLinkActive="active"
         [matTooltip]="isCollapsed ? 'Tasks' : ''" [matTooltipDisabled]="!isCollapsed">
         <mat-icon matListIcon>assignment</mat-icon>
-        <span matLine *ngIf="!isCollapsed">Nhiệm vụ</span>
+        <span matLine *ngIf="!isCollapsed">Giao nhiệm vụ</span>
       </a>
 
       <ng-container *ngIf="hasAnyGuide">

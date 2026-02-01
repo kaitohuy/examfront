@@ -62,7 +62,6 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     notUsedYears: this.fb.control<number>(1, { nonNullable: true, validators: [Validators.min(0)] }),
     noRepeatWithin: this.fb.control<boolean>(true, { nonNullable: true }),
     noRepeatAcross: this.fb.control<boolean>(false, { nonNullable: true }),
-    // labelScope bỏ khỏi UI => không tạo control để tránh chiếm chỗ
     steps: this.fb.array<FormGroup>([])
   });
 
@@ -220,7 +219,6 @@ export class AutoPaperSettingDialogComponent implements OnInit {
     if (this.form.invalid) return;
     const dto = this.toDto();
     this.saving.set(true);
-    // NEW: truyền kind
     this.api.update(this.data.subjectId, dto, this.kind).subscribe({
       next: (res) => { this.saving.set(false); this.ref.close(res); },
       error: (err) => { console.error(err); this.saving.set(false); }
